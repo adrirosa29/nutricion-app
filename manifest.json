@@ -1,0 +1,9 @@
+{
+  "name": "Diario Nutricional",
+  "short_name": "Diario",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#DCD5C4",
+  "theme_color": "#241F16",
+  "icons": []
+}
