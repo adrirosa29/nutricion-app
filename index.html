@@ -4612,11 +4612,13 @@ function NuevaReceta({
 }) {
   const esEdicion = !!recetaExistente;
   const [nombre, setNombre] = useState(recetaExistente ? recetaExistente.name : "");
-  const [meal, setMeal] = useState(recetaExistente ? recetaExistente.meal : MEALS[0]);
   const [servings, setServings] = useState(recetaExistente ? recetaExistente.servings || 1 : 1);
   const [tipo, setTipo] = useState(recetaExistente ? recetaExistente.tipo || "" : "");
   const [frecuencia, setFrecuencia] = useState(recetaExistente ? recetaExistente.frecuencia || "diaria" : "diaria");
-  const [momentos, setMomentos] = useState(recetaExistente ? momentosDe(recetaExistente) : [MEALS[0]]);
+  const [momentos, setMomentos] = useState(recetaExistente ? momentosDe(recetaExistente) : []);
+  // La franja principal se deduce de los momentos marcados (la primera en orden del día).
+  const mealFlex = recetaExistente && FRANJAS_FLEXIBLES.includes(recetaExistente.meal) ? recetaExistente.meal : null;
+  const meal = mealFlex || MEALS.find(m => momentos.includes(m)) || (momentos.includes("Postre") ? "Merienda" : MEALS[0]);
   const [porUnidad, setPorUnidad] = useState(recetaExistente ? !!recetaExistente.por_unidad : false);
   const [productos, setProductos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -4645,7 +4647,7 @@ function NuevaReceta({
     setIngredientes(prev => prev.filter(i => i.product_id !== product_id));
   }
   async function guardar() {
-    if (!nombre || ingredientes.length === 0) return;
+    if (!nombre || ingredientes.length === 0 || momentos.length === 0 && !mealFlex) return;
     setGuardando(true);
     const momentosFinal = [...new Set([meal, ...momentos])];
     if (esEdicion) {
@@ -4714,19 +4716,6 @@ function NuevaReceta({
       borderRadius: 12
     }
   }), /*#__PURE__*/React.createElement("select", {
-    value: meal,
-    onChange: e => setMeal(e.target.value),
-    className: "w-full mb-2 px-3 py-2 text-[13px]",
-    style: {
-      border: `1.5px solid ${palette.line}`,
-      background: palette.paperDark,
-      color: palette.ink,
-      borderRadius: 12
-    }
-  }, MEALS_RECETA.map(m => /*#__PURE__*/React.createElement("option", {
-    key: m,
-    value: m
-  }, m))), /*#__PURE__*/React.createElement("select", {
     value: tipo,
     onChange: e => setTipo(e.target.value),
     className: "w-full mb-2 px-3 py-2 text-[13px]",
@@ -4760,15 +4749,14 @@ function NuevaReceta({
     style: {
       color: palette.inkSoft
     }
-  }, "¿Cuándo puede aparecer?"), /*#__PURE__*/React.createElement("div", {
+  }, "¿Cuándo puede aparecer? (elige uno o varios)"), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-1.5 mb-2"
   }, MOMENTOS_RECETA.map(m => {
-    const on = m === meal || momentos.includes(m);
+    const on = momentos.includes(m);
     return /*#__PURE__*/React.createElement("button", {
       key: m,
       type: "button",
       onClick: () => {
-        if (m === meal) return;
         setMomentos(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
       },
       className: "px-2.5 py-1 text-[12px]",
@@ -4776,8 +4764,7 @@ function NuevaReceta({
         borderRadius: 999,
         border: `1.5px solid ${on ? palette.green : palette.line}`,
         background: on ? palette.greenSoft : "transparent",
-        color: on ? palette.greenDark : palette.inkSoft,
-        opacity: m === meal ? 0.8 : 1
+        color: on ? palette.greenDark : palette.inkSoft
       }
     }, on ? "✓ " : "", m === "Postre" ? "Postre (comida/cena)" : m);
   })), /*#__PURE__*/React.createElement("label", {
@@ -4875,7 +4862,7 @@ function NuevaReceta({
     className: "text-[12.5px]"
   }, p.name)))), /*#__PURE__*/React.createElement("button", {
     onClick: guardar,
-    disabled: guardando || !nombre || ingredientes.length === 0,
+    disabled: guardando || !nombre || ingredientes.length === 0 || momentos.length === 0 && !mealFlex,
     className: "w-full py-2.5 mt-4 text-[13px] uppercase tracking-wide",
     style: {
       background: palette.green,
