@@ -5298,13 +5298,7 @@ function NuevoProducto({
   const [categoria, setCategoria] = useState(productoExistente ? productoExistente.categoria || CATEGORIAS_PRODUCTO[0] : CATEGORIAS_PRODUCTO[0]);
   const [unidad, setUnidad] = useState(productoExistente ? productoExistente.unidad || "g" : "g");
   const [tipoProd, setTipoProd] = useState(productoExistente ? productoExistente.tipo || "" : "");
-  // Las calorías se calculan solas con los macros (4·P + 4·C + 9·G); si escribes
-  // un valor a mano (p. ej. el de la etiqueta) se respeta ese.
-  const [kcalManual, setKcalManual] = useState(() => {
-    if (!productoExistente || productoExistente.kcal == null) return null;
-    const auto = kcalDeMacros(productoExistente.proteinas, productoExistente.carbohidratos, productoExistente.grasas);
-    return Math.abs(auto - productoExistente.kcal) > 1 ? String(productoExistente.kcal) : null;
-  });
+  const [kcal, setKcal] = useState(productoExistente && productoExistente.kcal != null ? productoExistente.kcal : "");
   const [proteinas, setProteinas] = useState(productoExistente && productoExistente.proteinas != null ? productoExistente.proteinas : "");
   const [carbohidratos, setCarbohidratos] = useState(productoExistente && productoExistente.carbohidratos != null ? productoExistente.carbohidratos : "");
   const [grasas, setGrasas] = useState(productoExistente && productoExistente.grasas != null ? productoExistente.grasas : "");
@@ -5316,8 +5310,6 @@ function NuevoProducto({
     color: palette.ink,
     borderRadius: 12
   };
-  const hayMacros = proteinas !== "" || carbohidratos !== "" || grasas !== "";
-  const kcalMostrado = kcalManual !== null ? kcalManual : hayMacros ? String(kcalDeMacros(proteinas, carbohidratos, grasas)) : "";
   async function guardar() {
     if (!nombre) return;
     setGuardando(true);
@@ -5327,7 +5319,7 @@ function NuevoProducto({
       categoria,
       tipo: tipoProd,
       unidad,
-      kcal: kcalMostrado !== "" ? Number(kcalMostrado) : null,
+      kcal: kcal !== "" ? Number(kcal) : null,
       proteinas: proteinas !== "" ? Number(proteinas) : null,
       carbohidratos: carbohidratos !== "" ? Number(carbohidratos) : null,
       grasas: grasas !== "" ? Number(grasas) : null
@@ -5426,16 +5418,11 @@ function NuevoProducto({
     onChange: setGrasas,
     inputStyle: inputStyle
   }), /*#__PURE__*/React.createElement(CampoNutricional, {
-    label: kcalManual === null ? "Calorías (automático)" : "Calorías (a mano)",
-    value: kcalMostrado,
-    onChange: v => setKcalManual(v === "" ? null : v),
+    label: "Calorías (kcal)",
+    value: kcal,
+    onChange: setKcal,
     inputStyle: inputStyle
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] mb-3",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Las calorías se calculan solas con los macros (4 kcal/g de proteína e hidratos, 9 kcal/g de grasa). Si prefieres el valor de la etiqueta, escríbelo y se respeta."), error && /*#__PURE__*/React.createElement("div", {
+  })), error && /*#__PURE__*/React.createElement("div", {
     className: "text-[12px] mb-3",
     style: {
       color: palette.red
