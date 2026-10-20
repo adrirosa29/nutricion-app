@@ -3243,6 +3243,11 @@ function ObjetivoForm({
 }
 
 // ---------- Ajuste de una receta (raciones + ingredientes), reutilizable ----------
+// Un ingrediente «fijo» (p. ej. la tortilla de unas fajitas) solo cambia en unidades enteras de la receta.
+function factorRaciones(fijo, raciones) {
+  const n = Number(raciones) || 0;
+  return fijo ? n <= 0 ? 0 : Math.max(1, Math.round(n)) : n;
+}
 function ingredientesDesdeReceta(recipe, raciones0) {
   const servings = recipe.servings || 1;
   return (recipe.recipe_ingredients || []).map(ri => {
@@ -3256,8 +3261,9 @@ function ingredientesDesdeReceta(recipe, raciones0) {
       carbohidratos: ri.products && ri.products.carbohidratos || 0,
       grasas: ri.products && ri.products.grasas || 0,
       gramsBase,
-      grams: gramsBase * raciones0,
-      fromRecipe: true
+      grams: gramsBase * factorRaciones(ri.fijo, raciones0),
+      fromRecipe: true,
+      fijo: !!ri.fijo
     };
   });
 }
@@ -3320,7 +3326,7 @@ function AjusteReceta({
     setRaciones(n);
     setIngs(prev => prev.map(i => i.fromRecipe ? {
       ...i,
-      grams: (i.gramsBase || 0) * (n === "" ? 0 : Number(n))
+      grams: (i.gramsBase || 0) * factorRaciones(i.fijo, n === "" ? 0 : n)
     } : i));
   }
   function añadir(p) {
@@ -3389,7 +3395,13 @@ function AjusteReceta({
     className: "flex items-center justify-between py-1.5"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[13.5px] flex-1"
-  }, i.name), /*#__PURE__*/React.createElement("input", {
+  }, i.name, i.fijo && /*#__PURE__*/React.createElement("span", {
+    title: "Cantidad fija",
+    className: "text-[11px] ml-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "🔒")), /*#__PURE__*/React.createElement("input", {
     type: "number",
     step: "any",
     inputMode: "decimal",
@@ -3659,23 +3671,52 @@ function DiarioTab({
         }
       }, isOpen ? "▴" : "▾"))), isOpen && /*#__PURE__*/React.createElement("div", {
         className: "pb-1"
-      }, g.items.map(r => {
-        const total = (r.recipe_ingredients || []).reduce((s, ri) => s + factorCant(ri.products && ri.products.unidad, ri.grams) * (ri.products && ri.products.kcal || 0), 0);
-        return /*#__PURE__*/React.createElement("button", {
-          key: r.id,
-          onClick: () => elegirReceta(r),
-          className: "w-full text-left py-2.5 flex items-baseline justify-between",
+      }, [...TIPOS_RECETA, ""].map(t => ({
+        t,
+        items: g.items.filter(r => (r.tipo || "") === t)
+      })).filter(sg => sg.items.length > 0).map(sg => {
+        const key = g.cat + "|" + sg.t;
+        const subOpen = !!gruposRecetaAbiertos[key];
+        return /*#__PURE__*/React.createElement("div", {
+          key: key
+        }, /*#__PURE__*/React.createElement("button", {
+          onClick: () => setGruposRecetaAbiertos(e => ({
+            ...e,
+            [key]: !e[key]
+          })),
+          className: "w-full flex items-center justify-between py-2 px-1",
           style: {
             borderBottom: `1px solid ${palette.line}`
           }
         }, /*#__PURE__*/React.createElement("span", {
-          className: "text-[14px]"
-        }, r.name), /*#__PURE__*/React.createElement("span", {
-          className: "text-[13px]",
+          className: "text-[13px] font-semibold",
           style: {
+            color: palette.greenDark
+          }
+        }, sg.t || "Sin clasificar"), /*#__PURE__*/React.createElement("span", {
+          className: "text-[11px]",
+          style: {
+            color: palette.inkSoft,
             fontVariantNumeric: "tabular-nums"
           }
-        }, Math.round(total), " kcal"));
+        }, sg.items.length, " ", subOpen ? "▴" : "▾")), subOpen && sg.items.map(r => {
+          const total = (r.recipe_ingredients || []).reduce((s2, ri) => s2 + factorCant(ri.products && ri.products.unidad, ri.grams) * (ri.products && ri.products.kcal || 0), 0);
+          return /*#__PURE__*/React.createElement("button", {
+            key: r.id,
+            onClick: () => elegirReceta(r),
+            className: "w-full text-left py-2.5 pl-3 flex items-baseline justify-between",
+            style: {
+              borderBottom: `1px solid ${palette.line}`
+            }
+          }, /*#__PURE__*/React.createElement("span", {
+            className: "text-[14px]"
+          }, r.name), /*#__PURE__*/React.createElement("span", {
+            className: "text-[13px]",
+            style: {
+              fontVariantNumeric: "tabular-nums"
+            }
+          }, Math.round(total), " kcal"));
+        }));
       })));
     })));
   }
@@ -3806,6 +3847,11 @@ function macroRacion(recipe, campo) {
   const total = (recipe.recipe_ingredients || []).reduce((s, ri) => s + factorCant(ri.products && ri.products.unidad, ri.grams) * (ri.products && ri.products[campo] || 0), 0);
   return total / (recipe.servings || 1);
 }
+// Calorías/macros de la receta para un nº de raciones, respetando ingredientes fijos.
+function macroConRaciones(recipe, campo, r) {
+  const servings = recipe.servings || 1;
+  return (recipe.recipe_ingredients || []).reduce((s, ri) => s + factorCant(ri.products && ri.products.unidad, ri.grams) / servings * factorRaciones(ri.fijo, r) * (ri.products && ri.products[campo] || 0), 0);
+}
 function kcalRacion(recipe) {
   return macroRacion(recipe, "kcal");
 }
@@ -3821,23 +3867,7 @@ function azar(lista) {
   return lista[Math.floor(Math.random() * lista.length)];
 }
 function entradaDesdeReceta(recipe, raciones) {
-  const servings = recipe.servings || 1;
-  const ingredientes = (recipe.recipe_ingredients || []).map(ri => {
-    const pr = ri.products || {};
-    const gramsBase = ri.grams / servings;
-    return {
-      product_id: ri.product_id,
-      name: pr.name || "Ingrediente",
-      unidad: pr.unidad || "g",
-      kcal: pr.kcal || 0,
-      proteinas: pr.proteinas || 0,
-      carbohidratos: pr.carbohidratos || 0,
-      grasas: pr.grasas || 0,
-      gramsBase,
-      grams: gramsBase * raciones,
-      fromRecipe: true
-    };
-  });
+  const ingredientes = ingredientesDesdeReceta(recipe, raciones);
   const suma = c => ingredientes.reduce((s, i) => s + factorCant(i.unidad, i.grams) * (i[c] || 0), 0);
   return {
     name: recipe.name,
@@ -3907,7 +3937,7 @@ function planificarDia({
         eventual: true
       }]
     };
-    kcalEventual += kcalRacion(receta);
+    kcalEventual += macroConRaciones(receta, "kcal", 1);
     ctx.hoy.add(receta.id);
   });
   const restante = Math.max(objetivo - kcalEventual, 0);
@@ -3952,7 +3982,7 @@ function planificarDia({
           raciones: r
         });
         ctx.hoy.add(lado.id);
-        objetivoMain = Math.max(t - kcalRacion(lado) * r, t * 0.4);
+        objetivoMain = Math.max(t - macroConRaciones(lado, "kcal", r), t * 0.4);
       }
     }
     const main = mejorReceta(mains, objetivoMain, ctx);
@@ -3985,8 +4015,8 @@ function planificarDia({
   // Ajuste fino: acercar el total del día al objetivo escalando lo no eventual.
   const todosLibres = Object.values(slots).flatMap(sl => sl.items.filter(i => !i.eventual));
   const libresItems = todosLibres.filter(i => !i.recipe.por_unidad); // las de unidades no se escalan
-  const fijoUd = todosLibres.filter(i => i.recipe.por_unidad).reduce((s, i) => s + kcalRacion(i.recipe) * i.raciones, 0);
-  const totalLibre = libresItems.reduce((s, i) => s + kcalRacion(i.recipe) * i.raciones, 0);
+  const fijoUd = todosLibres.filter(i => i.recipe.por_unidad).reduce((s, i) => s + macroConRaciones(i.recipe, "kcal", i.raciones), 0);
+  const totalLibre = libresItems.reduce((s, i) => s + macroConRaciones(i.recipe, "kcal", i.raciones), 0);
   if (totalLibre > 0 && restante >= 150) {
     const f = clamp((restante - fijoUd) / totalLibre, 0.8, 1.25);
     libresItems.forEach(i => {
@@ -4052,10 +4082,10 @@ function planificarSemana({
 
 // Si el usuario ha editado los ingredientes de un item (it.custom), mandan esos.
 function kcalItem(it) {
-  return it.custom ? sumaIngredientes(it.custom, "kcal") : kcalRacion(it.recipe) * it.raciones;
+  return it.custom ? sumaIngredientes(it.custom, "kcal") : macroConRaciones(it.recipe, "kcal", it.raciones);
 }
 function protItem(it) {
-  return it.custom ? sumaIngredientes(it.custom, "proteinas") : macroRacion(it.recipe, "proteinas") * it.raciones;
+  return it.custom ? sumaIngredientes(it.custom, "proteinas") : macroConRaciones(it.recipe, "proteinas", it.raciones);
 }
 function totalDia(dia) {
   return Object.values(dia.slots).reduce((s, sl) => s + sl.items.reduce((s2, i) => s2 + kcalItem(i), 0), 0);
@@ -4639,7 +4669,8 @@ function NuevaReceta({
     product_id: ri.product_id,
     name: ri.products.name,
     grams: ri.grams,
-    unidad: ri.products.unidad || "g"
+    unidad: ri.products.unidad || "g",
+    fijo: !!ri.fijo
   })) : []); // {product_id, name, grams, unidad}
   const [guardando, setGuardando] = useState(false);
   useEffect(() => {
@@ -4677,7 +4708,8 @@ function NuevaReceta({
       await sb.from("recipe_ingredients").insert(ingredientes.map(i => ({
         recipe_id: recetaExistente.id,
         product_id: i.product_id,
-        grams: i.grams
+        grams: i.grams,
+        fijo: !!i.fijo
       })));
     } else {
       const {
@@ -4697,7 +4729,8 @@ function NuevaReceta({
         await sb.from("recipe_ingredients").insert(ingredientes.map(i => ({
           recipe_id: receta.id,
           product_id: i.product_id,
-          grams: i.grams
+          grams: i.grams,
+          fijo: !!i.fijo
         })));
       }
     }
@@ -4806,7 +4839,12 @@ function NuevaReceta({
       color: palette.ink,
       borderRadius: 12
     }
-  }), /*#__PURE__*/React.createElement(SectionTitle, null, "Ingredientes añadidos"), ingredientes.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(SectionTitle, null, "Ingredientes añadidos"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "🔒 = cantidad fija (p. ej. la tortilla de unas fajitas): solo se repite en unidades enteras de la receta, nunca se aumenta ni reduce a medias."), ingredientes.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "text-[12px] py-1.5",
     style: {
       color: palette.inkSoft
@@ -4834,11 +4872,22 @@ function NuevaReceta({
       fontVariantNumeric: "tabular-nums"
     }
   }), /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] mr-2",
+    className: "text-[11px] mr-1",
     style: {
       color: palette.inkSoft
     }
   }, etiquetaUnidad(ing.unidad)), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    title: "Cantidad fija: no se aumenta ni reduce en fracciones",
+    onClick: () => setIngredientes(prev => prev.map((i, iidx) => iidx === idx ? {
+      ...i,
+      fijo: !i.fijo
+    } : i)),
+    className: "text-[14px] mr-2",
+    style: {
+      opacity: ing.fijo ? 1 : 0.35
+    }
+  }, ing.fijo ? "🔒" : "🔓"), /*#__PURE__*/React.createElement("button", {
     onClick: () => quitarIngrediente(ing.product_id),
     className: "text-[13px]",
     style: {
