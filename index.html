@@ -2142,9 +2142,20 @@ function normalizarReceta(r) {
 function textoUnidades(r, n) {
   return r.por_unidad ? `${n} ud` : `${n} ración${n == 1 ? "" : "es"}`;
 }
-const TIPOS_RECETA = ["Bebidas", "Pastas", "Arroces", "Legumbres", "Carnes", "Pescados", "Huevos", "Verduras y ensaladas", "Guisos y platos de cuchara", "Fruta", "Frutos secos", "Lácteos", "Bocadillos y sándwiches", "Dulces y postres", "Otros"];
+const TIPOS_DESAYUNO = ["Bebidas", "Tostadas", "Bowls", "Dulces y postres"];
+// Subgrupos por tipo de plato de una franja (en el desayuno solo las 4 categorías propias).
+function subgruposPorTipo(items, franja) {
+  const lista = franja === "Desayuno" ? TIPOS_DESAYUNO : TIPOS_RECETA;
+  return [...lista, ""].map(t => ({
+    t,
+    items: items.filter(r => (lista.includes(r.tipo) ? r.tipo : "") === t)
+  })).filter(sg => sg.items.length > 0);
+}
+const TIPOS_RECETA = ["Bebidas", "Tostadas", "Bowls", "Pastas", "Arroces", "Legumbres", "Carnes", "Pescados", "Huevos", "Verduras y ensaladas", "Guisos y platos de cuchara", "Fruta", "Frutos secos", "Lácteos", "Bocadillos y sándwiches", "Dulces y postres", "Otros"];
 const ICONOS_TIPO = {
   "Bebidas": "🥤",
+  "Tostadas": "🍞",
+  "Bowls": "🥣",
   "Pastas": "🍝",
   "Arroces": "🍚",
   "Legumbres": "🫘",
@@ -3702,10 +3713,7 @@ function DiarioTab({
         }
       }, isOpen ? "▴" : "▾"))), isOpen && /*#__PURE__*/React.createElement("div", {
         className: "pb-1"
-      }, [...TIPOS_RECETA, ""].map(t => ({
-        t,
-        items: g.items.filter(r => (r.tipo || "") === t)
-      })).filter(sg => sg.items.length > 0).map(sg => {
+      }, subgruposPorTipo(g.items, g.cat === mealElegido ? mealElegido : "").map(sg => {
         const key = g.cat + "|" + sg.t;
         const subOpen = !!gruposRecetaAbiertos[key];
         return /*#__PURE__*/React.createElement("div", {
@@ -4692,6 +4700,7 @@ function NuevaReceta({
   const [momentos, setMomentos] = useState(recetaExistente ? momentosDe(recetaExistente) : []);
   // La franja principal se deduce de los momentos marcados (la primera en orden del día).
   const mealFlex = recetaExistente && FRANJAS_FLEXIBLES.includes(recetaExistente.meal) ? recetaExistente.meal : null;
+  const soloDesayuno = momentos.includes("Desayuno") && !["Almuerzo", "Comida", "Merienda", "Cena"].some(m => momentos.includes(m));
   const meal = mealFlex || MEALS.find(m => momentos.includes(m)) || (momentos.includes("Postre") ? "Merienda" : MEALS[0]);
   const [porUnidad, setPorUnidad] = useState(recetaExistente ? !!recetaExistente.por_unidad : false);
   const [productos, setProductos] = useState([]);
@@ -4804,7 +4813,7 @@ function NuevaReceta({
     }
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Tipo de plato (sin clasificar)"), TIPOS_RECETA.map(t => /*#__PURE__*/React.createElement("option", {
+  }, "Tipo de plato (sin clasificar)"), (soloDesayuno ? [...TIPOS_DESAYUNO, ...(tipo && !TIPOS_DESAYUNO.includes(tipo) ? [tipo] : [])] : TIPOS_RECETA).map(t => /*#__PURE__*/React.createElement("option", {
     key: t,
     value: t
   }, iconoTipo(t), " ", t))), /*#__PURE__*/React.createElement("select", {
@@ -5176,10 +5185,7 @@ function RecetasTab({
       style: {
         color: palette.inkSoft
       }
-    }, "Sin recetas todavía") : [...TIPOS_RECETA, ""].map(t => ({
-      t,
-      items: delMeal.filter(r => (r.tipo || "") === t)
-    })).filter(sg => sg.items.length > 0).map(sg => {
+    }, "Sin recetas todavía") : subgruposPorTipo(delMeal, meal).map(sg => {
       const key = meal + "|" + sg.t;
       const subOpen = !!expanded[key];
       return /*#__PURE__*/React.createElement("div", {
