@@ -5909,6 +5909,36 @@ function ListaCompraTab() {
   const [editando, setEditando] = useState(null); // {id, nombre, categoria}
   const [catalogoOk, setCatalogoOk] = useState(null); // null = cargando, true/false
   const [resumenCatalogo, setResumenCatalogo] = useState(null);
+  const [habituales, setHabituales] = useState([]); // productos que sueles apuntar: {clave,nombre,mercadona_id,imagen,categoria,veces,ultima}
+
+  const claveDe = (nombre, mercadonaId) => mercadonaId ? "m" + mercadonaId : "n" + sinAcentos(nombre).trim();
+  async function registrarUso(d) {
+    const clave = claveDe(d.nombre, d.mercadona_id);
+    const previo = habituales.find(h => h.clave === clave);
+    const fila = {
+      clave,
+      nombre: d.nombre,
+      mercadona_id: d.mercadona_id || null,
+      imagen: d.imagen || null,
+      categoria: d.categoria || null,
+      veces: (previo ? previo.veces || 0 : 0) + 1,
+      ultima: new Date().toISOString()
+    };
+    setHabituales(prev => previo ? prev.map(h => h.clave === clave ? {
+      ...h,
+      ...fila
+    } : h) : [...prev, fila]);
+    await sb.from("compra_frecuentes").upsert(fila, {
+      onConflict: "clave"
+    });
+  }
+  // Añade a la lista; si ya está pendiente, sube la cantidad en vez de duplicar. Siempre cuenta como uso.
+  async function anadirALista(d) {
+    const clave = claveDe(d.nombre, d.mercadona_id);
+    const existente = items.find(i => !i.comprado && claveDe(i.nombre, i.mercadona_id) === clave);
+    if (existente) await cambiarCantidad(existente, 1);else await sb.from("lista_compra").insert(d);
+    registrarUso(d);
+  }
   async function actualizarCatalogo(file) {
     if (!file) return;
     try {
@@ -5947,6 +5977,9 @@ function ListaCompraTab() {
     setMapaCategorias(mapa);
   }
   useEffect(() => {
+    sb.from("compra_frecuentes").select("*").then(({
+      data
+    }) => setHabituales(data || []));
     cargarCatalogoMercadona().then(setCatalogoOk);
     recargar();
     cargarMapa();
@@ -5965,7 +5998,7 @@ function ListaCompraTab() {
     const categoriaConocida = mapaCategorias[clave];
     if (categoriaConocida) {
       setEnviando(true);
-      await sb.from("lista_compra").insert({
+      await anadirALista({
         nombre,
         categoria: categoriaConocida
       });
@@ -5977,7 +6010,7 @@ function ListaCompraTab() {
   }
   async function añadirMercadona(p) {
     setEnviando(true);
-    await sb.from("lista_compra").insert({
+    await anadirALista({
       nombre: p.nombre,
       categoria: SECCION_A_CATEGORIA[p.seccion] || null,
       imagen: p.img || null,
@@ -5993,7 +6026,7 @@ function ListaCompraTab() {
     setEligiendoCategoriaPara(null);
     setNuevo("");
     setEnviando(true);
-    await sb.from("lista_compra").insert({
+    await anadirALista({
       nombre,
       categoria
     });
@@ -6118,7 +6151,27 @@ function ListaCompraTab() {
     label,
     items: [...its].sort((x, y) => (x.comprado ? 1 : 0) - (y.comprado ? 1 : 0))
   })).sort((x, y) => ordenSeccion(x.label) - ordenSeccion(y.label) || x.label.localeCompare(y.label, "es"));
-  const sugMercadona = buscarMercadona(nuevo);
+  async function añadirHabitual(h) {
+    setEnviando(true);
+    const pm = productoMercadonaPorId(h.mercadona_id);
+    await anadirALista({
+      nombre: h.nombre,
+      categoria: h.categoria || null,
+      ...(h.mercadona_id ? {
+        mercadona_id: String(h.mercadona_id),
+        imagen: h.imagen || pm && pm.img || null,
+        formato: pm ? pm.formato : null
+      } : {})
+    });
+    setNuevo("");
+    setEnviando(false);
+  }
+  const consulta = sinAcentos(nuevo).split(/\s+/).filter(Boolean);
+  const habitualesCoinc = consulta.length ? [...habituales].filter(h => consulta.every(t => sinAcentos(h.nombre).includes(t))).sort((a, b) => (b.veces || 0) - (a.veces || 0)).slice(0, 5) : [];
+  const clavesHabituales = new Set(habitualesCoinc.map(h => h.mercadona_id && String(h.mercadona_id)));
+  const sugMercadona = buscarMercadona(nuevo).filter(p => !clavesHabituales.has(String(p.id)));
+  const enLista = new Set(items.filter(i => !i.comprado).map(i => claveDe(i.nombre, i.mercadona_id)));
+  const topHabituales = [...habituales].filter(h => !enLista.has(h.clave)).sort((a, b) => (b.veces || 0) - (a.veces || 0) || String(b.ultima).localeCompare(String(a.ultima))).slice(0, 8);
   const lineas = items.map(it => {
     const pr = precioItemLista(it);
     return pr == null ? null : pr * (Number(it.cantidad) || 1);
@@ -6169,7 +6222,65 @@ function ListaCompraTab() {
       borderRadius: 14,
       opacity: enviando ? 0.6 : 1
     }
-  }, "+")), sugMercadona.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "+")), nuevo.trim() === "" && topHabituales.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Tus habituales · toca para añadir"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, topHabituales.map(h => /*#__PURE__*/React.createElement("button", {
+    key: h.clave,
+    onClick: () => añadirHabitual(h),
+    className: "px-2.5 py-1 text-[12px]",
+    style: {
+      borderRadius: 999,
+      background: palette.greenSoft,
+      color: palette.greenDark
+    }
+  }, "+ ", h.nombre.length > 28 ? h.nombre.slice(0, 27) + "…" : h.nombre)))), habitualesCoinc.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-3",
+    style: {
+      border: `1px solid ${palette.line}`,
+      borderRadius: 12,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-3 py-1 text-[10px] uppercase tracking-wide",
+    style: {
+      background: palette.greenSoft,
+      color: palette.greenDark
+    }
+  }, "⭐ Tus habituales"), habitualesCoinc.map(h => {
+    const pm = productoMercadonaPorId(h.mercadona_id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: h.clave,
+      onClick: () => añadirHabitual(h),
+      className: "w-full text-left px-3 py-1.5 flex items-center gap-2.5",
+      style: {
+        borderTop: `1px solid ${palette.line}`
+      }
+    }, /*#__PURE__*/React.createElement(FotoProducto, {
+      img: h.imagen || pm && pm.img,
+      size: 40
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "block text-[13px] leading-tight"
+    }, h.nombre), /*#__PURE__*/React.createElement("span", {
+      className: "block text-[11px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, h.veces || 1, " ", (h.veces || 1) === 1 ? "vez" : "veces", pm && pm.formato ? ` · ${pm.formato}` : "")), /*#__PURE__*/React.createElement("span", {
+      className: "text-[13px] font-semibold whitespace-nowrap",
+      style: {
+        fontVariantNumeric: "tabular-nums"
+      }
+    }, pm && pm.precio != null ? `${pm.precio.toFixed(2)} €` : ""));
+  })), sugMercadona.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mb-3",
     style: {
       border: `1px solid ${palette.line}`,
