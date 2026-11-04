@@ -2853,6 +2853,7 @@ function DayBreakdown({
   onEditarEntrada
 }) {
   const [expanded, setExpanded] = useState({});
+  const [filaAbierta, setFilaAbierta] = useState(null);
   const isFuture = date > hoy();
   const hasAny = MEALS.some(m => (dayData[m] || []).length);
   const total = MEALS.reduce((s, m) => s + (dayData[m] || []).reduce((s2, i) => s2 + i.kcal, 0), 0);
@@ -2915,24 +2916,76 @@ function DayBreakdown({
       style: {
         color: palette.inkSoft
       }
-    }, "Sin registros") : items.map((it, idx) => /*#__PURE__*/React.createElement("div", {
-      key: idx,
-      className: "flex items-center gap-1.5"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "flex-1 text-left",
-      onClick: () => onEditarEntrada && onEditarEntrada(it),
-      disabled: !onEditarEntrada
-    }, /*#__PURE__*/React.createElement(Row, {
-      left: it.name,
-      sub: it.planificado ? `${it.qty} · planificado` : it.qty,
-      right: `${it.kcal} kcal`
-    })), onEliminarEntrada && /*#__PURE__*/React.createElement("button", {
-      onClick: () => onEliminarEntrada(it.id),
-      className: "text-[12px] pb-1.5",
-      style: {
-        color: palette.red
-      }
-    }, "✕"))));
+    }, "Sin registros") : items.map((it, idx) => {
+      const clave = meal + "-" + idx;
+      const abierta = filaAbierta === clave;
+      const accionable = !!(onEditarEntrada || onEliminarEntrada);
+      return /*#__PURE__*/React.createElement("div", {
+        key: idx
+      }, /*#__PURE__*/React.createElement("button", {
+        className: "w-full text-left flex items-start justify-between gap-3 py-2",
+        style: {
+          borderBottom: `1px solid ${palette.line}`
+        },
+        onClick: () => accionable && setFilaAbierta(abierta ? null : clave),
+        disabled: !accionable
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "min-w-0 flex-1"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[13.5px] leading-tight font-medium",
+        style: {
+          overflowWrap: "anywhere"
+        }
+      }, it.name), /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px] mt-0.5",
+        style: {
+          color: palette.inkSoft
+        }
+      }, it.planificado ? `${it.qty} · planificado` : it.qty)), /*#__PURE__*/React.createElement("div", {
+        className: "text-right whitespace-nowrap",
+        style: {
+          minWidth: 58
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[13px] font-semibold",
+        style: {
+          fontVariantNumeric: "tabular-nums"
+        }
+      }, it.kcal, " kcal"), accionable && /*#__PURE__*/React.createElement("div", {
+        className: "text-[15px] leading-none",
+        style: {
+          color: palette.inkSoft
+        }
+      }, abierta ? "⌄" : "›"))), abierta && /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between gap-2 px-2.5 py-2 my-1.5",
+        style: {
+          background: palette.paperDark,
+          borderRadius: 12
+        }
+      }, onEditarEntrada ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setFilaAbierta(null);
+          onEditarEntrada(it);
+        },
+        className: "px-3 py-1.5 text-[12px] font-semibold",
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 10,
+          color: palette.ink
+        }
+      }, "✎ Editar") : /*#__PURE__*/React.createElement("span", null), onEliminarEntrada && /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setFilaAbierta(null);
+          onEliminarEntrada(it.id);
+        },
+        className: "px-3 py-1.5 text-[12px] font-semibold",
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 10,
+          color: palette.red
+        }
+      }, "🗑 Quitar del día")));
+    }));
   }), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between " + (compact ? "pt-2 mt-1" : "pt-3 mt-1"),
     style: {
