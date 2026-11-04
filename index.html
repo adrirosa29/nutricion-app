@@ -5467,10 +5467,17 @@ function NuevoProducto({
   const [categoria, setCategoria] = useState(productoExistente ? productoExistente.categoria || CATEGORIAS_PRODUCTO[0] : CATEGORIAS_PRODUCTO[0]);
   const [unidad, setUnidad] = useState(productoExistente ? productoExistente.unidad || "g" : "g");
   const [tipoProd, setTipoProd] = useState(productoExistente ? productoExistente.tipo || "" : "");
-  const [aprovech, setAprovech] = useState(productoExistente && productoExistente.aprovechamiento != null ? productoExistente.aprovechamiento : "");
-  const [piezaG, setPiezaG] = useState("");
-  const [comestibleG, setComestibleG] = useState("");
-  const [pesoUnidad, setPesoUnidad] = useState(productoExistente && productoExistente.peso_unidad != null ? productoExistente.peso_unidad : "");
+  const pesoIni = productoExistente && productoExistente.peso_unidad != null ? Number(productoExistente.peso_unidad) : null;
+  const aprovIni = productoExistente && productoExistente.aprovechamiento != null ? Number(productoExistente.aprovechamiento) : null;
+  const [piezaG, setPiezaG] = useState(pesoIni != null ? String(pesoIni) : "");
+  const [comesG, setComesG] = useState(pesoIni != null && aprovIni != null && aprovIni < 100 ? String(Math.round(pesoIni * aprovIni / 10) / 10) : "");
+  const [envaseUds, setEnvaseUds] = useState("");
+  const [envaseG, setEnvaseG] = useState("");
+  const [verPieza, setVerPieza] = useState(false);
+  const [, setCatTick] = useState(0);
+  useEffect(() => {
+    cargarCatalogoMercadona().then(() => setCatTick(n => n + 1));
+  }, []);
   const [kcal, setKcal] = useState(productoExistente && productoExistente.kcal != null ? productoExistente.kcal : "");
   const [proteinas, setProteinas] = useState(productoExistente && productoExistente.proteinas != null ? productoExistente.proteinas : "");
   const [carbohidratos, setCarbohidratos] = useState(productoExistente && productoExistente.carbohidratos != null ? productoExistente.carbohidratos : "");
@@ -5483,6 +5490,64 @@ function NuevoProducto({
     color: palette.ink,
     borderRadius: 12
   };
+
+  // Pieza: "pesa entera" -> peso_unidad; "lo que comes" / "pesa entera" -> aprovechamiento (%).
+  const pm = productoExistente && productoExistente.mercadona_id ? productoMercadonaPorId(productoExistente.mercadona_id) : null;
+  const mFormato = pm ? String(pm.formato || "").match(/^([\d.,]+)\s*(kg|l|ud)/i) : null;
+  const envaseEnUd = !!(mFormato && mFormato[2].toLowerCase() === "ud");
+  const datosPieza = (() => {
+    const pz = Number(piezaG),
+      cm = Number(comesG);
+    if (pz > 0) return {
+      peso: pz,
+      aprov: cm > 0 && cm < pz ? Math.round(cm / pz * 1000) / 10 : null
+    };
+    if (comesG === "" && piezaG === "" && aprovIni != null) return {
+      peso: null,
+      aprov: aprovIni
+    };
+    return {
+      peso: null,
+      aprov: null
+    };
+  })();
+  const mostrarPieza = verPieza || unidad === "unidad" || envaseEnUd || pesoIni != null || aprovIni != null || piezaG !== "";
+  const calcDesdeEnvase = (u, g) => {
+    const n = Number(u),
+      t = Number(g);
+    if (n > 0 && t > 0) setPiezaG(String(Math.round(t / n * 100) / 100));
+  };
+  const prodPrueba = {
+    ...(productoExistente || {}),
+    unidad,
+    peso_unidad: datosPieza.peso,
+    aprovechamiento: datosPieza.aprov
+  };
+  const pruebas = [];
+  if (pm) {
+    if (unidad === "unidad") {
+      pruebas.push({
+        txt: "1 unidad",
+        c: costeCantidad(prodPrueba, 1)
+      });
+      pruebas.push({
+        txt: "2 unidades",
+        c: costeCantidad(prodPrueba, 2)
+      });
+    } else {
+      pruebas.push({
+        txt: `100 ${unidad}`,
+        c: costeCantidad(prodPrueba, 100)
+      });
+      if (datosPieza.peso) {
+        const comida = Number(comesG) > 0 ? Number(comesG) : datosPieza.peso;
+        pruebas.push({
+          txt: `1 pieza (${comida} ${unidad} comidos)`,
+          c: costeCantidad(prodPrueba, comida)
+        });
+      }
+    }
+  }
   async function guardar() {
     if (!nombre) return;
     setGuardando(true);
@@ -5491,8 +5556,8 @@ function NuevoProducto({
       name: nombre,
       categoria,
       tipo: tipoProd,
-      peso_unidad: pesoUnidad !== "" ? Number(pesoUnidad) : null,
-      aprovechamiento: aprovech !== "" ? Number(aprovech) : null,
+      peso_unidad: datosPieza.peso,
+      aprovechamiento: datosPieza.aprov,
       unidad,
       kcal: kcal !== "" ? Number(kcal) : null,
       proteinas: proteinas !== "" ? Number(proteinas) : null,
@@ -5575,75 +5640,120 @@ function NuevoProducto({
     value: "ml"
   }, "Líquido / bebida (mililitros)"), /*#__PURE__*/React.createElement("option", {
     value: "unidad"
-  }, "Por unidad (huevo, yogur, pieza de fruta…)")), /*#__PURE__*/React.createElement("label", {
-    className: "block text-[11px] uppercase tracking-wide mb-1",
+  }, "Por unidad (huevo, yogur, pieza de fruta…)")), !mostrarPieza && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerPieza(true),
+    className: "text-[12px] mb-4",
+    style: {
+      color: palette.green,
+      textDecoration: "underline"
+    }
+  }, "+ Se compra por piezas (fruta, loncha, rebanada…)"), mostrarPieza && /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 p-3",
+    style: {
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] uppercase tracking-wide mb-1",
     style: {
       color: palette.inkSoft
     }
-  }, "Peso de 1 unidad (g) · opcional"), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "any",
-    inputMode: "decimal",
-    value: pesoUnidad,
-    onChange: e => setPesoUnidad(e.target.value),
-    placeholder: unidad === "unidad" ? "Ej. 180 (una manzana)" : "Ej. 60 (un huevo)",
-    className: "w-full mb-1 px-3 py-2 text-[13px]",
-    style: inputStyle
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] mb-4",
+  }, "Pieza · opcional"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mb-2",
     style: {
       color: palette.inkSoft
     }
-  }, "Sirve para calcular el precio cuando tú lo mides de una forma y Mercadona lo vende de otra (por unidad ↔ por peso)."), /*#__PURE__*/React.createElement("label", {
-    className: "block text-[11px] uppercase tracking-wide mb-1",
+  }, "Sirve para calcular el precio cuando tú lo cuentas de una forma y Mercadona lo vende de otra (unidades ↔ peso)."), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-[10.5px] mb-1",
     style: {
       color: palette.inkSoft
     }
-  }, "Parte comestible (%) · opcional"), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "any",
-    inputMode: "decimal",
-    value: aprovech,
-    onChange: e => setAprovech(e.target.value),
-    placeholder: "100 = se come entero",
-    className: "w-full mb-1 px-3 py-2 text-[13px]",
-    style: inputStyle
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-2 mb-1"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, "Pesa entera (g)"), /*#__PURE__*/React.createElement("input", {
     type: "number",
     step: "any",
     inputMode: "decimal",
     value: piezaG,
-    onChange: e => {
-      setPiezaG(e.target.value);
-      const a = Number(e.target.value),
-        c = Number(comestibleG);
-      if (a > 0 && c > 0) setAprovech(String(Math.round(c / a * 1000) / 10));
-    },
-    placeholder: "Pieza entera (g)",
-    className: "w-full px-3 py-2 text-[12.5px]",
+    onChange: e => setPiezaG(e.target.value),
+    placeholder: "Ej. 120",
+    className: "w-full px-3 py-2 text-[13px]",
     style: inputStyle
-  }), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "any",
-    inputMode: "decimal",
-    value: comestibleG,
-    onChange: e => {
-      setComestibleG(e.target.value);
-      const a = Number(piezaG),
-        c = Number(e.target.value);
-      if (a > 0 && c > 0) setAprovech(String(Math.round(c / a * 1000) / 10));
-    },
-    placeholder: "Lo que comes (g)",
-    className: "w-full px-3 py-2 text-[12.5px]",
-    style: inputStyle
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] mb-4",
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-[10.5px] mb-1",
     style: {
       color: palette.inkSoft
     }
-  }, "Para fruta con piel, huesos, etc. Ej.: una mandarina pesa 120 g y comes 80 g → 66,7 %. Las calorías siguen siendo por lo que comes; el precio se calcula con lo que compras."), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
+  }, "Lo que comes (g)"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: comesG,
+    onChange: e => setComesG(e.target.value),
+    placeholder: "= entera",
+    className: "w-full px-3 py-2 text-[13px]",
+    style: inputStyle
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mb-2",
+    style: {
+      color: palette.inkSoft
+    }
+  }, datosPieza.aprov != null ? `Aprovechas el ${String(datosPieza.aprov).replace(".", ",")} % (el resto es piel, hueso, etc.). ` : "Si dejas \"lo que comes\" vacío, se aprovecha entera. ", "Las calorías son por lo que comes; el precio, por lo que compras."), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10.5px] mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "¿Lo sabes por el envase? Calcular el peso de 1 pieza:"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 items-center"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: envaseUds,
+    onChange: e => {
+      setEnvaseUds(e.target.value);
+      calcDesdeEnvase(e.target.value, envaseG);
+    },
+    placeholder: "12 uds",
+    className: "w-full px-3 py-2 text-[12.5px]",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[12px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "="), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: envaseG,
+    onChange: e => {
+      setEnvaseG(e.target.value);
+      calcDesdeEnvase(envaseUds, e.target.value);
+    },
+    placeholder: "300 g",
+    className: "w-full px-3 py-2 text-[12.5px]",
+    style: inputStyle
+  }))), pm && /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 px-3 py-2 text-[12px]",
+    style: {
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      borderRadius: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-1",
+    style: {
+      opacity: 0.8
+    }
+  }, "Mercadona: ", pm.nombre, " · ", pm.formato, " · ", formatoEuros(pm.precio)), pruebas.map(t => /*#__PURE__*/React.createElement("div", {
+    key: t.txt
+  }, /*#__PURE__*/React.createElement("b", null, t.txt), " → ", t.c == null ? "falta un dato para calcular (pon el peso de la pieza)" : formatoEuros(t.c)))), !pm && esEdicion && /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 text-[11px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Vincula el producto con Mercadona (desde Productos) para ver aquí la prueba de precio."), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2 mb-3"
   }, /*#__PURE__*/React.createElement(CampoNutricional, {
     label: "Proteínas (g)",
