@@ -5870,6 +5870,34 @@ function FotoProducto({
 
 // ---------- Lista de la compra (compartida, en tiempo real) ----------
 const ORDEN_PASILLOS = ["Fruta y verdura", "Carne", "Marisco y pescado", "Charcutería y quesos", "Panadería y pastelería", "Huevos, leche y mantequilla", "Postres y yogures", "Arroz, legumbres y pasta", "Conservas, caldos y cremas", "Aceite, especias y salsas", "Cereales y galletas", "Cacao, café e infusiones", "Azúcar, caramelos y chocolate", "Aperitivos", "Pizzas y platos preparados", "Congelados", "Agua y refrescos", "Zumos", "Bodega", "Limpieza y hogar", "Mascotas", "Bebé", "Cuidado facial y corporal", "Cuidado del cabello", "Maquillaje", "Fitoterapia y parafarmacia"];
+const ICONO_SECCION = {
+  "Fruta y verdura": "🥦",
+  "Carne": "🥩",
+  "Marisco y pescado": "🐟",
+  "Charcutería y quesos": "🧀",
+  "Panadería y pastelería": "🥖",
+  "Huevos, leche y mantequilla": "🥚",
+  "Postres y yogures": "🍮",
+  "Arroz, legumbres y pasta": "🍝",
+  "Conservas, caldos y cremas": "🥫",
+  "Aceite, especias y salsas": "🫒",
+  "Cereales y galletas": "🥣",
+  "Cacao, café e infusiones": "☕",
+  "Azúcar, caramelos y chocolate": "🍫",
+  "Aperitivos": "🥨",
+  "Pizzas y platos preparados": "🍕",
+  "Congelados": "🧊",
+  "Agua y refrescos": "💧",
+  "Zumos": "🧃",
+  "Bodega": "🍷",
+  "Limpieza y hogar": "🧴",
+  "Mascotas": "🐾",
+  "Bebé": "🍼",
+  "Cuidado facial y corporal": "🧼",
+  "Cuidado del cabello": "💇",
+  "Maquillaje": "💄",
+  "Fitoterapia y parafarmacia": "🌿"
+};
 function ListaCompraTab() {
   const [items, setItems] = useState([]);
   const [mapaCategorias, setMapaCategorias] = useState({});
@@ -6095,6 +6123,7 @@ function ListaCompraTab() {
     const pr = precioItemLista(it);
     return pr == null ? null : pr * (Number(it.cantidad) || 1);
   });
+  const lineaPorId = Object.fromEntries(items.map((it, k) => [it.id, lineas[k]]));
   const totalEstimado = lineas.reduce((s2, x) => s2 + (x || 0), 0);
   const totalPendiente = items.reduce((s2, it, k) => s2 + (it.comprado ? 0 : lineas[k] || 0), 0);
   const sinPrecio = lineas.filter(x => x == null).length;
@@ -6211,34 +6240,39 @@ function ListaCompraTab() {
     const pend = g.items.filter(i => !i.comprado).length;
     return /*#__PURE__*/React.createElement("div", {
       key: g.id,
-      className: "mb-2"
+      className: "mb-3",
+      style: {
+        border: `1px solid ${palette.line}`,
+        borderRadius: 16,
+        overflow: "hidden",
+        boxShadow: "0 2px 8px rgba(28,43,31,0.05)"
+      }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setExpanded(e => ({
         ...e,
         [g.id]: !isOpen
       })),
-      className: "w-full flex items-center justify-between py-2",
+      className: "w-full flex items-center justify-between px-3 py-2.5",
       style: {
-        borderBottom: `2px solid ${palette.line}`
+        background: colorCategoria(SECCION_A_CATEGORIA[g.label] || g.label),
+        color: "#FFFFFF"
       }
     }, /*#__PURE__*/React.createElement("span", {
-      className: "flex items-center gap-1.5 text-[12px] uppercase tracking-wide font-semibold"
+      className: "flex items-center gap-2 text-[13px] font-bold text-left leading-tight"
     }, /*#__PURE__*/React.createElement("span", {
-      className: "w-2.5 h-2.5 inline-block",
       style: {
-        background: colorCategoria(SECCION_A_CATEGORIA[g.label] || g.label)
+        fontSize: 17
       }
-    }), g.label), /*#__PURE__*/React.createElement("span", {
-      className: "text-[11px]",
+    }, ICONO_SECCION[g.label] || "🛒"), g.label), /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-semibold whitespace-nowrap pl-2 text-right",
       style: {
-        color: palette.inkSoft,
         fontVariantNumeric: "tabular-nums"
       }
-    }, pend, "/", g.items.length, " ", isOpen ? "▴" : "▾")), isOpen && g.items.map(it => {
+    }, g.items.reduce((s2, x) => s2 + (lineaPorId[x.id] || 0), 0).toFixed(2), " € · ", pend, "/", g.items.length, " ", isOpen ? "▴" : "▾")), isOpen && g.items.map(it => {
       if (editando && editando.id === it.id) {
         return /*#__PURE__*/React.createElement("div", {
           key: it.id,
-          className: "py-2 pl-1",
+          className: "py-2 px-3",
           style: {
             borderBottom: `1px solid ${palette.line}`
           }
@@ -6308,7 +6342,7 @@ function ListaCompraTab() {
       const imgId = it.imagen || pm && pm.img;
       return /*#__PURE__*/React.createElement("div", {
         key: it.id,
-        className: "flex items-start gap-2.5 py-2.5",
+        className: "flex items-start gap-2.5 py-2.5 px-3",
         style: {
           borderBottom: `1px solid ${palette.line}`,
           opacity: it.comprado ? 0.45 : 1
