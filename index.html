@@ -5869,6 +5869,7 @@ function FotoProducto({
 }
 
 // ---------- Lista de la compra (compartida, en tiempo real) ----------
+const ORDEN_PASILLOS = ["Fruta y verdura", "Carne", "Marisco y pescado", "Charcutería y quesos", "Panadería y pastelería", "Huevos, leche y mantequilla", "Postres y yogures", "Arroz, legumbres y pasta", "Conservas, caldos y cremas", "Aceite, especias y salsas", "Cereales y galletas", "Cacao, café e infusiones", "Azúcar, caramelos y chocolate", "Aperitivos", "Pizzas y platos preparados", "Congelados", "Agua y refrescos", "Zumos", "Bodega", "Limpieza y hogar", "Mascotas", "Bebé", "Cuidado facial y corporal", "Cuidado del cabello", "Maquillaje", "Fitoterapia y parafarmacia"];
 function ListaCompraTab() {
   const [items, setItems] = useState([]);
   const [mapaCategorias, setMapaCategorias] = useState({});
@@ -5978,9 +5979,35 @@ function ListaCompraTab() {
     }));
     setEnviando(false);
   }
-  async function tachar(id) {
-    setItems(prev => prev.filter(i => i.id !== id)); // optimista
+  async function alternarComprado(it) {
+    setItems(prev => prev.map(x => x.id === it.id ? {
+      ...x,
+      comprado: !x.comprado
+    } : x)); // optimista
+    await sb.from("lista_compra").update({
+      comprado: !it.comprado
+    }).eq("id", it.id);
+  }
+  async function cambiarCantidad(it, delta) {
+    const nueva = Math.max(1, (Number(it.cantidad) || 1) + delta);
+    setItems(prev => prev.map(x => x.id === it.id ? {
+      ...x,
+      cantidad: nueva
+    } : x));
+    await sb.from("lista_compra").update({
+      cantidad: nueva
+    }).eq("id", it.id);
+  }
+  async function borrarItem(id) {
+    setItems(prev => prev.filter(i => i.id !== id));
+    setEditando(null);
     await sb.from("lista_compra").delete().eq("id", id);
+  }
+  async function borrarComprados() {
+    const lista = items.filter(i => i.comprado);
+    if (!lista.length || !confirm(`¿Quitar de la lista los ${lista.length} productos ya comprados?`)) return;
+    setItems(prev => prev.filter(i => !i.comprado));
+    for (const it of lista) await sb.from("lista_compra").delete().eq("id", it.id);
   }
   async function guardarEdicion() {
     if (!editando || !editando.nombre.trim()) return;
@@ -6042,21 +6069,37 @@ function ListaCompraTab() {
       className: "text-[14px]"
     }, cat)))));
   }
-  const sinCategoria = items.filter(i => !i.categoria || !CATEGORIAS_PRODUCTO.includes(i.categoria));
-  const grupos = [...CATEGORIAS_PRODUCTO.map(cat => ({
-    id: cat,
-    label: cat,
-    items: items.filter(i => i.categoria === cat)
-  }))];
-  if (sinCategoria.length > 0) grupos.push({
-    id: "__sin__",
-    label: "Sin categoría",
-    items: sinCategoria
+
+  // Agrupado por pasillo/sección de Mercadona (lo que no está vinculado, por su categoría propia).
+  const seccionDe = it => {
+    const pm = productoMercadonaPorId(it.mercadona_id);
+    return pm ? pm.seccion : it.categoria || "Otros";
+  };
+  const ordenSeccion = sec => {
+    const k = ORDEN_PASILLOS.indexOf(sec);
+    return k >= 0 ? k : 100;
+  };
+  const mapaGrupos = new Map();
+  items.forEach(it => {
+    const sec = seccionDe(it);
+    if (!mapaGrupos.has(sec)) mapaGrupos.set(sec, []);
+    mapaGrupos.get(sec).push(it);
   });
+  const grupos = [...mapaGrupos.entries()].map(([label, its]) => ({
+    id: label,
+    label,
+    items: [...its].sort((x, y) => (x.comprado ? 1 : 0) - (y.comprado ? 1 : 0))
+  })).sort((x, y) => ordenSeccion(x.label) - ordenSeccion(y.label) || x.label.localeCompare(y.label, "es"));
   const sugMercadona = buscarMercadona(nuevo);
-  const preciosItems = items.map(precioItemLista);
-  const totalEstimado = preciosItems.reduce((s, x) => s + (x || 0), 0);
-  const sinPrecio = preciosItems.filter(x => x == null).length;
+  const lineas = items.map(it => {
+    const pr = precioItemLista(it);
+    return pr == null ? null : pr * (Number(it.cantidad) || 1);
+  });
+  const totalEstimado = lineas.reduce((s2, x) => s2 + (x || 0), 0);
+  const totalPendiente = items.reduce((s2, it, k) => s2 + (it.comprado ? 0 : lineas[k] || 0), 0);
+  const sinPrecio = lineas.filter(x => x == null).length;
+  const nComprados = items.filter(i => i.comprado).length;
+  const nPendientes = items.length - nComprados;
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6066,30 +6109,11 @@ function ListaCompraTab() {
     }
   }, "Lista de la compra"), /*#__PURE__*/React.createElement("div", {
     className: "text-[20px] font-semibold mt-1"
-  }, items.length, " pendientes"), items.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 mx-auto px-4 py-2 inline-block",
+  }, nPendientes, " por comprar")), /*#__PURE__*/React.createElement("div", {
+    className: "px-5",
     style: {
-      background: palette.greenSoft,
-      borderRadius: 14
+      paddingBottom: 96
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[10.5px] uppercase tracking-wide",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Total apuntado"), /*#__PURE__*/React.createElement("div", {
-    className: "text-[22px] font-bold",
-    style: {
-      color: palette.greenDark,
-      fontVariantNumeric: "tabular-nums"
-    }
-  }, totalEstimado.toFixed(2), " €"), sinPrecio > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "text-[10.5px]",
-    style: {
-      color: palette.inkSoft
-    }
-  }, sinPrecio, " sin precio (no suman)"))), /*#__PURE__*/React.createElement("div", {
-    className: "px-5 pb-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "relative mb-1"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6182,11 +6206,12 @@ function ListaCompraTab() {
     style: {
       color: palette.inkSoft
     }
-  }, "Nada pendiente. Añade algo arriba.") : grupos.filter(g => g.items.length > 0).map(g => {
+  }, "Nada apuntado. Añade algo arriba.") : grupos.map(g => {
     const isOpen = expanded[g.id] !== false; // abierto por defecto
+    const pend = g.items.filter(i => !i.comprado).length;
     return /*#__PURE__*/React.createElement("div", {
       key: g.id,
-      className: "mb-1"
+      className: "mb-2"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setExpanded(e => ({
         ...e,
@@ -6194,14 +6219,14 @@ function ListaCompraTab() {
       })),
       className: "w-full flex items-center justify-between py-2",
       style: {
-        borderBottom: `1px solid ${palette.line}`
+        borderBottom: `2px solid ${palette.line}`
       }
     }, /*#__PURE__*/React.createElement("span", {
-      className: "flex items-center gap-1.5 text-[12px] uppercase tracking-wide"
+      className: "flex items-center gap-1.5 text-[12px] uppercase tracking-wide font-semibold"
     }, /*#__PURE__*/React.createElement("span", {
       className: "w-2.5 h-2.5 inline-block",
       style: {
-        background: colorCategoria(g.id)
+        background: colorCategoria(SECCION_A_CATEGORIA[g.label] || g.label)
       }
     }), g.label), /*#__PURE__*/React.createElement("span", {
       className: "text-[11px]",
@@ -6209,104 +6234,166 @@ function ListaCompraTab() {
         color: palette.inkSoft,
         fontVariantNumeric: "tabular-nums"
       }
-    }, g.items.length, " ", isOpen ? "▴" : "▾")), isOpen && g.items.map(it => editando && editando.id === it.id ? /*#__PURE__*/React.createElement("div", {
-      key: it.id,
-      className: "py-2 pl-1",
-      style: {
-        borderBottom: `1px solid ${palette.line}`
+    }, pend, "/", g.items.length, " ", isOpen ? "▴" : "▾")), isOpen && g.items.map(it => {
+      if (editando && editando.id === it.id) {
+        return /*#__PURE__*/React.createElement("div", {
+          key: it.id,
+          className: "py-2 pl-1",
+          style: {
+            borderBottom: `1px solid ${palette.line}`
+          }
+        }, /*#__PURE__*/React.createElement("input", {
+          value: editando.nombre,
+          onChange: e => setEditando(s => ({
+            ...s,
+            nombre: e.target.value
+          })),
+          className: "w-full mb-1.5 px-2 py-1.5 text-[13px]",
+          style: {
+            border: `1.5px solid ${palette.line}`,
+            background: palette.paperDark,
+            color: palette.ink,
+            borderRadius: 12
+          }
+        }), /*#__PURE__*/React.createElement("select", {
+          value: editando.categoria || "",
+          onChange: e => setEditando(s => ({
+            ...s,
+            categoria: e.target.value
+          })),
+          className: "w-full mb-1.5 px-2 py-1.5 text-[12.5px]",
+          style: {
+            border: `1.5px solid ${palette.line}`,
+            background: palette.paperDark,
+            color: palette.ink,
+            borderRadius: 12
+          }
+        }, /*#__PURE__*/React.createElement("option", {
+          value: ""
+        }, "Sin categoría"), CATEGORIAS_PRODUCTO.map(cat => /*#__PURE__*/React.createElement("option", {
+          key: cat,
+          value: cat
+        }, cat))), /*#__PURE__*/React.createElement("div", {
+          className: "flex gap-2"
+        }, /*#__PURE__*/React.createElement("button", {
+          onClick: guardarEdicion,
+          className: "flex-1 py-1.5 text-[11.5px] uppercase tracking-wide",
+          style: {
+            background: palette.green,
+            color: "#FFFFFF",
+            borderRadius: 14
+          }
+        }, "Guardar"), /*#__PURE__*/React.createElement("button", {
+          onClick: () => setEditando(null),
+          className: "flex-1 py-1.5 text-[11.5px] uppercase tracking-wide",
+          style: {
+            border: `1.5px solid ${palette.line}`,
+            color: palette.inkSoft,
+            borderRadius: 14
+          }
+        }, "Cancelar")), /*#__PURE__*/React.createElement("button", {
+          onClick: () => borrarItem(it.id),
+          className: "w-full mt-2 py-1.5 text-[11.5px] uppercase tracking-wide",
+          style: {
+            background: palette.redSoft,
+            color: palette.red,
+            borderRadius: 14
+          }
+        }, "Quitar de la lista"));
       }
-    }, /*#__PURE__*/React.createElement("input", {
-      value: editando.nombre,
-      onChange: e => setEditando(s => ({
-        ...s,
-        nombre: e.target.value
-      })),
-      className: "w-full mb-1.5 px-2 py-1.5 text-[13px]",
-      style: {
-        border: `1.5px solid ${palette.line}`,
-        background: palette.paperDark,
-        color: palette.ink,
-        borderRadius: 12
-      }
-    }), /*#__PURE__*/React.createElement("select", {
-      value: editando.categoria || "",
-      onChange: e => setEditando(s => ({
-        ...s,
-        categoria: e.target.value
-      })),
-      className: "w-full mb-1.5 px-2 py-1.5 text-[12.5px]",
-      style: {
-        border: `1.5px solid ${palette.line}`,
-        background: palette.paperDark,
-        color: palette.ink,
-        borderRadius: 12
-      }
-    }, /*#__PURE__*/React.createElement("option", {
-      value: ""
-    }, "Sin categoría"), CATEGORIAS_PRODUCTO.map(cat => /*#__PURE__*/React.createElement("option", {
-      key: cat,
-      value: cat
-    }, cat))), /*#__PURE__*/React.createElement("div", {
-      className: "flex gap-2"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: guardarEdicion,
-      className: "flex-1 py-1.5 text-[11.5px] uppercase tracking-wide",
-      style: {
-        background: palette.green,
-        color: "#FFFFFF",
-        borderRadius: 14
-      }
-    }, "Guardar"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setEditando(null),
-      className: "flex-1 py-1.5 text-[11.5px] uppercase tracking-wide",
-      style: {
-        border: `1.5px solid ${palette.line}`,
-        color: palette.inkSoft,
-        borderRadius: 14
-      }
-    }, "Cancelar"))) : /*#__PURE__*/React.createElement("div", {
-      key: it.id,
-      className: "flex items-center gap-2.5 py-2 pl-1",
-      style: {
-        borderBottom: `1px solid ${palette.line}`
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => tachar(it.id),
-      className: "flex-shrink-0",
-      style: {
-        width: 18,
-        height: 18,
-        border: `1.5px solid ${palette.green}`,
-        borderRadius: 4
-      }
-    }), (it.imagen || productoMercadonaPorId(it.mercadona_id)) && /*#__PURE__*/React.createElement(FotoProducto, {
-      img: it.imagen || productoMercadonaPorId(it.mercadona_id).img,
-      size: 36
-    }), /*#__PURE__*/React.createElement("button", {
-      onClick: () => tachar(it.id),
-      className: "flex-1 text-left text-[14px]"
-    }, it.nombre, (() => {
       const pm = productoMercadonaPorId(it.mercadona_id);
       const pr = precioItemLista(it);
+      const cant = Number(it.cantidad) || 1;
       const f = it.formato || pm && pm.formato;
-      return f || pr != null ? /*#__PURE__*/React.createElement("span", {
-        className: "block text-[11px]",
+      const imgId = it.imagen || pm && pm.img;
+      return /*#__PURE__*/React.createElement("div", {
+        key: it.id,
+        className: "flex items-start gap-2.5 py-2.5",
+        style: {
+          borderBottom: `1px solid ${palette.line}`,
+          opacity: it.comprado ? 0.45 : 1
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => alternarComprado(it),
+        "aria-label": "Marcar comprado",
+        className: "flex-shrink-0 flex items-center justify-center",
+        style: {
+          width: 30,
+          height: 30,
+          marginTop: 8,
+          borderRadius: 9,
+          border: `2px solid ${palette.green}`,
+          background: it.comprado ? palette.green : "transparent",
+          color: "#FFFFFF",
+          fontSize: 17,
+          lineHeight: 1
+        }
+      }, it.comprado ? "✓" : ""), /*#__PURE__*/React.createElement(FotoProducto, {
+        img: imgId,
+        size: 48
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "flex-1 min-w-0"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[15px] leading-tight",
+        style: {
+          textDecoration: it.comprado ? "line-through" : "none"
+        }
+      }, it.nombre), (f || pr != null) && /*#__PURE__*/React.createElement("div", {
+        className: "text-[11px] mt-0.5",
         style: {
           color: palette.inkSoft
         }
-      }, [f, pr != null ? `${pr.toFixed(2)} €` : null].filter(Boolean).join(" · ")) : null;
-    })()), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setEditando({
-        id: it.id,
-        nombre: it.nombre,
-        categoria: it.categoria || ""
-      }),
-      className: "text-[12px] pl-1",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "✎"))));
-  }), /*#__PURE__*/React.createElement("div", {
+      }, [f, pr != null ? `${pr.toFixed(2)} €/ud` : null].filter(Boolean).join(" · ")), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between mt-1.5"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center",
+        style: {
+          border: `1.5px solid ${palette.line}`,
+          borderRadius: 12
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => cambiarCantidad(it, -1),
+        className: "px-3 py-1 text-[16px]",
+        style: {
+          color: cant > 1 ? palette.ink : palette.line
+        }
+      }, "−"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[14px] font-semibold px-1",
+        style: {
+          minWidth: 22,
+          textAlign: "center",
+          fontVariantNumeric: "tabular-nums"
+        }
+      }, cant), /*#__PURE__*/React.createElement("button", {
+        onClick: () => cambiarCantidad(it, 1),
+        className: "px-3 py-1 text-[16px]"
+      }, "+")), /*#__PURE__*/React.createElement("span", {
+        className: "text-[15px] font-bold",
+        style: {
+          fontVariantNumeric: "tabular-nums",
+          color: pr != null ? palette.greenDark : palette.line
+        }
+      }, pr != null ? `${(pr * cant).toFixed(2)} €` : "— €"))), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setEditando({
+          id: it.id,
+          nombre: it.nombre,
+          categoria: it.categoria || ""
+        }),
+        className: "text-[13px] pl-0.5 pt-1",
+        style: {
+          color: palette.inkSoft
+        }
+      }, "✎"));
+    }));
+  }), nComprados > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: borrarComprados,
+    className: "w-full py-2 mt-2 text-[11.5px] uppercase tracking-wide",
+    style: {
+      border: `1.5px solid ${palette.line}`,
+      color: palette.inkSoft,
+      borderRadius: 14
+    }
+  }, "Quitar los ", nComprados, " comprados"), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 pt-3 text-center",
     style: {
       borderTop: `1px solid ${palette.line}`
@@ -6338,7 +6425,43 @@ function ListaCompraTab() {
     style: {
       color: palette.inkSoft
     }
-  }, resumenCatalogo))));
+  }, resumenCatalogo))), items.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      left: 0,
+      right: 0,
+      bottom: 80,
+      margin: "0 auto",
+      maxWidth: 356,
+      zIndex: 20,
+      padding: "0 4px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between",
+    style: {
+      background: palette.greenDark,
+      color: "#FFFFFF",
+      borderRadius: 18,
+      padding: "10px 16px",
+      boxShadow: "0 8px 24px rgba(21,39,26,0.30)"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide",
+    style: {
+      opacity: 0.8
+    }
+  }, "Total apuntado"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[22px] font-bold leading-tight",
+    style: {
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, totalEstimado.toFixed(2), " €")), /*#__PURE__*/React.createElement("div", {
+    className: "text-right text-[11.5px]",
+    style: {
+      fontVariantNumeric: "tabular-nums",
+      opacity: 0.95
+    }
+  }, /*#__PURE__*/React.createElement("div", null, "Por comprar: ", /*#__PURE__*/React.createElement("b", null, totalPendiente.toFixed(2), " €")), /*#__PURE__*/React.createElement("div", null, nComprados, "/", items.length, " en el carro", sinPrecio > 0 ? ` · ${sinPrecio} sin precio` : "")))));
 }
 
 // ---------- Vincular tus productos con el catálogo de Mercadona (una sola vez) ----------
