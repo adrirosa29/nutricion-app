@@ -5467,6 +5467,7 @@ function NuevoProducto({
   const [categoria, setCategoria] = useState(productoExistente ? productoExistente.categoria || CATEGORIAS_PRODUCTO[0] : CATEGORIAS_PRODUCTO[0]);
   const [unidad, setUnidad] = useState(productoExistente ? productoExistente.unidad || "g" : "g");
   const [tipoProd, setTipoProd] = useState(productoExistente ? productoExistente.tipo || "" : "");
+  const [pesoUnidad, setPesoUnidad] = useState(productoExistente && productoExistente.peso_unidad != null ? productoExistente.peso_unidad : "");
   const [kcal, setKcal] = useState(productoExistente && productoExistente.kcal != null ? productoExistente.kcal : "");
   const [proteinas, setProteinas] = useState(productoExistente && productoExistente.proteinas != null ? productoExistente.proteinas : "");
   const [carbohidratos, setCarbohidratos] = useState(productoExistente && productoExistente.carbohidratos != null ? productoExistente.carbohidratos : "");
@@ -5487,6 +5488,7 @@ function NuevoProducto({
       name: nombre,
       categoria,
       tipo: tipoProd,
+      peso_unidad: pesoUnidad !== "" ? Number(pesoUnidad) : null,
       unidad,
       kcal: kcal !== "" ? Number(kcal) : null,
       proteinas: proteinas !== "" ? Number(proteinas) : null,
@@ -5569,7 +5571,26 @@ function NuevoProducto({
     value: "ml"
   }, "Líquido / bebida (mililitros)"), /*#__PURE__*/React.createElement("option", {
     value: "unidad"
-  }, "Por unidad (huevo, yogur, pieza de fruta…)")), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
+  }, "Por unidad (huevo, yogur, pieza de fruta…)")), /*#__PURE__*/React.createElement("label", {
+    className: "block text-[11px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Peso de 1 unidad (g) · opcional"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: pesoUnidad,
+    onChange: e => setPesoUnidad(e.target.value),
+    placeholder: unidad === "unidad" ? "Ej. 180 (una manzana)" : "Ej. 60 (un huevo)",
+    className: "w-full mb-1 px-3 py-2 text-[13px]",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mb-4",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Sirve para calcular el precio cuando tú lo mides de una forma y Mercadona lo vende de otra (por unidad ↔ por peso)."), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2 mb-3"
   }, /*#__PURE__*/React.createElement(CampoNutricional, {
     label: "Proteínas (g)",
@@ -5728,9 +5749,15 @@ function costeCantidad(producto, cantidad) {
   const f = m[2].toLowerCase();
   const cant = Number(cantidad) || 0;
   const unidad = producto.unidad || "g";
-  if (unidad === "unidad") return f === "ud" ? pm.precio / n * cant : null;
-  if (f === "ud") return null;
-  return pm.precio / (n * 1000) * cant;
+  const peso = Number(producto.peso_unidad) || 0; // g (o ml) que pesa 1 unidad
+  if (f === "ud") {
+    const porUd = pm.precio / n;
+    if (unidad === "unidad") return porUd * cant;
+    return peso > 0 ? cant / peso * porUd : null; // producto en g/ml, envase por unidades
+  }
+  const porG = pm.precio / (n * 1000);
+  if (unidad === "unidad") return peso > 0 ? porG * peso * cant : null; // producto por unidad, envase por peso
+  return porG * cant;
 }
 function costeReceta(recipe) {
   let total = 0,
