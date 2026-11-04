@@ -5467,6 +5467,9 @@ function NuevoProducto({
   const [categoria, setCategoria] = useState(productoExistente ? productoExistente.categoria || CATEGORIAS_PRODUCTO[0] : CATEGORIAS_PRODUCTO[0]);
   const [unidad, setUnidad] = useState(productoExistente ? productoExistente.unidad || "g" : "g");
   const [tipoProd, setTipoProd] = useState(productoExistente ? productoExistente.tipo || "" : "");
+  const [aprovech, setAprovech] = useState(productoExistente && productoExistente.aprovechamiento != null ? productoExistente.aprovechamiento : "");
+  const [piezaG, setPiezaG] = useState("");
+  const [comestibleG, setComestibleG] = useState("");
   const [pesoUnidad, setPesoUnidad] = useState(productoExistente && productoExistente.peso_unidad != null ? productoExistente.peso_unidad : "");
   const [kcal, setKcal] = useState(productoExistente && productoExistente.kcal != null ? productoExistente.kcal : "");
   const [proteinas, setProteinas] = useState(productoExistente && productoExistente.proteinas != null ? productoExistente.proteinas : "");
@@ -5489,6 +5492,7 @@ function NuevoProducto({
       categoria,
       tipo: tipoProd,
       peso_unidad: pesoUnidad !== "" ? Number(pesoUnidad) : null,
+      aprovechamiento: aprovech !== "" ? Number(aprovech) : null,
       unidad,
       kcal: kcal !== "" ? Number(kcal) : null,
       proteinas: proteinas !== "" ? Number(proteinas) : null,
@@ -5590,7 +5594,56 @@ function NuevoProducto({
     style: {
       color: palette.inkSoft
     }
-  }, "Sirve para calcular el precio cuando tú lo mides de una forma y Mercadona lo vende de otra (por unidad ↔ por peso)."), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
+  }, "Sirve para calcular el precio cuando tú lo mides de una forma y Mercadona lo vende de otra (por unidad ↔ por peso)."), /*#__PURE__*/React.createElement("label", {
+    className: "block text-[11px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Parte comestible (%) · opcional"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: aprovech,
+    onChange: e => setAprovech(e.target.value),
+    placeholder: "100 = se come entero",
+    className: "w-full mb-1 px-3 py-2 text-[13px]",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 mb-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: piezaG,
+    onChange: e => {
+      setPiezaG(e.target.value);
+      const a = Number(e.target.value),
+        c = Number(comestibleG);
+      if (a > 0 && c > 0) setAprovech(String(Math.round(c / a * 1000) / 10));
+    },
+    placeholder: "Pieza entera (g)",
+    className: "w-full px-3 py-2 text-[12.5px]",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "any",
+    inputMode: "decimal",
+    value: comestibleG,
+    onChange: e => {
+      setComestibleG(e.target.value);
+      const a = Number(piezaG),
+        c = Number(e.target.value);
+      if (a > 0 && c > 0) setAprovech(String(Math.round(c / a * 1000) / 10));
+    },
+    placeholder: "Lo que comes (g)",
+    className: "w-full px-3 py-2 text-[12.5px]",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mb-4",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Para fruta con piel, huesos, etc. Ej.: una mandarina pesa 120 g y comes 80 g → 66,7 %. Las calorías siguen siendo por lo que comes; el precio se calcula con lo que compras."), /*#__PURE__*/React.createElement(SectionTitle, null, "Valores nutricionales ", unidad === "unidad" ? "por unidad" : `por 100${unidad}`), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2 mb-3"
   }, /*#__PURE__*/React.createElement(CampoNutricional, {
     label: "Proteínas (g)",
@@ -5749,15 +5802,17 @@ function costeCantidad(producto, cantidad) {
   const f = m[2].toLowerCase();
   const cant = Number(cantidad) || 0;
   const unidad = producto.unidad || "g";
-  const peso = Number(producto.peso_unidad) || 0; // g (o ml) que pesa 1 unidad
+  const peso = Number(producto.peso_unidad) || 0; // g (o ml) que pesa 1 unidad tal como se compra
+  // Parte comestible (%): si comes 80 g de una mandarina de 120 g, se compran 120 g para comer 80 g.
+  const aprov = Math.min(100, Math.max(1, Number(producto.aprovechamiento) || 100)) / 100;
   if (f === "ud") {
     const porUd = pm.precio / n;
     if (unidad === "unidad") return porUd * cant;
-    return peso > 0 ? cant / peso * porUd : null; // producto en g/ml, envase por unidades
+    return peso > 0 ? cant / aprov / peso * porUd : null; // producto en g/ml, envase por unidades
   }
   const porG = pm.precio / (n * 1000);
   if (unidad === "unidad") return peso > 0 ? porG * peso * cant : null; // producto por unidad, envase por peso
-  return porG * cant;
+  return porG * (cant / aprov);
 }
 function costeReceta(recipe) {
   let total = 0,
