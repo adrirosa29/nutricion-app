@@ -6359,7 +6359,7 @@ function ListaCompraTab() {
     return k >= 0 ? k : 100;
   };
   const mapaGrupos = new Map();
-  items.forEach(it => {
+  items.filter(it => !it.comprado).forEach(it => {
     const sec = seccionDe(it);
     if (!mapaGrupos.has(sec)) mapaGrupos.set(sec, []);
     mapaGrupos.get(sec).push(it);
@@ -6389,7 +6389,12 @@ function ListaCompraTab() {
   const clavesHabituales = new Set(habitualesCoinc.map(h => h.mercadona_id && String(h.mercadona_id)));
   const sugMercadona = buscarMercadona(nuevo).filter(p => !clavesHabituales.has(String(p.id)));
   const enLista = new Set(items.filter(i => !i.comprado).map(i => claveDe(i.nombre, i.mercadona_id)));
-  const topHabituales = [...habituales].filter(h => !enLista.has(h.clave)).sort((a, b) => (b.veces || 0) - (a.veces || 0) || String(b.ultima).localeCompare(String(a.ultima))).slice(0, 8);
+  const carro = items.filter(i => i.comprado);
+  const totalCarro = carro.reduce((s2, it) => s2 + (lineaDe(it) || 0), 0);
+  function lineaDe(it) {
+    const pr = precioItemLista(it);
+    return pr == null ? null : pr * (Number(it.cantidad) || 1);
+  }
   const lineas = items.map(it => {
     const pr = precioItemLista(it);
     return pr == null ? null : pr * (Number(it.cantidad) || 1);
@@ -6440,25 +6445,7 @@ function ListaCompraTab() {
       borderRadius: 14,
       opacity: enviando ? 0.6 : 1
     }
-  }, "+")), nuevo.trim() === "" && topHabituales.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mb-3"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[10px] uppercase tracking-wide mb-1",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Tus habituales · toca para añadir"), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap gap-1.5"
-  }, topHabituales.map(h => /*#__PURE__*/React.createElement("button", {
-    key: h.clave,
-    onClick: () => añadirHabitual(h),
-    className: "px-2.5 py-1 text-[12px]",
-    style: {
-      borderRadius: 999,
-      background: palette.greenSoft,
-      color: palette.greenDark
-    }
-  }, "+ ", h.nombre.length > 28 ? h.nombre.slice(0, 27) + "…" : h.nombre)))), habitualesCoinc.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "+")), habitualesCoinc.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mb-3",
     style: {
       border: `1px solid ${palette.line}`,
@@ -6564,7 +6551,12 @@ function ListaCompraTab() {
     style: {
       color: palette.inkSoft
     }
-  }, "Nada apuntado. Añade algo arriba.") : grupos.map(g => {
+  }, "Nada apuntado. Añade algo arriba.") : grupos.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] py-3 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "✓ Todo en el carro. No queda nada por comprar.") : grupos.map(g => {
     const isOpen = expanded[g.id] !== false; // abierto por defecto
     const pend = g.items.filter(i => !i.comprado).length;
     return /*#__PURE__*/React.createElement("div", {
@@ -6748,15 +6740,97 @@ function ListaCompraTab() {
         }
       }, "✎"));
     }));
-  }), nComprados > 0 && /*#__PURE__*/React.createElement("button", {
-    onClick: borrarComprados,
-    className: "w-full py-2 mt-2 text-[11.5px] uppercase tracking-wide",
+  }), carro.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 mb-3",
     style: {
-      border: `1.5px solid ${palette.line}`,
-      color: palette.inkSoft,
-      borderRadius: 14
+      border: `1px solid ${palette.line}`,
+      borderRadius: 16,
+      overflow: "hidden"
     }
-  }, "Quitar los ", nComprados, " comprados"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setExpanded(e => ({
+      ...e,
+      __carro: e.__carro === false ? true : false
+    })),
+    className: "w-full flex items-center justify-between px-3 py-2.5",
+    style: {
+      background: "#8C968E",
+      color: "#FFFFFF"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-2 text-[13px] font-bold text-left leading-tight"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 17
+    }
+  }, "🛒"), "Carro de la compra"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-semibold whitespace-nowrap pl-2 text-right",
+    style: {
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, totalCarro.toFixed(2), " € · ", carro.length, " ", expanded.__carro === false ? "▾" : "▴")), expanded.__carro !== false && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark
+    }
+  }, carro.map(it => {
+    const pm = productoMercadonaPorId(it.mercadona_id);
+    const cant = Number(it.cantidad) || 1;
+    const ln = lineaDe(it);
+    const imgId = it.imagen || pm && pm.img;
+    return /*#__PURE__*/React.createElement("div", {
+      key: it.id,
+      className: "flex items-center gap-2.5 py-2 px-3",
+      style: {
+        borderBottom: `1px solid ${palette.line}`
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => alternarComprado(it),
+      "aria-label": "Devolver a la lista",
+      className: "flex-shrink-0 flex items-center justify-center",
+      style: {
+        width: 26,
+        height: 26,
+        borderRadius: 8,
+        background: "#8C968E",
+        border: "2px solid #8C968E",
+        color: "#FFFFFF",
+        fontSize: 15,
+        lineHeight: 1
+      }
+    }, "✓"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        opacity: 0.5,
+        filter: "grayscale(1)"
+      }
+    }, /*#__PURE__*/React.createElement(FotoProducto, {
+      img: imgId,
+      size: 36
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0",
+      style: {
+        color: palette.inkSoft
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[13.5px] leading-tight",
+      style: {
+        textDecoration: "line-through"
+      }
+    }, it.nombre), cant > 1 && /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] mt-0.5"
+    }, "× ", cant)), /*#__PURE__*/React.createElement("span", {
+      className: "text-[13px] font-semibold whitespace-nowrap",
+      style: {
+        fontVariantNumeric: "tabular-nums",
+        color: palette.inkSoft
+      }
+    }, ln != null ? `${ln.toFixed(2)} €` : ""));
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: borrarComprados,
+    className: "w-full py-2 text-[11.5px] uppercase tracking-wide",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Vaciar el carro (", nComprados, ")"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 pt-3 text-center",
     style: {
       borderTop: `1px solid ${palette.line}`
