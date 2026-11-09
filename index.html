@@ -3653,6 +3653,157 @@ function AjusteReceta({
 }
 
 // ---------- Diario (hoy) ----------
+// ---------- Entrada manual de calorías (comida fuera de casa, algo sin receta…) ----------
+function EntradaManual({
+  meal,
+  entrada,
+  onCancel,
+  onGuardar
+}) {
+  const [nombre, setNombre] = useState(entrada ? entrada.name : "");
+  const [kcal, setKcal] = useState(entrada ? String(entrada.kcal || "") : "");
+  const [verMacros, setVerMacros] = useState(!!(entrada && (entrada.proteinas || entrada.carbohidratos || entrada.grasas)));
+  const [prot, setProt] = useState(entrada && entrada.proteinas ? String(entrada.proteinas) : "");
+  const [carb, setCarb] = useState(entrada && entrada.carbohidratos ? String(entrada.carbohidratos) : "");
+  const [gras, setGras] = useState(entrada && entrada.grasas ? String(entrada.grasas) : "");
+  const [guardando, setGuardando] = useState(false);
+  const k = Number(String(kcal).replace(",", "."));
+  const valido = k > 0;
+  const inputStyle2 = {
+    border: `1.5px solid ${palette.line}`,
+    background: palette.paperDark,
+    color: palette.ink,
+    borderRadius: 12
+  };
+  const num = v => Math.round(Number(String(v).replace(",", ".")) || 0);
+  // Si das los macros pero no las kcal, las calcula; si das kcal, manda tu cifra
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-3 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, meal), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mt-1"
+  }, "Kcal manuales"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Para comer fuera o algo que no tienes como receta.")), /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "¿Qué has comido? (opcional)"), /*#__PURE__*/React.createElement("input", {
+    value: nombre,
+    onChange: e => setNombre(e.target.value),
+    placeholder: "Ej. Menú del restaurante",
+    className: "w-full mb-3 px-3 py-2 text-[14px]",
+    style: inputStyle2
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Calorías"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "decimal",
+    value: kcal,
+    onChange: e => setKcal(e.target.value),
+    placeholder: "0",
+    className: "flex-1 px-3 py-3 text-[22px] font-semibold text-center",
+    style: inputStyle2
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[14px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "kcal")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 12
+    }
+  }, [200, 400, 600, 800, 1000].map(v => /*#__PURE__*/React.createElement("button", {
+    key: v,
+    onClick: () => setKcal(String(v)),
+    style: {
+      padding: "6px 12px",
+      borderRadius: 999,
+      fontSize: 12.5,
+      fontWeight: 600,
+      background: palette.paperDark,
+      color: palette.inkSoft
+    }
+  }, v))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerMacros(!verMacros),
+    className: "text-[12.5px] font-semibold mb-2",
+    style: {
+      color: palette.greenDark
+    }
+  }, verMacros ? "▾ Quitar macros" : "▸ Añadir macros (opcional)"), verMacros && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, [["Prot. g", prot, setProt], ["Hidr. g", carb, setCarb], ["Grasa g", gras, setGras]].map(([l, v, f]) => /*#__PURE__*/React.createElement("div", {
+    key: l,
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, l), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "decimal",
+    value: v,
+    onChange: e => f(e.target.value),
+    placeholder: "0",
+    className: "w-full px-2 py-2 text-[15px] text-center",
+    style: inputStyle2
+  })))), /*#__PURE__*/React.createElement("button", {
+    disabled: !valido || guardando,
+    onClick: async () => {
+      setGuardando(true);
+      await onGuardar({
+        name: nombre.trim() || "Comida sin receta",
+        qty: "manual",
+        kcal: Math.round(k),
+        proteinas: num(prot),
+        carbohidratos: num(carb),
+        grasas: num(gras),
+        recipe_id: null,
+        raciones: null,
+        ingredientes: []
+      });
+    },
+    className: "w-full py-3 text-[14px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14,
+      opacity: valido && !guardando ? 1 : 0.5
+    }
+  }, guardando ? "Guardando…" : entrada ? "Guardar cambios" : "Añadir al diario")));
+}
 function DiarioTab({
   userId,
   perfilId,
@@ -3667,6 +3818,7 @@ function DiarioTab({
   const [raciones, setRaciones] = useState(1);
   const [ingredientesAjustados, setIngredientesAjustados] = useState([]); // [{product_id,name,unidad,kcal,proteinas,carbohidratos,grasas,gramsBase,grams,fromRecipe}]
   const [entradaEditando, setEntradaEditando] = useState(null); // id de la entrada si estamos editando, si no null
+  const [manualEntrada, setManualEntrada] = useState(null); // entrada manual que se está editando
   const [objetivoData, setObjetivoData] = useState({});
   const [productos, setProductos] = useState([]);
   const [gruposRecetaAbiertos, setGruposRecetaAbiertos] = useState({});
@@ -3709,7 +3861,30 @@ function DiarioTab({
     setIngredientesAjustados(ingredientesDesdeReceta(recipe, 1));
     setView("ajustar");
   }
+  async function guardarManual(campos) {
+    if (manualEntrada) {
+      await sb.from("diary_entries").update(campos).eq("id", manualEntrada.id);
+    } else {
+      await sb.from("diary_entries").insert({
+        user_id: userId,
+        perfil: perfilId,
+        entry_date: todayKey,
+        meal: mealElegido,
+        ...campos
+      });
+    }
+    setManualEntrada(null);
+    setView("diario");
+    setMealElegido(null);
+    recargar();
+  }
   async function editarEntrada(entrada) {
+    if (!entrada.recipe_id && entrada.qty === "manual") {
+      setManualEntrada(entrada);
+      setMealElegido(entrada.meal);
+      setView("manual");
+      return;
+    }
     const r = await cargarEntradaParaEditar(entrada);
     if (!r) return;
     setRecetaSeleccionada(r.recipe);
@@ -3767,6 +3942,18 @@ function DiarioTab({
       className: "text-[14px]"
     }, m)))));
   }
+  if (view === "manual") {
+    return /*#__PURE__*/React.createElement(EntradaManual, {
+      key: manualEntrada ? manualEntrada.id : "nueva",
+      meal: mealElegido,
+      entrada: manualEntrada,
+      onCancel: () => {
+        setManualEntrada(null);
+        setView(manualEntrada ? "diario" : "receta");
+      },
+      onGuardar: guardarManual
+    });
+  }
   if (view === "receta") {
     return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
       className: "px-5 pt-5 pb-3 text-center"
@@ -3781,7 +3968,28 @@ function DiarioTab({
       className: "text-[20px] font-semibold mt-1"
     }, "Elige receta")), /*#__PURE__*/React.createElement("div", {
       className: "px-5 pb-5"
-    }, recetas.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setManualEntrada(null);
+        setView("manual");
+      },
+      className: "w-full flex items-center justify-between px-3.5 py-3 mb-3",
+      style: {
+        background: palette.greenSoft,
+        border: `1.5px dashed ${palette.green}`,
+        borderRadius: 14
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[13.5px] font-semibold",
+      style: {
+        color: palette.greenDark
+      }
+    }, "✏️ Poner kcal a mano"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[11.5px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "comer fuera, sin receta…")), recetas.length === 0 ? /*#__PURE__*/React.createElement("div", {
       className: "text-[12.5px] py-3",
       style: {
         color: palette.inkSoft
@@ -10952,7 +11160,11 @@ const CATALOGO_EXT = {
     "crunch": "Crunches",
     "crunch_inverso": "Reverse_Crunch",
     "bicicleta_abdominal": "Air_Bike",
-    "bicho_muerto": "Dead_Bug"
+    "bicho_muerto": "Dead_Bug",
+    "press_suelo": "Dumbbell_Floor_Press",
+    "aperturas_suelo": "Dumbbell_Flyes",
+    "pullover": "Bent-Arm_Dumbbell_Pullover",
+    "sentadilla_bulgara": "Split_Squat_with_Dumbbells"
   }
 };
 const URL_FOTOS = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
@@ -10987,11 +11199,20 @@ function cargarCatalogo() {
   return _catPromesa;
 }
 
-// ---------- Calorías (estimación con METs del Compendio de Actividad Física) ----------
+// ---------- Calorías (METs del Compendio de Actividad Física y ecuaciones ACSM para cinta/paseo) ----------
+let FACTOR_KCAL = 1; // ajuste individual con tu metabolismo basal (peso, altura, edad, sexo); 1 = sin datos
+function factorMetabolico(peso, altura, edad, genero) {
+  peso = Number(peso);
+  altura = Number(altura);
+  edad = Number(edad);
+  if (!(peso > 0 && altura > 0 && edad > 0)) return 1;
+  const rmr = 10 * peso + 6.25 * altura - 5 * edad + (genero === "hombre" ? 5 : -161); // Mifflin-St Jeor, kcal/día
+  return Math.max(0.85, Math.min(1.2, rmr / (24 * peso)));
+}
 const MET_FUERZA = 4.5;
 const CARDIO_MAQ = {
   bici: {
-    nombre: "Bicicleta estática",
+    nombre: "Bici estática",
     icono: "🚴",
     met: {
       suave: 5.5,
@@ -11007,18 +11228,38 @@ const CARDIO_MAQ = {
       moderada: 6.0,
       intensa: 8.5
     }
+  },
+  cinta: {
+    nombre: "Cinta",
+    icono: "🏃‍♂️",
+    vel: 8
+  },
+  paseo: {
+    nombre: "Paseo",
+    icono: "🚶",
+    vel: 5
   }
 };
+const ACTIVIDADES_CARDIO = [["carrera", "🏃", "Correr"], ["cinta", "🏃‍♂️", "Cinta"], ["paseo", "🚶", "Paseo"], ["bici", "🚴", "Bici"], ["eliptica", "🌀", "Elíptica"]];
 const INTENSIDADES = [["suave", "Suave"], ["moderada", "Moderada"], ["intensa", "Intensa"]];
 function kcalMET(met, kg, seg) {
-  return Math.round(met * kg * seg / 3600);
+  return Math.round(met * kg * (seg / 3600) * FACTOR_KCAL);
 }
 function kcalFuerza(kg, seg) {
   return kcalMET(MET_FUERZA, kg, seg);
 }
-function kcalCardio(maq, inten, kg, seg) {
-  const m = CARDIO_MAQ[maq] || CARDIO_MAQ.bici;
-  return kcalMET(m.met[inten] || m.met.moderada, kg, seg);
+// c = { maquina, intensidad, vel (km/h), incl (%) }
+function kcalCardio(c, kg, seg) {
+  c = c || {};
+  const m = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
+  if (m.vel) {
+    const v = Number(c.vel) || m.vel,
+      g = (Number(c.incl) || 0) / 100,
+      vm = v * 1000 / 60; // m/min
+    const vo2 = v <= 7.2 ? 0.1 * vm + 1.8 * vm * g + 3.5 : 0.2 * vm + 0.9 * vm * g + 3.5; // ml/kg/min
+    return Math.round(vo2 * kg / 1000 * 5 * (seg / 60));
+  }
+  return kcalMET(m.met[c.intensidad] || m.met.moderada, kg, seg);
 }
 function kcalCarrera(kg, km) {
   return Math.round(1.0 * kg * km);
@@ -11027,7 +11268,8 @@ function kcalCarrera(kg, km) {
 // ---------- Entreno: plan semanal, editor, sesión guiada ----------
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DIAS_CORTO = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
-const TIPOS_ENTRENO = [["fuerza", "💪", "Fuerza"], ["carrera", "🏃", "Carrera"], ["cardio", "🚴", "Cardio"], ["otro", "✏️", "Otro"], ["descanso", "😴", "Descanso"]];
+const TIPOS_ENTRENO = [["fuerza", "💪", "Fuerza"], ["cardio", "🏃", "Cardio"], ["otro", "✏️", "Otro"], ["descanso", "😴", "Descanso"], ["carrera", "🏃", "Cardio"]];
+const TIPOS_CHIPS = TIPOS_ENTRENO.slice(0, 4);
 function indiceDia(date) {
   return (date.getDay() + 6) % 7;
 }
@@ -11544,7 +11786,9 @@ function EntrenoTab({
       return 0;
     }
   });
+  const [datosPerfil, setDatosPerfil] = useState({});
   const pesoKg = pesoManual || pesoPerfil || 70;
+  FACTOR_KCAL = factorMetabolico(pesoKg, datosPerfil.altura_cm, datosPerfil.edad, datosPerfil.genero);
   function fijarPeso(v) {
     setPesoManual(v);
     try {
@@ -11565,7 +11809,10 @@ function EntrenoTab({
     if (!userId) return;
     sb.from("perfil_objetivos").select("*").eq("user_id", userId).eq("perfil", perfilId).maybeSingle().then(({
       data
-    }) => setPesoPerfil(Number(data && data.peso_kg) || 0)).catch(() => {});
+    }) => {
+      setPesoPerfil(Number(data && data.peso_kg) || 0);
+      setDatosPerfil(data || {});
+    }).catch(() => {});
   }, [perfilId, userId]);
   const [plan, setPlan] = useState({});
   const [registros, setRegistros] = useState([]);
@@ -11574,7 +11821,31 @@ function EntrenoTab({
     t: "semana"
   });
   const planRef = useRef({});
+  const baseRef = useRef({}); // plan fijo (se repite todas las semanas)
+  const overRef = useRef({}); // ajustes de una semana concreta: "lunesKey|dia" -> doc
+  const [semOff, setSemOff] = useState(0); // 0 = esta semana, -1 = anterior, +1 = siguiente…
+  const lunesVista = fechaDeDia(lunesDe(hoy()), semOff * 7);
+  const kSem = toKey(lunesVista);
+  const kSemRef = useRef(kSem);
+  kSemRef.current = kSem;
   const timers = useRef({});
+  function efectivo(k) {
+    const m = {
+      ...baseRef.current
+    };
+    for (let d = 0; d < 7; d++) {
+      const o = overRef.current[k + "|" + d];
+      if (o) m[d] = o;
+    }
+    return m;
+  }
+  function refrescarPlan() {
+    planRef.current = efectivo(kSemRef.current);
+    setPlan(planRef.current);
+  }
+  useEffect(() => {
+    refrescarPlan();
+  }, [kSem]);
   function cargarRegistros() {
     return sb.from("entreno_registros").select("*").eq("perfil", perfilId).then(({
       data
@@ -11586,12 +11857,14 @@ function EntrenoTab({
       t: "semana"
     });
     Promise.all([sb.from("entreno_plan").select("*").eq("perfil", perfilId), cargarRegistros()]).then(([p]) => {
-      const m = {};
+      const m = {},
+        o = {};
       (p && p.data || []).forEach(d => {
-        m[d.dia] = d;
+        if (d.semana) o[d.semana + "|" + d.dia] = d;else m[d.dia] = d;
       });
-      planRef.current = m;
-      setPlan(m);
+      baseRef.current = m;
+      overRef.current = o;
+      refrescarPlan();
       setCargando(false);
     });
   }, [perfilId]);
@@ -11615,43 +11888,90 @@ function EntrenoTab({
       }
     };
   }
-  function cambiarDia(dia, parche) {
+  function guardarDoc(d, semana) {
+    const clave = semana ? `${perfilId}_${semana}_${d.dia}` : `${perfilId}_${d.dia}`;
+    const reg = {
+      clave,
+      perfil: perfilId,
+      dia: d.dia,
+      tipo: d.tipo,
+      titulo: d.titulo || "",
+      notas: d.notas || "",
+      ejercicios: d.ejercicios || [],
+      carrera: d.carrera || {},
+      cardio: d.cardio || {}
+    };
+    if (semana) reg.semana = semana;
+    return sb.from("entreno_plan").upsert(reg, {
+      onConflict: "clave"
+    });
+  }
+  // Los cambios se guardan solo en la semana que estás viendo (ajuste semanal)
+  function cambiarDia(dia, parche, aBase) {
+    const k = kSemRef.current;
     const nuevo = {
       ...docDia(dia),
-      ...parche
+      ...parche,
+      dia
     };
-    planRef.current = {
-      ...planRef.current,
-      [dia]: nuevo
-    };
-    setPlan(planRef.current);
-    clearTimeout(timers.current[dia]);
-    timers.current[dia] = setTimeout(() => {
-      const d = planRef.current[dia];
-      sb.from("entreno_plan").upsert({
-        clave: `${perfilId}_${dia}`,
-        perfil: perfilId,
-        dia,
-        tipo: d.tipo,
-        titulo: d.titulo || "",
-        notas: d.notas || "",
-        ejercicios: d.ejercicios || [],
-        carrera: d.carrera || {},
-        cardio: d.cardio || {}
-      }, {
-        onConflict: "clave"
-      });
+    if (aBase) {
+      baseRef.current = {
+        ...baseRef.current,
+        [dia]: {
+          ...nuevo,
+          semana: undefined
+        }
+      };
+    } else {
+      overRef.current = {
+        ...overRef.current,
+        [k + "|" + dia]: {
+          ...nuevo,
+          semana: k
+        }
+      };
+    }
+    refrescarPlan();
+    const tk = (aBase ? "b" : k) + "|" + dia;
+    clearTimeout(timers.current[tk]);
+    timers.current[tk] = setTimeout(() => {
+      if (aBase) guardarDoc(baseRef.current[dia], null);else guardarDoc(overRef.current[k + "|" + dia], k);
     }, 600);
+  }
+  function aplicarATodas(dia) {
+    const k = kSemRef.current;
+    const d = overRef.current[k + "|" + dia] || baseRef.current[dia];
+    if (!d) return;
+    cambiarDia(dia, d, true);
+    const o = {
+      ...overRef.current
+    };
+    delete o[k + "|" + dia];
+    overRef.current = o;
+    sb.from("entreno_plan").delete().eq("clave", `${perfilId}_${k}_${dia}`);
+    refrescarPlan();
+  }
+  function copiarDeSemana(origen) {
+    const k = kSemRef.current,
+      ef = efectivo(origen);
+    for (let d = 0; d < 7; d++) {
+      if (ef[d]) cambiarDia(d, {
+        ...ef[d],
+        semana: undefined
+      });
+    }
   }
   const [confirmarPlan, setConfirmarPlan] = useState(false);
   function cargarSemana() {
     const docs = docsDePlanSemanal();
-    docs.forEach((d, i) => cambiarDia(i, d));
+    docs.forEach((d, i) => cambiarDia(i, d, true));
     setConfirmarPlan(false);
   }
   if (cargando || !catOk) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
   if (vista.t === "dia") {
     return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
+      semOff: semOff,
+      onTodas: () => aplicarATodas(vista.dia),
       pesoKg: pesoKg,
       dia: vista.dia,
       doc: docDia(vista.dia),
@@ -11664,10 +11984,10 @@ function EntrenoTab({
         t: "picker",
         dia: vista.dia
       }),
-      onEmpezar: () => setVista({
+      onEmpezar: semOff === 0 ? () => setVista({
         t: "sesion",
         dia: vista.dia
-      }),
+      }) : null,
       onHecho: async () => {
         const d = docDia(vista.dia);
         await sb.from("entreno_registros").insert({
@@ -11746,7 +12066,7 @@ function EntrenoTab({
 
   // ---- Vista semana ----
   const hoyD = hoy();
-  const lunes = lunesDe(hoyD);
+  const lunes = lunesVista;
   const kLunes = toKey(lunes);
   const kDomingo = toKey(fechaDeDia(lunes, 6));
   const hechosSemana = {}; // índice de día del plan -> registro de esta semana
@@ -11766,8 +12086,72 @@ function EntrenoTab({
       color: palette.inkSoft
     }
   }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
-    className: "text-[20px] font-semibold mt-1"
-  }, "Semana del ", fechaCorta(lunes)), diasConPlan.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSemOff(semOff - 1),
+    "aria-label": "Semana anterior",
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 999,
+      background: palette.paperDark,
+      fontSize: 20,
+      fontWeight: 700,
+      color: palette.ink
+    }
+  }, "‹"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold"
+  }, "Semana del ", fechaCorta(lunes)), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, semOff === 0 ? "Esta semana" : semOff === -1 ? "Semana pasada" : semOff === 1 ? "Próxima semana" : semOff < 0 ? `Hace ${-semOff} semanas` : `Dentro de ${semOff} semanas`)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSemOff(semOff + 1),
+    "aria-label": "Semana siguiente",
+    style: {
+      width: 40,
+      height: 40,
+      borderRadius: 999,
+      background: palette.paperDark,
+      fontSize: 20,
+      fontWeight: 700,
+      color: palette.ink
+    }
+  }, "›")), semOff !== 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      justifyContent: "center",
+      marginTop: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSemOff(0),
+    style: {
+      padding: "5px 12px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 600,
+      background: palette.greenSoft,
+      color: palette.greenDark
+    }
+  }, "Ir a hoy"), semOff > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => copiarDeSemana(toKey(fechaDeDia(lunesVista, -7))),
+    style: {
+      padding: "5px 12px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 600,
+      background: palette.paperDark,
+      color: palette.ink
+    }
+  }, "Copiar semana anterior")), diasConPlan.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-2"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11895,6 +12279,7 @@ function EntrenoTab({
     const tipo = doc ? TIPOS_ENTRENO.find(x => x[0] === doc.tipo) : null;
     let titulo = "Sin plan",
       sub = "Toca para añadir";
+    let icoFila = tipo ? tipo[1] : "";
     if (doc && doc.tipo === "fuerza") {
       const n = (doc.ejercicios || []).length;
       titulo = doc.titulo || "Fuerza";
@@ -11905,8 +12290,9 @@ function EntrenoTab({
     } else if (doc && doc.tipo === "cardio") {
       const c = doc.cardio || {};
       const m = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
+      icoFila = m.icono;
       titulo = doc.titulo || m.nombre;
-      sub = `${c.min || 0} min · ${c.intensidad || "moderada"} · ~${kcalCardio(c.maquina, c.intensidad, pesoKg, (c.min || 0) * 60)} kcal`;
+      sub = `${c.min || 0} min · ${m.vel ? `${String(Number(c.vel) || m.vel).replace(".", ",")} km/h${Number(c.incl) ? ` · ${String(c.incl).replace(".", ",")}%` : ""}` : c.intensidad || "moderada"} · ~${kcalCardio(c, pesoKg, (c.min || 0) * 60)} kcal`;
     } else if (doc && doc.tipo === "otro") {
       titulo = doc.titulo || "Otro";
       sub = doc.notas || "Actividad libre";
@@ -11963,7 +12349,7 @@ function EntrenoTab({
         lineHeight: 1.2,
         overflowWrap: "anywhere"
       }
-    }, tipo ? tipo[1] + " " : "", titulo), /*#__PURE__*/React.createElement("div", {
+    }, icoFila ? icoFila + " " : "", titulo), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: palette.inkSoft,
@@ -12149,6 +12535,8 @@ function EntrenoTab({
 
 // ---------- Editor de un día ----------
 function EditorDiaEntreno({
+  semOff,
+  onTodas,
   pesoKg,
   dia,
   doc,
@@ -12211,7 +12599,22 @@ function EditorDiaEntreno({
     }
   }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
     className: "text-[22px] font-semibold mt-1"
-  }, DIAS_SEMANA[dia])), /*#__PURE__*/React.createElement("div", {
+  }, DIAS_SEMANA[dia]), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11.5px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Los cambios se guardan solo en esta semana", semOff !== 0 ? "" : "", "."), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onTodas();
+      alert("Este día queda como plan fijo en todas las semanas.");
+    },
+    className: "mt-1 text-[12px] font-semibold",
+    style: {
+      color: palette.greenDark,
+      textDecoration: "underline"
+    }
+  }, "Usar este día en todas las semanas")), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12219,25 +12622,74 @@ function EditorDiaEntreno({
       gap: 6,
       marginBottom: 12
     }
-  }, TIPOS_ENTRENO.map(([id, ico, label]) => /*#__PURE__*/React.createElement("button", {
-    key: id,
-    onClick: () => cambiar({
-      tipo: id
-    }),
-    style: {
-      flex: 1,
-      padding: "8px 2px",
-      borderRadius: 12,
-      fontSize: 11.5,
-      fontWeight: 600,
-      background: doc.tipo === id ? palette.green : palette.paperDark,
-      color: doc.tipo === id ? "#FFFFFF" : palette.inkSoft
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 17
-    }
-  }, ico), label))), doc.tipo !== "descanso" && /*#__PURE__*/React.createElement("input", {
+  }, TIPOS_CHIPS.map(([id, ico, label]) => {
+    const act = doc.tipo === id || id === "cardio" && doc.tipo === "carrera";
+    return /*#__PURE__*/React.createElement("button", {
+      key: id,
+      onClick: () => {
+        if (!act) cambiar({
+          tipo: id
+        });
+      },
+      style: {
+        flex: 1,
+        padding: "8px 2px",
+        borderRadius: 12,
+        fontSize: 11.5,
+        fontWeight: 600,
+        background: act ? palette.green : palette.paperDark,
+        color: act ? "#FFFFFF" : palette.inkSoft
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 17
+      }
+    }, ico), label);
+  })), (doc.tipo === "cardio" || doc.tipo === "carrera") && (() => {
+    const c0 = doc.cardio || {
+      maquina: "bici",
+      min: 30,
+      intensidad: "moderada"
+    };
+    const actual = doc.tipo === "carrera" ? "carrera" : c0.maquina || "bici";
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        overflowX: "auto",
+        marginBottom: 12,
+        paddingBottom: 2
+      }
+    }, ACTIVIDADES_CARDIO.map(([k, ico, l]) => /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => {
+        if (k === actual) return;
+        if (k === "carrera") cambiar({
+          tipo: "carrera"
+        });else cambiar({
+          tipo: "cardio",
+          cardio: {
+            min: 30,
+            intensidad: "moderada",
+            ...c0,
+            maquina: k,
+            vel: CARDIO_MAQ[k].vel || c0.vel,
+            incl: c0.incl || 0
+          }
+        });
+      },
+      style: {
+        flexShrink: 0,
+        padding: "7px 12px",
+        borderRadius: 999,
+        fontSize: 12.5,
+        fontWeight: 600,
+        background: actual === k ? palette.greenSoft : palette.paperDark,
+        color: actual === k ? palette.greenDark : palette.inkSoft,
+        border: `1.5px solid ${actual === k ? palette.green : "transparent"}`
+      }
+    }, ico, " ", l)));
+  })(), doc.tipo !== "descanso" && /*#__PURE__*/React.createElement("input", {
     value: doc.titulo || "",
     onChange: e => cambiar({
       titulo: e.target.value
@@ -12285,26 +12737,6 @@ function EditorDiaEntreno({
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 8,
-        marginBottom: 10
-      }
-    }, Object.keys(CARDIO_MAQ).map(k => /*#__PURE__*/React.createElement("button", {
-      key: k,
-      onClick: () => setC({
-        maquina: k
-      }),
-      style: {
-        flex: 1,
-        padding: "10px 4px",
-        borderRadius: 14,
-        fontSize: 13,
-        fontWeight: 600,
-        background: (c.maquina || "bici") === k ? palette.green : palette.paperDark,
-        color: (c.maquina || "bici") === k ? "#FFFFFF" : palette.inkSoft
-      }
-    }, CARDIO_MAQ[k].icono, " ", CARDIO_MAQ[k].nombre))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
         gap: 10,
         marginBottom: 10
       }
@@ -12318,14 +12750,40 @@ function EditorDiaEntreno({
       onChange: v => setC({
         min: v
       })
-    })), /*#__PURE__*/React.createElement("div", {
+    })), CARDIO_MAQ[c.maquina || "bici"].vel ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Velocidad",
+      valor: Number(c.vel) || CARDIO_MAQ[c.maquina].vel,
+      paso: 0.5,
+      min: 2,
+      max: 25,
+      sufijo: "km/h",
+      onChange: v => setC({
+        vel: v
+      })
+    }), /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Inclinación",
+      valor: Number(c.incl) || 0,
+      paso: 0.5,
+      min: 0,
+      max: 15,
+      sufijo: "%",
+      onChange: v => setC({
+        incl: v
+      })
+    })) : /*#__PURE__*/React.createElement("div", {
       className: "text-[10px] uppercase tracking-wide mb-1 text-center",
       style: {
         color: palette.inkSoft
       }
     }, "Intensidad"), /*#__PURE__*/React.createElement("div", {
       style: {
-        display: "flex",
+        display: CARDIO_MAQ[c.maquina || "bici"].vel ? "none" : "flex",
         gap: 6,
         marginBottom: 10
       }
@@ -12353,7 +12811,7 @@ function EditorDiaEntreno({
       style: {
         color: palette.ink
       }
-    }, kcalCardio(c.maquina || "bici", c.intensidad || "moderada", pesoKg, (c.min || 0) * 60), " kcal"), " (con ", pesoKg, " kg)"), /*#__PURE__*/React.createElement("textarea", {
+    }, kcalCardio(c, pesoKg, (c.min || 0) * 60), " kcal"), " (con ", pesoKg, " kg)"), /*#__PURE__*/React.createElement("textarea", {
       value: doc.notas || "",
       onChange: e => cambiar({
         notas: e.target.value
@@ -12362,7 +12820,7 @@ function EditorDiaEntreno({
       rows: 2,
       className: "w-full px-3 py-2 text-[13px] mb-3",
       style: inputStyle
-    }), /*#__PURE__*/React.createElement("button", {
+    }), onEmpezar && /*#__PURE__*/React.createElement("button", {
       onClick: onEmpezar,
       className: "w-full py-3 text-[13px] font-semibold",
       style: {
@@ -12422,7 +12880,7 @@ function EditorDiaEntreno({
     rows: 2,
     className: "w-full px-3 py-2 text-[13px] mb-3",
     style: inputStyle
-  }), /*#__PURE__*/React.createElement("button", {
+  }), onEmpezar && /*#__PURE__*/React.createElement("button", {
     onClick: onEmpezar,
     className: "w-full py-3 text-[13px] font-semibold",
     style: {
@@ -12430,7 +12888,7 @@ function EditorDiaEntreno({
       color: "#FFFFFF",
       borderRadius: 14
     }
-  }, "▶ Empezar carrera")), doc.tipo === "fuerza" && /*#__PURE__*/React.createElement("div", null, ejercicios.length > 0 && /*#__PURE__*/React.createElement("button", {
+  }, "▶ Empezar carrera")), doc.tipo === "fuerza" && /*#__PURE__*/React.createElement("div", null, ejercicios.length > 0 && onEmpezar && /*#__PURE__*/React.createElement("button", {
     onClick: onEmpezar,
     className: "w-full py-3 text-[13.5px] font-semibold mb-3",
     style: {
@@ -13726,6 +14184,14 @@ function SesionCardio({
   const [terminada, setTerminada] = useState(false);
   const [minutos, setMinutos] = useState(0);
   const [inten, setInten] = useState(c.intensidad || "moderada");
+  const [vel, setVel] = useState(Number(c.vel) || maq.vel || 0);
+  const [incl, setIncl] = useState(Number(c.incl) || 0);
+  const cc = {
+    ...c,
+    intensidad: inten,
+    vel,
+    incl
+  };
   const [guardando, setGuardando] = useState(false);
   const avisado = useRef(false);
   useEffect(() => {
@@ -13771,7 +14237,7 @@ function SesionCardio({
     setMinutos(Math.max(1, Math.round(total / 60000)));
     setTerminada(true);
   }
-  const kcal = kcalCardio(c.maquina, inten, pesoKg, minutos * 60);
+  const kcal = kcalCardio(cc, pesoKg, minutos * 60);
   async function guardar() {
     setGuardando(true);
     await sb.from("entreno_registros").insert({
@@ -13783,6 +14249,8 @@ function SesionCardio({
       tipo: "cardio",
       maquina: c.maquina || "bici",
       intensidad: inten,
+      vel: maq.vel ? vel : 0,
+      incl: maq.vel ? incl : 0,
       duracion_s: minutos * 60,
       kcal
     });
@@ -13807,7 +14275,7 @@ function SesionCardio({
     style: {
       color: palette.ink
     }
-  }, c.min, " min"), " · ", c.intensidad || "moderada"), doc.notas ? /*#__PURE__*/React.createElement("div", {
+  }, c.min, " min"), " · ", maq.vel ? `${String(vel).replace(".", ",")} km/h${incl ? ` · ${incl}%` : ""}` : c.intensidad || "moderada"), doc.notas ? /*#__PURE__*/React.createElement("div", {
     className: "text-[12px] mt-1",
     style: {
       color: palette.inkSoft
@@ -13825,7 +14293,7 @@ function SesionCardio({
     style: {
       color: palette.inkSoft
     }
-  }, objSeg > 0 ? falta > 0 ? `Faltan ${mmss(falta)}` : "¡Objetivo cumplido!" : "", " · ≈ ", kcalCardio(c.maquina, inten, pesoKg, seg), " kcal"), /*#__PURE__*/React.createElement("button", {
+  }, objSeg > 0 ? falta > 0 ? `Faltan ${mmss(falta)}` : "¡Objetivo cumplido!" : "", " · ≈ ", kcalCardio(cc, pesoKg, seg), " kcal"), /*#__PURE__*/React.createElement("button", {
     onClick: alternar,
     className: "w-full py-4 text-[16px] font-bold mb-2",
     style: {
@@ -13865,14 +14333,36 @@ function SesionCardio({
     max: 600,
     sufijo: "min",
     onChange: setMinutos
-  })), /*#__PURE__*/React.createElement("div", {
+  })), maq.vel ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Velocidad",
+    valor: vel,
+    paso: 0.5,
+    min: 2,
+    max: 25,
+    sufijo: "km/h",
+    onChange: setVel
+  }), /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Inclinación",
+    valor: incl,
+    paso: 0.5,
+    min: 0,
+    max: 15,
+    sufijo: "%",
+    onChange: setIncl
+  })) : /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-wide mb-1",
     style: {
       color: palette.inkSoft
     }
   }, "Intensidad"), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
+      display: maq.vel ? "none" : "flex",
       gap: 6,
       marginBottom: 10
     }
