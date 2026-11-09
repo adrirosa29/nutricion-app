@@ -7542,7 +7542,7 @@ function _colocar(J, ancla, cx, excluir) {
 
 // ---------- Biblioteca de ejercicios (solo mancuernas + peso corporal, sin banco) ----------
 // poses: [A, B]. resalta: segmentos que se colorean (ua, fa, th, sh, t).
-const GRUPOS_EJ = ["Pecho", "Espalda", "Hombro", "Bíceps", "Tríceps", "Pierna", "Core"];
+const GRUPOS_EJ = ["Pecho", "Espalda", "Hombro", "Bíceps", "Tríceps", "Pierna", "Core", "Pliométrico", "Estiramientos"];
 const EJERCICIOS = [
 // ---------- PECHO ----------
 {
@@ -9168,10 +9168,1866 @@ function colorMusculo(m, prim, sec, calor) {
   return "#E4EBE1";
 }
 
+// ---------- Catálogo ampliado (fotos del banco libre free-exercise-db, licencia Unlicense) ----------
+const CATALOGO_EXT = {
+  "nuevos": [{
+    "id": "db_Zottman_Curl",
+    "nombre": "Curl Zottman",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Zottman_Curl"
+  }, {
+    "id": "db_Dumbbell_Alternate_Bicep_Curl",
+    "nombre": "Curl de bíceps alterno",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Dumbbell_Alternate_Bicep_Curl"
+  }, {
+    "id": "db_Standing_Inner-Biceps_Curl",
+    "nombre": "Curl de bíceps interior de pie",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": [],
+    "foto": "Standing_Inner-Biceps_Curl"
+  }, {
+    "id": "db_Seated_Dumbbell_Inner_Biceps_Curl",
+    "nombre": "Curl de bíceps interior sentado",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas · silla",
+    "prim": ["biceps"],
+    "sec": [],
+    "foto": "Seated_Dumbbell_Inner_Biceps_Curl"
+  }, {
+    "id": "db_Seated_Dumbbell_Curl",
+    "nombre": "Curl de bíceps sentado",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas · silla",
+    "prim": ["biceps"],
+    "sec": [],
+    "foto": "Seated_Dumbbell_Curl"
+  }, {
+    "id": "db_Concentration_Curls",
+    "nombre": "Curl de concentración",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Concentration_Curls"
+  }, {
+    "id": "db_Standing_Concentration_Curl",
+    "nombre": "Curl de concentración de pie",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Standing_Concentration_Curl"
+  }, {
+    "id": "db_Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
+    "nombre": "Curl de muñeca a una mano (palmas abajo)",
+    "grupo": "Bíceps",
+    "musculos": "Antebrazo",
+    "material": "Mancuernas",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl"
+  }, {
+    "id": "db_Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
+    "nombre": "Curl de muñeca a una mano (palmas arriba)",
+    "grupo": "Bíceps",
+    "musculos": "Antebrazo",
+    "material": "Mancuernas",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl"
+  }, {
+    "id": "db_Seated_Dumbbell_Palms-Down_Wrist_Curl",
+    "nombre": "Curl de muñeca sentado (palmas abajo)",
+    "grupo": "Bíceps",
+    "musculos": "Antebrazo",
+    "material": "Mancuernas · silla",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Seated_Dumbbell_Palms-Down_Wrist_Curl"
+  }, {
+    "id": "db_Seated_Dumbbell_Palms-Up_Wrist_Curl",
+    "nombre": "Curl de muñeca sentado (palmas arriba)",
+    "grupo": "Bíceps",
+    "musculos": "Antebrazo",
+    "material": "Mancuernas · silla",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Seated_Dumbbell_Palms-Up_Wrist_Curl"
+  }, {
+    "id": "db_Standing_Dumbbell_Reverse_Curl",
+    "nombre": "Curl inverso de pie",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Standing_Dumbbell_Reverse_Curl"
+  }, {
+    "id": "db_Alternate_Hammer_Curl",
+    "nombre": "Curl martillo alterno",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Alternate_Hammer_Curl"
+  }, {
+    "id": "db_Cross_Body_Hammer_Curl",
+    "nombre": "Curl martillo cruzado",
+    "grupo": "Bíceps",
+    "musculos": "Bíceps",
+    "material": "Mancuernas",
+    "prim": ["biceps"],
+    "sec": ["antebrazo"],
+    "foto": "Cross_Body_Hammer_Curl"
+  }, {
+    "id": "db_Janda_Sit-Up",
+    "nombre": "Abdominal Janda",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Janda_Sit-Up"
+  }, {
+    "id": "db_Sit-Up",
+    "nombre": "Abdominal completo (sit-up)",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Sit-Up"
+  }, {
+    "id": "db_Jackknife_Sit-Up",
+    "nombre": "Abdominal navaja",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Jackknife_Sit-Up"
+  }, {
+    "id": "db_3_4_Sit-Up",
+    "nombre": "Abdominal ¾ (sit-up parcial)",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "3_4_Sit-Up"
+  }, {
+    "id": "db_Frog_Sit-Ups",
+    "nombre": "Abdominales rana",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Frog_Sit-Ups"
+  }, {
+    "id": "db_Cocoons",
+    "nombre": "Capullos abdominales",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Cocoons"
+  }, {
+    "id": "db_Elbow_to_Knee",
+    "nombre": "Codo a rodilla",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Elbow_to_Knee"
+  }, {
+    "id": "db_Crunch_-_Hands_Overhead",
+    "nombre": "Crunch con manos sobre la cabeza",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Crunch_-_Hands_Overhead"
+  }, {
+    "id": "db_Cross-Body_Crunch",
+    "nombre": "Crunch cruzado",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Cross-Body_Crunch"
+  }, {
+    "id": "db_Tuck_Crunch",
+    "nombre": "Crunch encogido",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Tuck_Crunch"
+  }, {
+    "id": "db_Oblique_Crunches",
+    "nombre": "Crunch oblicuo",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Oblique_Crunches"
+  }, {
+    "id": "db_Oblique_Crunches_-_On_The_Floor",
+    "nombre": "Crunch oblicuo en el suelo",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Oblique_Crunches_-_On_The_Floor"
+  }, {
+    "id": "db_Spider_Crawl",
+    "nombre": "Gateo de araña",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": ["pecho", "hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Spider_Crawl"
+  }, {
+    "id": "db_Spell_Caster",
+    "nombre": "Giro con mancuerna (lanzador)",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Mancuernas",
+    "prim": ["abdomen"],
+    "sec": ["gluteo", "hombro_ant", "hombro_lat"],
+    "foto": "Spell_Caster"
+  }, {
+    "id": "db_Russian_Twist",
+    "nombre": "Giro ruso",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": ["lumbar"],
+    "foto": "Russian_Twist"
+  }, {
+    "id": "db_Dumbbell_Side_Bend",
+    "nombre": "Inclinación lateral con mancuerna",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Mancuernas",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Dumbbell_Side_Bend"
+  }, {
+    "id": "db_Side_Jackknife",
+    "nombre": "Navaja lateral",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": [],
+    "foto": "Side_Jackknife"
+  }, {
+    "id": "db_Side_Bridge",
+    "nombre": "Plancha lateral",
+    "grupo": "Core",
+    "musculos": "Abdomen, oblicuos",
+    "material": "Sin material",
+    "prim": ["abdomen", "oblicuos"],
+    "sec": ["hombro_lat"],
+    "foto": "Side_Bridge",
+    "unidad": "s"
+  }, {
+    "id": "db_Leg_Pull-In",
+    "nombre": "Recogida de piernas",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Leg_Pull-In"
+  }, {
+    "id": "db_Seated_Leg_Tucks",
+    "nombre": "Recogida de piernas sentado",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material · silla",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Seated_Leg_Tucks"
+  }, {
+    "id": "db_Wind_Sprints",
+    "nombre": "Sprints en el sitio",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Wind_Sprints"
+  }, {
+    "id": "db_Alternate_Heel_Touchers",
+    "nombre": "Toques de talón alternos",
+    "grupo": "Core",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Alternate_Heel_Touchers"
+  }, {
+    "id": "db_Middle_Back_Shrug",
+    "nombre": "Encogimiento de espalda media",
+    "grupo": "Espalda",
+    "musculos": "Dorsal, trapecio",
+    "material": "Mancuernas",
+    "prim": ["dorsal", "trapecio"],
+    "sec": [],
+    "foto": "Middle_Back_Shrug"
+  }, {
+    "id": "db_Dumbbell_Shrug",
+    "nombre": "Encogimientos con mancuernas",
+    "grupo": "Espalda",
+    "musculos": "Trapecio",
+    "material": "Mancuernas",
+    "prim": ["trapecio"],
+    "sec": [],
+    "foto": "Dumbbell_Shrug"
+  }, {
+    "id": "db_Standing_Dumbbell_Upright_Row",
+    "nombre": "Remo al mentón con mancuernas",
+    "grupo": "Espalda",
+    "musculos": "Trapecio",
+    "material": "Mancuernas",
+    "prim": ["trapecio"],
+    "sec": ["biceps", "hombro_ant", "hombro_lat"],
+    "foto": "Standing_Dumbbell_Upright_Row"
+  }, {
+    "id": "db_Bent_Over_Two-Dumbbell_Row_With_Palms_In",
+    "nombre": "Remo inclinado con mancuernas (agarre neutro)",
+    "grupo": "Espalda",
+    "musculos": "Dorsal, trapecio",
+    "material": "Mancuernas",
+    "prim": ["dorsal", "trapecio"],
+    "sec": ["biceps"],
+    "foto": "Bent_Over_Two-Dumbbell_Row_With_Palms_In"
+  }, {
+    "id": "db_Hug_Knees_To_Chest",
+    "nombre": "Abrazar rodillas al pecho",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": ["gluteo"],
+    "foto": "Hug_Knees_To_Chest",
+    "unidad": "s"
+  }, {
+    "id": "db_Pelvic_Tilt_Into_Bridge",
+    "nombre": "Basculación pélvica a puente",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": [],
+    "foto": "Pelvic_Tilt_Into_Bridge",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Pelvic_Tilt",
+    "nombre": "Basculación pélvica de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": ["gluteo"],
+    "foto": "Standing_Pelvic_Tilt",
+    "unidad": "s"
+  }, {
+    "id": "db_Elbows_Back",
+    "nombre": "Codos atrás (pecho)",
+    "grupo": "Estiramientos",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "hombro_lat"],
+    "foto": "Elbows_Back",
+    "unidad": "s"
+  }, {
+    "id": "db_Lower_Back_Curl",
+    "nombre": "Curl lumbar",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Lower_Back_Curl",
+    "unidad": "s"
+  }, {
+    "id": "db_Arm_Circles",
+    "nombre": "Círculos de brazos",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Arm_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Hip_Circles_prone",
+    "nombre": "Círculos de cadera boca abajo",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["aductores"],
+    "foto": "Hip_Circles_prone",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Hip_Circles",
+    "nombre": "Círculos de cadera de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["aductores"],
+    "foto": "Standing_Hip_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Elbow_Circles",
+    "nombre": "Círculos de codos",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Elbow_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Shoulder_Circles",
+    "nombre": "Círculos de hombros",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Shoulder_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Wrist_Circles",
+    "nombre": "Círculos de muñeca",
+    "grupo": "Estiramientos",
+    "musculos": "Antebrazo",
+    "material": "Sin material",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Wrist_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Knee_Circles",
+    "nombre": "Círculos de rodillas",
+    "grupo": "Estiramientos",
+    "musculos": "Gemelos",
+    "material": "Sin material",
+    "prim": ["gemelos"],
+    "sec": ["femoral", "cuadriceps"],
+    "foto": "Knee_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Ankle_Circles",
+    "nombre": "Círculos de tobillo",
+    "grupo": "Estiramientos",
+    "musculos": "Gemelos",
+    "material": "Sin material",
+    "prim": ["gemelos"],
+    "sec": [],
+    "foto": "Ankle_Circles",
+    "unidad": "s"
+  }, {
+    "id": "db_Worlds_Greatest_Stretch",
+    "nombre": "El mejor estiramiento del mundo",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["gemelos", "gluteo", "cuadriceps"],
+    "foto": "Worlds_Greatest_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Front_Leg_Raises",
+    "nombre": "Elevaciones de pierna al frente",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": [],
+    "foto": "Front_Leg_Raises",
+    "unidad": "s"
+  }, {
+    "id": "db_Rear_Leg_Raises",
+    "nombre": "Elevaciones de pierna atrás",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "Rear_Leg_Raises",
+    "unidad": "s"
+  }, {
+    "id": "db_Side_Leg_Raises",
+    "nombre": "Elevaciones laterales de pierna",
+    "grupo": "Estiramientos",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": [],
+    "foto": "Side_Leg_Raises",
+    "unidad": "s"
+  }, {
+    "id": "db_Shoulder_Raise",
+    "nombre": "Elevación de hombros (estiramiento)",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["dorsal"],
+    "foto": "Shoulder_Raise",
+    "unidad": "s"
+  }, {
+    "id": "db_The_Straddle",
+    "nombre": "Estiramiento con piernas abiertas",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["aductores", "gemelos"],
+    "foto": "The_Straddle",
+    "unidad": "s"
+  }, {
+    "id": "db_Adductor_Groin",
+    "nombre": "Estiramiento de aductores",
+    "grupo": "Estiramientos",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": [],
+    "foto": "Adductor_Groin",
+    "unidad": "s"
+  }, {
+    "id": "db_Kneeling_Forearm_Stretch",
+    "nombre": "Estiramiento de antebrazo de rodillas",
+    "grupo": "Estiramientos",
+    "musculos": "Antebrazo",
+    "material": "Sin material",
+    "prim": ["antebrazo"],
+    "sec": [],
+    "foto": "Kneeling_Forearm_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Seated_Biceps",
+    "nombre": "Estiramiento de bíceps sentado",
+    "grupo": "Estiramientos",
+    "musculos": "Bíceps",
+    "material": "Sin material · silla",
+    "prim": ["biceps"],
+    "sec": ["pecho", "hombro_ant", "hombro_lat"],
+    "foto": "Seated_Biceps",
+    "unidad": "s"
+  }, {
+    "id": "db_Spinal_Stretch",
+    "nombre": "Estiramiento de columna",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal, trapecio",
+    "material": "Sin material",
+    "prim": ["dorsal", "trapecio"],
+    "sec": ["lumbar"],
+    "foto": "Spinal_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Chin_To_Chest_Stretch",
+    "nombre": "Estiramiento de cuello (barbilla al pecho)",
+    "grupo": "Estiramientos",
+    "musculos": "Trapecio",
+    "material": "Sin material",
+    "prim": ["trapecio"],
+    "sec": [],
+    "foto": "Chin_To_Chest_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_All_Fours_Quad_Stretch",
+    "nombre": "Estiramiento de cuádriceps a cuatro patas",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "All_Fours_Quad_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Lying_Prone_Quadriceps",
+    "nombre": "Estiramiento de cuádriceps boca abajo",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "Lying_Prone_Quadriceps",
+    "unidad": "s"
+  }, {
+    "id": "db_Seated_Front_Deltoid",
+    "nombre": "Estiramiento de deltoides frontal sentado",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal)",
+    "material": "Sin material · silla",
+    "prim": ["hombro_ant"],
+    "sec": ["pecho"],
+    "foto": "Seated_Front_Deltoid",
+    "unidad": "s"
+  }, {
+    "id": "db_Upper_Back_Stretch",
+    "nombre": "Estiramiento de espalda alta",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal, trapecio",
+    "material": "Sin material",
+    "prim": ["dorsal", "trapecio"],
+    "sec": [],
+    "foto": "Upper_Back_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Upper_Back-Leg_Grab",
+    "nombre": "Estiramiento de espalda alta agarrando pierna",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["lumbar", "dorsal", "trapecio"],
+    "foto": "Upper_Back-Leg_Grab",
+    "unidad": "s"
+  }, {
+    "id": "db_Middle_Back_Stretch",
+    "nombre": "Estiramiento de espalda media",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal, trapecio",
+    "material": "Sin material",
+    "prim": ["dorsal", "trapecio"],
+    "sec": ["abdomen", "lumbar"],
+    "foto": "Middle_Back_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Kneeling_Hip_Flexor",
+    "nombre": "Estiramiento de flexor de cadera de rodillas",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "Kneeling_Hip_Flexor",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Hip_Flexors",
+    "nombre": "Estiramiento de flexores de cadera de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "Standing_Hip_Flexors",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Gastrocnemius_Calf_Stretch",
+    "nombre": "Estiramiento de gemelo de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Gemelos",
+    "material": "Sin material",
+    "prim": ["gemelos"],
+    "sec": ["femoral"],
+    "foto": "Standing_Gastrocnemius_Calf_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Seated_Calf_Stretch",
+    "nombre": "Estiramiento de gemelo sentado",
+    "grupo": "Estiramientos",
+    "musculos": "Gemelos",
+    "material": "Sin material · silla",
+    "prim": ["gemelos"],
+    "sec": ["femoral", "lumbar"],
+    "foto": "Seated_Calf_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Seated_Glute",
+    "nombre": "Estiramiento de glúteo sentado",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material · silla",
+    "prim": ["gluteo"],
+    "sec": ["aductores"],
+    "foto": "Seated_Glute",
+    "unidad": "s"
+  }, {
+    "id": "db_Lying_Glute",
+    "nombre": "Estiramiento de glúteo tumbado",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": [],
+    "foto": "Lying_Glute",
+    "unidad": "s"
+  }, {
+    "id": "db_Shoulder_Stretch",
+    "nombre": "Estiramiento de hombro",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": [],
+    "foto": "Shoulder_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Side_Lying_Groin_Stretch",
+    "nombre": "Estiramiento de ingle de lado",
+    "grupo": "Estiramientos",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": ["femoral"],
+    "foto": "Side_Lying_Groin_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Groin_and_Back_Stretch",
+    "nombre": "Estiramiento de ingle y espalda",
+    "grupo": "Estiramientos",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": [],
+    "foto": "Groin_and_Back_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_One_Half_Locust",
+    "nombre": "Estiramiento de langosta",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["abdomen", "biceps", "pecho"],
+    "foto": "One_Half_Locust",
+    "unidad": "s"
+  }, {
+    "id": "db_Side_Wrist_Pull",
+    "nombre": "Estiramiento de muñeca lateral",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_lat"],
+    "sec": ["antebrazo", "dorsal"],
+    "foto": "Side_Wrist_Pull",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Soleus_And_Achilles_Stretch",
+    "nombre": "Estiramiento de sóleo y Aquiles",
+    "grupo": "Estiramientos",
+    "musculos": "Gemelos",
+    "material": "Sin material",
+    "prim": ["gemelos"],
+    "sec": [],
+    "foto": "Standing_Soleus_And_Achilles_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Triceps_Stretch",
+    "nombre": "Estiramiento de tríceps",
+    "grupo": "Estiramientos",
+    "musculos": "Tríceps",
+    "material": "Sin material",
+    "prim": ["triceps"],
+    "sec": ["dorsal"],
+    "foto": "Triceps_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Overhead_Triceps",
+    "nombre": "Estiramiento de tríceps sobre la cabeza",
+    "grupo": "Estiramientos",
+    "musculos": "Tríceps",
+    "material": "Sin material",
+    "prim": ["triceps"],
+    "sec": ["dorsal"],
+    "foto": "Overhead_Triceps",
+    "unidad": "s"
+  }, {
+    "id": "db_Dancers_Stretch",
+    "nombre": "Estiramiento del bailarín",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": ["gluteo"],
+    "foto": "Dancers_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Runners_Stretch",
+    "nombre": "Estiramiento del corredor",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["gemelos"],
+    "foto": "Runners_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Cat_Stretch",
+    "nombre": "Estiramiento del gato",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": ["dorsal", "trapecio"],
+    "foto": "Cat_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Dynamic_Back_Stretch",
+    "nombre": "Estiramiento dinámico de espalda",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal",
+    "material": "Sin material",
+    "prim": ["dorsal"],
+    "sec": [],
+    "foto": "Dynamic_Back_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Dynamic_Chest_Stretch",
+    "nombre": "Estiramiento dinámico de pecho",
+    "grupo": "Estiramientos",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["dorsal", "trapecio"],
+    "foto": "Dynamic_Chest_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Upward_Stretch",
+    "nombre": "Estiramiento hacia arriba",
+    "grupo": "Estiramientos",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["pecho", "dorsal"],
+    "foto": "Upward_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Side_Neck_Stretch",
+    "nombre": "Estiramiento lateral de cuello",
+    "grupo": "Estiramientos",
+    "musculos": "Trapecio",
+    "material": "Sin material",
+    "prim": ["trapecio"],
+    "sec": [],
+    "foto": "Side_Neck_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Lateral_Stretch",
+    "nombre": "Estiramiento lateral de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Standing_Lateral_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Tricep_Side_Stretch",
+    "nombre": "Estiramiento lateral de tríceps",
+    "grupo": "Estiramientos",
+    "musculos": "Tríceps",
+    "material": "Sin material",
+    "prim": ["triceps"],
+    "sec": ["hombro_lat"],
+    "foto": "Tricep_Side_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Side-Lying_Floor_Stretch",
+    "nombre": "Estiramiento lateral en el suelo",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal",
+    "material": "Sin material",
+    "prim": ["dorsal"],
+    "sec": [],
+    "foto": "Side-Lying_Floor_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Chair_Lower_Back_Stretch",
+    "nombre": "Estiramiento lumbar en silla",
+    "grupo": "Estiramientos",
+    "musculos": "Dorsal",
+    "material": "Sin material",
+    "prim": ["dorsal"],
+    "sec": ["lumbar"],
+    "foto": "Chair_Lower_Back_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Seated_Overhead_Stretch",
+    "nombre": "Estiramiento sentado sobre la cabeza",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material · silla",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Seated_Overhead_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Overhead_Stretch",
+    "nombre": "Estiramiento sobre la cabeza",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": ["pecho", "antebrazo", "dorsal", "triceps"],
+    "foto": "Overhead_Stretch",
+    "unidad": "s"
+  }, {
+    "id": "db_Ankle_On_The_Knee",
+    "nombre": "Estiramiento tobillo sobre rodilla",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": [],
+    "foto": "Ankle_On_The_Knee",
+    "unidad": "s"
+  }, {
+    "id": "db_Groiners",
+    "nombre": "Groiners (zancada a plancha)",
+    "grupo": "Estiramientos",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": [],
+    "foto": "Groiners",
+    "unidad": "s"
+  }, {
+    "id": "db_Inchworm",
+    "nombre": "Gusano (inchworm)",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": [],
+    "foto": "Inchworm",
+    "unidad": "s"
+  }, {
+    "id": "db_Looking_At_Ceiling",
+    "nombre": "Mirar al techo (estiramiento)",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": [],
+    "foto": "Looking_At_Ceiling",
+    "unidad": "s"
+  }, {
+    "id": "db_Windmills",
+    "nombre": "Molinos (movilidad)",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral", "lumbar"],
+    "foto": "Windmills",
+    "unidad": "s"
+  }, {
+    "id": "db_Scissor_Kick",
+    "nombre": "Patada de tijera",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Scissor_Kick",
+    "unidad": "s"
+  }, {
+    "id": "db_Childs_Pose",
+    "nombre": "Postura del niño",
+    "grupo": "Estiramientos",
+    "musculos": "Lumbar",
+    "material": "Sin material",
+    "prim": ["lumbar"],
+    "sec": ["gluteo", "dorsal", "trapecio"],
+    "foto": "Childs_Pose",
+    "unidad": "s"
+  }, {
+    "id": "db_Knee_Across_The_Body",
+    "nombre": "Rodilla cruzada (glúteo)",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["lumbar"],
+    "foto": "Knee_Across_The_Body",
+    "unidad": "s"
+  }, {
+    "id": "db_Frog_Hops",
+    "nombre": "Saltos de rana",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Frog_Hops",
+    "unidad": "s"
+  }, {
+    "id": "db_Split_Squats",
+    "nombre": "Sentadilla dividida",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["gemelos", "gluteo", "cuadriceps"],
+    "foto": "Split_Squats",
+    "unidad": "s"
+  }, {
+    "id": "db_Sit_Squats",
+    "nombre": "Sentadilla profunda (estiramiento)",
+    "grupo": "Estiramientos",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "femoral"],
+    "foto": "Sit_Squats",
+    "unidad": "s"
+  }, {
+    "id": "db_Standing_Toe_Touches",
+    "nombre": "Tocar puntas de pie",
+    "grupo": "Estiramientos",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["gemelos"],
+    "foto": "Standing_Toe_Touches",
+    "unidad": "s"
+  }, {
+    "id": "db_Toe_Touchers",
+    "nombre": "Tocar puntas tumbado",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Toe_Touchers",
+    "unidad": "s"
+  }, {
+    "id": "db_One_Knee_To_Chest",
+    "nombre": "Una rodilla al pecho",
+    "grupo": "Estiramientos",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral", "lumbar"],
+    "foto": "One_Knee_To_Chest",
+    "unidad": "s"
+  }, {
+    "id": "db_Stomach_Vacuum",
+    "nombre": "Vacío abdominal",
+    "grupo": "Estiramientos",
+    "musculos": "Abdomen",
+    "material": "Sin material",
+    "prim": ["abdomen"],
+    "sec": [],
+    "foto": "Stomach_Vacuum",
+    "unidad": "s"
+  }, {
+    "id": "db_Reverse_Flyes",
+    "nombre": "Aperturas inversas",
+    "grupo": "Hombro",
+    "musculos": "Hombro (posterior)",
+    "material": "Mancuernas",
+    "prim": ["hombro_post"],
+    "sec": [],
+    "foto": "Reverse_Flyes"
+  }, {
+    "id": "db_Reverse_Flyes_With_External_Rotation",
+    "nombre": "Aperturas inversas con rotación externa",
+    "grupo": "Hombro",
+    "musculos": "Hombro (posterior)",
+    "material": "Mancuernas",
+    "prim": ["hombro_post"],
+    "sec": [],
+    "foto": "Reverse_Flyes_With_External_Rotation"
+  }, {
+    "id": "db_Alternating_Deltoid_Raise",
+    "nombre": "Elevaciones de deltoides alternas",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant"],
+    "sec": [],
+    "foto": "Alternating_Deltoid_Raise"
+  }, {
+    "id": "db_Front_Two-Dumbbell_Raise",
+    "nombre": "Elevaciones frontales con dos mancuernas",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant"],
+    "sec": [],
+    "foto": "Front_Two-Dumbbell_Raise"
+  }, {
+    "id": "db_Seated_Side_Lateral_Raise",
+    "nombre": "Elevaciones laterales sentado",
+    "grupo": "Hombro",
+    "musculos": "Hombro (lateral)",
+    "material": "Mancuernas · silla",
+    "prim": ["hombro_lat"],
+    "sec": [],
+    "foto": "Seated_Side_Lateral_Raise"
+  }, {
+    "id": "db_Power_Partials",
+    "nombre": "Elevaciones parciales de potencia",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": [],
+    "foto": "Power_Partials"
+  }, {
+    "id": "db_Single_Dumbbell_Raise",
+    "nombre": "Elevación con una mancuerna",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant"],
+    "sec": ["antebrazo", "trapecio"],
+    "foto": "Single_Dumbbell_Raise"
+  }, {
+    "id": "db_Dumbbell_Raise",
+    "nombre": "Elevación de mancuerna",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant"],
+    "sec": ["biceps"],
+    "foto": "Dumbbell_Raise"
+  }, {
+    "id": "db_Dumbbell_Scaption",
+    "nombre": "Elevación en escaption",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Dumbbell_Scaption"
+  }, {
+    "id": "db_Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head",
+    "nombre": "Elevación frontal brazos rectos sobre la cabeza",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant"],
+    "sec": [],
+    "foto": "Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head"
+  }, {
+    "id": "db_Side_Laterals_to_Front_Raise",
+    "nombre": "Elevación lateral a frontal",
+    "grupo": "Hombro",
+    "musculos": "Hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Side_Laterals_to_Front_Raise"
+  }, {
+    "id": "db_One-Arm_Side_Laterals",
+    "nombre": "Elevación lateral a un brazo",
+    "grupo": "Hombro",
+    "musculos": "Hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_lat"],
+    "sec": [],
+    "foto": "One-Arm_Side_Laterals"
+  }, {
+    "id": "db_Isometric_Neck_Exercise_-_Front_And_Back",
+    "nombre": "Isométrico de cuello (frente y atrás)",
+    "grupo": "Hombro",
+    "musculos": "Trapecio",
+    "material": "Sin material",
+    "prim": ["trapecio"],
+    "sec": [],
+    "foto": "Isometric_Neck_Exercise_-_Front_And_Back",
+    "unidad": "s"
+  }, {
+    "id": "db_Isometric_Neck_Exercise_-_Sides",
+    "nombre": "Isométrico de cuello (lados)",
+    "grupo": "Hombro",
+    "musculos": "Trapecio",
+    "material": "Sin material",
+    "prim": ["trapecio"],
+    "sec": [],
+    "foto": "Isometric_Neck_Exercise_-_Sides",
+    "unidad": "s"
+  }, {
+    "id": "db_Arnold_Dumbbell_Press",
+    "nombre": "Press Arnold",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Arnold_Dumbbell_Press"
+  }, {
+    "id": "db_Standing_Palm-In_One-Arm_Dumbbell_Press",
+    "nombre": "Press a una mano (agarre neutro)",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Standing_Palm-In_One-Arm_Dumbbell_Press"
+  }, {
+    "id": "db_Standing_Alternating_Dumbbell_Press",
+    "nombre": "Press alterno de pie",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Standing_Alternating_Dumbbell_Press"
+  }, {
+    "id": "db_See-Saw_Press_Alternating_Side_Press",
+    "nombre": "Press balancín alterno",
+    "grupo": "Hombro",
+    "musculos": "Hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_lat"],
+    "sec": ["abdomen", "oblicuos", "triceps"],
+    "foto": "See-Saw_Press_Alternating_Side_Press"
+  }, {
+    "id": "db_Standing_Palms-In_Dumbbell_Press",
+    "nombre": "Press con agarre neutro",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Standing_Palms-In_Dumbbell_Press"
+  }, {
+    "id": "db_Cuban_Press",
+    "nombre": "Press cubano",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["trapecio"],
+    "foto": "Cuban_Press"
+  }, {
+    "id": "db_Dumbbell_One-Arm_Shoulder_Press",
+    "nombre": "Press de hombro a una mano",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Dumbbell_One-Arm_Shoulder_Press"
+  }, {
+    "id": "db_Dumbbell_Shoulder_Press",
+    "nombre": "Press de hombros con mancuernas",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Dumbbell_Shoulder_Press"
+  }, {
+    "id": "db_Seated_Dumbbell_Press",
+    "nombre": "Press de hombros sentado",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas · silla",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["triceps"],
+    "foto": "Seated_Dumbbell_Press"
+  }, {
+    "id": "db_Dumbbell_One-Arm_Upright_Row",
+    "nombre": "Remo al mentón a una mano",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["biceps", "trapecio"],
+    "foto": "Dumbbell_One-Arm_Upright_Row"
+  }, {
+    "id": "db_External_Rotation",
+    "nombre": "Rotación externa de hombro",
+    "grupo": "Hombro",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Mancuernas",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": [],
+    "foto": "External_Rotation"
+  }, {
+    "id": "db_Push-Up_Wide",
+    "nombre": "Flexiones abiertas",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["abdomen", "hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Push-Up_Wide"
+  }, {
+    "id": "db_Pushups_Close_and_Wide_Hand_Positions",
+    "nombre": "Flexiones cerradas y abiertas",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Pushups_Close_and_Wide_Hand_Positions"
+  }, {
+    "id": "db_Push-Ups_With_Feet_Elevated",
+    "nombre": "Flexiones con pies elevados",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material · silla",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Push-Ups_With_Feet_Elevated"
+  }, {
+    "id": "db_Clock_Push-Up",
+    "nombre": "Flexiones reloj",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Clock_Push-Up"
+  }, {
+    "id": "db_Push_Up_to_Side_Plank",
+    "nombre": "Flexión a plancha lateral",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["abdomen", "oblicuos", "hombro_lat", "triceps"],
+    "foto": "Push_Up_to_Side_Plank"
+  }, {
+    "id": "db_Single-Arm_Push-Up",
+    "nombre": "Flexión a un brazo",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "triceps"],
+    "foto": "Single-Arm_Push-Up"
+  }, {
+    "id": "db_Isometric_Wipers",
+    "nombre": "Limpiaparabrisas isométricos",
+    "grupo": "Pecho",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["abdomen", "hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Isometric_Wipers",
+    "unidad": "s"
+  }, {
+    "id": "db_Dumbbell_Clean",
+    "nombre": "Clean con mancuernas",
+    "grupo": "Pierna",
+    "musculos": "Femoral",
+    "material": "Mancuernas",
+    "prim": ["femoral"],
+    "sec": ["gemelos", "antebrazo", "gluteo", "lumbar", "cuadriceps", "hombro_ant", "hombro_lat", "trapecio"],
+    "foto": "Dumbbell_Clean"
+  }, {
+    "id": "db_Leg_Lift",
+    "nombre": "Elevación de pierna (glúteo)",
+    "grupo": "Pierna",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral"],
+    "foto": "Leg_Lift"
+  }, {
+    "id": "db_Calf_Raise_On_A_Dumbbell",
+    "nombre": "Elevación de talones sobre mancuerna",
+    "grupo": "Pierna",
+    "musculos": "Gemelos",
+    "material": "Mancuernas",
+    "prim": ["gemelos"],
+    "sec": [],
+    "foto": "Calf_Raise_On_A_Dumbbell"
+  }, {
+    "id": "db_Dumbbell_Seated_One-Leg_Calf_Raise",
+    "nombre": "Elevación de talón sentado a una pierna",
+    "grupo": "Pierna",
+    "musculos": "Gemelos",
+    "material": "Mancuernas · silla",
+    "prim": ["gemelos"],
+    "sec": [],
+    "foto": "Dumbbell_Seated_One-Leg_Calf_Raise"
+  }, {
+    "id": "db_Glute_Kickback",
+    "nombre": "Patada de glúteo",
+    "grupo": "Pierna",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral"],
+    "foto": "Glute_Kickback"
+  }, {
+    "id": "db_Flutter_Kicks",
+    "nombre": "Patadas flutter",
+    "grupo": "Pierna",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral"],
+    "foto": "Flutter_Kicks"
+  }, {
+    "id": "db_Single_Leg_Glute_Bridge",
+    "nombre": "Puente de glúteo a una pierna",
+    "grupo": "Pierna",
+    "musculos": "Glúteo",
+    "material": "Sin material",
+    "prim": ["gluteo"],
+    "sec": ["femoral"],
+    "foto": "Single_Leg_Glute_Bridge"
+  }, {
+    "id": "db_Dumbbell_Squat",
+    "nombre": "Sentadilla con mancuernas",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Mancuernas",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral", "lumbar"],
+    "foto": "Dumbbell_Squat"
+  }, {
+    "id": "db_Bodyweight_Squat",
+    "nombre": "Sentadilla con peso corporal",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "femoral"],
+    "foto": "Bodyweight_Squat"
+  }, {
+    "id": "db_Freehand_Jump_Squat",
+    "nombre": "Sentadilla con salto",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Freehand_Jump_Squat"
+  }, {
+    "id": "db_Split_Squat_with_Dumbbells",
+    "nombre": "Sentadilla dividida con mancuernas",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Mancuernas",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "femoral"],
+    "foto": "Split_Squat_with_Dumbbells"
+  }, {
+    "id": "db_Plie_Dumbbell_Squat",
+    "nombre": "Sentadilla plié con mancuerna",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Mancuernas",
+    "prim": ["cuadriceps"],
+    "sec": ["abdomen", "gemelos", "gluteo", "femoral"],
+    "foto": "Plie_Dumbbell_Squat"
+  }, {
+    "id": "db_Bodyweight_Walking_Lunge",
+    "nombre": "Zancada caminando",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Bodyweight_Walking_Lunge"
+  }, {
+    "id": "db_Dumbbell_Rear_Lunge",
+    "nombre": "Zancada hacia atrás con mancuernas",
+    "grupo": "Pierna",
+    "musculos": "Cuádriceps",
+    "material": "Mancuernas",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Dumbbell_Rear_Lunge"
+  }, {
+    "id": "db_Vertical_Swing",
+    "nombre": "Balanceo vertical con mancuerna",
+    "grupo": "Pliométrico",
+    "musculos": "Femoral",
+    "material": "Mancuernas",
+    "prim": ["femoral"],
+    "sec": ["gluteo", "cuadriceps", "hombro_ant", "hombro_lat"],
+    "foto": "Vertical_Swing"
+  }, {
+    "id": "db_Kneeling_Arm_Drill",
+    "nombre": "Ejercicio de brazos de rodillas",
+    "grupo": "Pliométrico",
+    "musculos": "Hombro (frontal), hombro (lateral)",
+    "material": "Sin material",
+    "prim": ["hombro_ant", "hombro_lat"],
+    "sec": ["abdomen"],
+    "foto": "Kneeling_Arm_Drill"
+  }, {
+    "id": "db_Mountain_Climbers",
+    "nombre": "Escaladores",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["pecho", "femoral", "hombro_ant", "hombro_lat"],
+    "foto": "Mountain_Climbers"
+  }, {
+    "id": "db_Plyo_Push-up",
+    "nombre": "Flexiones pliométricas",
+    "grupo": "Pliométrico",
+    "musculos": "Pecho",
+    "material": "Sin material",
+    "prim": ["pecho"],
+    "sec": ["hombro_ant", "hombro_lat", "triceps"],
+    "foto": "Plyo_Push-up"
+  }, {
+    "id": "db_Rocket_Jump",
+    "nombre": "Salto cohete",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "femoral"],
+    "foto": "Rocket_Jump"
+  }, {
+    "id": "db_Knee_Tuck_Jump",
+    "nombre": "Salto con rodillas al pecho",
+    "grupo": "Pliométrico",
+    "musculos": "Femoral",
+    "material": "Sin material",
+    "prim": ["femoral"],
+    "sec": ["gluteo", "aductores", "gemelos", "cuadriceps"],
+    "foto": "Knee_Tuck_Jump"
+  }, {
+    "id": "db_Split_Jump",
+    "nombre": "Salto con zancada",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Split_Jump"
+  }, {
+    "id": "db_Star_Jump",
+    "nombre": "Salto de estrella",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral", "hombro_ant", "hombro_lat"],
+    "foto": "Star_Jump"
+  }, {
+    "id": "db_Standing_Long_Jump",
+    "nombre": "Salto de longitud",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Standing_Long_Jump"
+  }, {
+    "id": "db_Side_Standing_Long_Jump",
+    "nombre": "Salto de longitud lateral",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "gluteo", "femoral"],
+    "foto": "Side_Standing_Long_Jump"
+  }, {
+    "id": "db_Scissors_Jump",
+    "nombre": "Salto de tijera",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "femoral"],
+    "foto": "Scissors_Jump"
+  }, {
+    "id": "db_Lateral_Bound",
+    "nombre": "Salto lateral",
+    "grupo": "Pliométrico",
+    "musculos": "Aductores",
+    "material": "Sin material",
+    "prim": ["aductores"],
+    "sec": ["gluteo", "gemelos", "femoral", "cuadriceps"],
+    "foto": "Lateral_Bound"
+  }, {
+    "id": "db_Alternate_Leg_Diagonal_Bound",
+    "nombre": "Saltos diagonales alternos",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "aductores", "gemelos", "femoral"],
+    "foto": "Alternate_Leg_Diagonal_Bound"
+  }, {
+    "id": "db_Fast_Skipping",
+    "nombre": "Skipping rápido",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "aductores", "gemelos", "femoral"],
+    "foto": "Fast_Skipping"
+  }, {
+    "id": "db_Double_Leg_Butt_Kick",
+    "nombre": "Talones al glúteo con salto",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gluteo", "aductores", "gemelos", "femoral"],
+    "foto": "Double_Leg_Butt_Kick"
+  }, {
+    "id": "db_Single_Leg_Butt_Kick",
+    "nombre": "Talón al glúteo a una pierna",
+    "grupo": "Pliométrico",
+    "musculos": "Cuádriceps",
+    "material": "Sin material",
+    "prim": ["cuadriceps"],
+    "sec": ["gemelos", "femoral"],
+    "foto": "Single_Leg_Butt_Kick"
+  }, {
+    "id": "db_Dumbbell_Tricep_Extension_-Pronated_Grip",
+    "nombre": "Extensión de tríceps (agarre pronado)",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Dumbbell_Tricep_Extension_-Pronated_Grip"
+  }, {
+    "id": "db_Dumbbell_One-Arm_Triceps_Extension",
+    "nombre": "Extensión de tríceps a una mano",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Dumbbell_One-Arm_Triceps_Extension"
+  }, {
+    "id": "db_One_Arm_Pronated_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps a una mano (pronado)",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "One_Arm_Pronated_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_One_Arm_Supinated_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps a una mano (supinado)",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "One_Arm_Supinated_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Standing_One-Arm_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps a una mano de pie",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": ["pecho", "hombro_ant", "hombro_lat"],
+    "foto": "Standing_One-Arm_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps inclinado a dos manos",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps inclinado a una mano",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": ["hombro_post"],
+    "foto": "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps inclinado sentado a dos manos",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas · silla",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+    "nombre": "Extensión de tríceps inclinado sentado a una mano",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas · silla",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension"
+  }, {
+    "id": "db_Push-Ups_-_Close_Triceps_Position",
+    "nombre": "Flexiones cerradas (tríceps)",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Sin material",
+    "prim": ["triceps"],
+    "sec": ["pecho", "hombro_ant", "hombro_lat"],
+    "foto": "Push-Ups_-_Close_Triceps_Position"
+  }, {
+    "id": "db_Close-Grip_Push-Up_off_of_a_Dumbbell",
+    "nombre": "Flexiones cerradas sobre mancuerna",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Sin material",
+    "prim": ["triceps"],
+    "sec": ["abdomen", "pecho", "hombro_ant", "hombro_lat"],
+    "foto": "Close-Grip_Push-Up_off_of_a_Dumbbell"
+  }, {
+    "id": "db_Tate_Press",
+    "nombre": "Press Tate",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas",
+    "prim": ["triceps"],
+    "sec": ["pecho", "hombro_ant", "hombro_lat"],
+    "foto": "Tate_Press"
+  }, {
+    "id": "db_Seated_Triceps_Press",
+    "nombre": "Press de tríceps sentado",
+    "grupo": "Tríceps",
+    "musculos": "Tríceps",
+    "material": "Mancuernas · silla",
+    "prim": ["triceps"],
+    "sec": [],
+    "foto": "Seated_Triceps_Press"
+  }],
+  "fotos": {
+    "flexiones": "Pushups",
+    "remo_inclinado": "Bent_Over_Two-Dumbbell_Row",
+    "remo_unilateral": "One-Arm_Dumbbell_Row",
+    "peso_muerto_rumano": "Stiff-Legged_Dumbbell_Deadlift",
+    "superman": "Superman",
+    "press_militar": "Standing_Dumbbell_Press",
+    "elevaciones_laterales": "Side_Lateral_Raise",
+    "elevaciones_frontales": "Front_Dumbbell_Raise",
+    "pajaros": "Seated_Bent-Over_Rear_Delt_Raise",
+    "curl_biceps": "Dumbbell_Bicep_Curl",
+    "curl_martillo": "Hammer_Curls",
+    "triceps_nuca": "Standing_Dumbbell_Triceps_Extension",
+    "patada_triceps": "Tricep_Dumbbell_Kickback",
+    "sentadilla_goblet": "Goblet_Squat",
+    "zancada": "Dumbbell_Lunges",
+    "puente_gluteo": "Butt_Lift_Bridge",
+    "elevacion_talones": "Standing_Dumbbell_Calf_Raise",
+    "plancha": "Plank",
+    "crunch": "Crunches",
+    "crunch_inverso": "Reverse_Crunch",
+    "bicicleta_abdominal": "Air_Bike",
+    "bicho_muerto": "Dead_Bug"
+  }
+};
+const URL_FOTOS = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+let _catPromesa = null;
+function cargarCatalogo() {
+  if (_catPromesa) return _catPromesa;
+  const fotos = id => [`${URL_FOTOS}${id}/0.jpg`, `${URL_FOTOS}${id}/1.jpg`];
+  const cat = CATALOGO_EXT;
+  Object.keys(cat.fotos || {}).forEach(own => {
+    if (EJ_POR_ID[own]) EJ_POR_ID[own].fotos = fotos(cat.fotos[own]);
+  });
+  (cat.nuevos || []).forEach(n => {
+    if (EJ_POR_ID[n.id]) return;
+    const e = {
+      id: n.id,
+      nombre: n.nombre,
+      grupo: n.grupo,
+      musculos: n.musculos,
+      material: n.material,
+      prim: n.prim,
+      sec: n.sec,
+      fotos: fotos(n.foto),
+      pasos: [],
+      desc: "",
+      periodo: 2200
+    };
+    if (n.unidad) e.unidad = n.unidad;
+    EJERCICIOS.push(e);
+    EJ_POR_ID[e.id] = e;
+  });
+  _catPromesa = Promise.resolve(true);
+  return _catPromesa;
+}
+
+// ---------- Calorías (estimación con METs del Compendio de Actividad Física) ----------
+const MET_FUERZA = 4.5;
+const CARDIO_MAQ = {
+  bici: {
+    nombre: "Bicicleta estática",
+    icono: "🚴",
+    met: {
+      suave: 5.5,
+      moderada: 7.0,
+      intensa: 10.0
+    }
+  },
+  eliptica: {
+    nombre: "Elíptica",
+    icono: "🌀",
+    met: {
+      suave: 5.0,
+      moderada: 6.0,
+      intensa: 8.5
+    }
+  }
+};
+const INTENSIDADES = [["suave", "Suave"], ["moderada", "Moderada"], ["intensa", "Intensa"]];
+function kcalMET(met, kg, seg) {
+  return Math.round(met * kg * seg / 3600);
+}
+function kcalFuerza(kg, seg) {
+  return kcalMET(MET_FUERZA, kg, seg);
+}
+function kcalCardio(maq, inten, kg, seg) {
+  const m = CARDIO_MAQ[maq] || CARDIO_MAQ.bici;
+  return kcalMET(m.met[inten] || m.met.moderada, kg, seg);
+}
+function kcalCarrera(kg, km) {
+  return Math.round(1.0 * kg * km);
+}
+
 // ---------- Entreno: plan semanal, editor, sesión guiada ----------
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DIAS_CORTO = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
-const TIPOS_ENTRENO = [["fuerza", "💪", "Fuerza"], ["carrera", "🏃", "Carrera"], ["otro", "✏️", "Otro"], ["descanso", "😴", "Descanso"]];
+const TIPOS_ENTRENO = [["fuerza", "💪", "Fuerza"], ["carrera", "🏃", "Carrera"], ["cardio", "🚴", "Cardio"], ["otro", "✏️", "Otro"], ["descanso", "😴", "Descanso"]];
 function indiceDia(date) {
   return (date.getDay() + 6) % 7;
 }
@@ -9313,6 +11169,45 @@ function FiguraEjercicio({
   ej,
   k
 }) {
+  if (ej.fotos) {
+    const kk = Math.max(0, Math.min(1, k || 0));
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "relative",
+        width: "100%",
+        aspectRatio: "3 / 2",
+        overflow: "hidden",
+        background: "#E9EDE6"
+      },
+      role: "img",
+      "aria-label": ej.nombre
+    }, /*#__PURE__*/React.createElement("img", {
+      src: ej.fotos[0],
+      alt: "",
+      loading: "lazy",
+      draggable: false,
+      style: {
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      }
+    }), /*#__PURE__*/React.createElement("img", {
+      src: ej.fotos[1],
+      alt: "",
+      loading: "lazy",
+      draggable: false,
+      style: {
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        opacity: kk
+      }
+    }));
+  }
   const d = dibujoEjercicio(ej, k || 0);
   const c = cajaEjercicio(ej);
   return /*#__PURE__*/React.createElement("svg", {
@@ -9637,8 +11532,41 @@ function Stepper({
 
 // ---------- Pestaña principal ----------
 function EntrenoTab({
-  perfilId
+  perfilId,
+  userId
 }) {
+  const [catOk, setCatOk] = useState(false);
+  const [pesoPerfil, setPesoPerfil] = useState(0);
+  const [pesoManual, setPesoManual] = useState(() => {
+    try {
+      return Number(localStorage.getItem("entreno_peso_" + perfilId)) || 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+  const pesoKg = pesoManual || pesoPerfil || 70;
+  function fijarPeso(v) {
+    setPesoManual(v);
+    try {
+      localStorage.setItem("entreno_peso_" + perfilId, String(v));
+    } catch (e) {}
+  }
+  useEffect(() => {
+    cargarCatalogo().then(() => setCatOk(true));
+  }, []);
+  useEffect(() => {
+    setPesoManual(() => {
+      try {
+        return Number(localStorage.getItem("entreno_peso_" + perfilId)) || 0;
+      } catch (e) {
+        return 0;
+      }
+    });
+    if (!userId) return;
+    sb.from("perfil_objetivos").select("*").eq("user_id", userId).eq("perfil", perfilId).maybeSingle().then(({
+      data
+    }) => setPesoPerfil(Number(data && data.peso_kg) || 0)).catch(() => {});
+  }, [perfilId, userId]);
   const [plan, setPlan] = useState({});
   const [registros, setRegistros] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -9679,6 +11607,11 @@ function EntrenoTab({
       carrera: {
         km: 5,
         ritmo: ""
+      },
+      cardio: {
+        maquina: "bici",
+        min: 30,
+        intensidad: "moderada"
       }
     };
   }
@@ -9703,7 +11636,8 @@ function EntrenoTab({
         titulo: d.titulo || "",
         notas: d.notas || "",
         ejercicios: d.ejercicios || [],
-        carrera: d.carrera || {}
+        carrera: d.carrera || {},
+        cardio: d.cardio || {}
       }, {
         onConflict: "clave"
       });
@@ -9715,9 +11649,10 @@ function EntrenoTab({
     docs.forEach((d, i) => cambiarDia(i, d));
     setConfirmarPlan(false);
   }
-  if (cargando) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
+  if (cargando || !catOk) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
   if (vista.t === "dia") {
     return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
+      pesoKg: pesoKg,
       dia: vista.dia,
       doc: docDia(vista.dia),
       registros: registros,
@@ -9789,12 +11724,21 @@ function EntrenoTab({
       doc: d,
       dia: vista.dia,
       perfilId: perfilId,
+      pesoKg: pesoKg,
+      onSalir: salir
+    });
+    if (d.tipo === "cardio") return /*#__PURE__*/React.createElement(SesionCardio, {
+      doc: d,
+      dia: vista.dia,
+      perfilId: perfilId,
+      pesoKg: pesoKg,
       onSalir: salir
     });
     return /*#__PURE__*/React.createElement(SesionEntreno, {
       doc: d,
       dia: vista.dia,
       perfilId: perfilId,
+      pesoKg: pesoKg,
       registros: registros,
       onSalir: salir
     });
@@ -9810,8 +11754,9 @@ function EntrenoTab({
     const idx = r.dia_plan !== undefined && r.dia_plan !== null ? r.dia_plan : indiceDia(new Date(r.fecha + "T12:00:00"));
     hechosSemana[idx] = r;
   });
-  const diasConPlan = [0, 1, 2, 3, 4, 5, 6].filter(d => plan[d] && ["fuerza", "carrera", "otro"].includes(plan[d].tipo));
+  const diasConPlan = [0, 1, 2, 3, 4, 5, 6].filter(d => plan[d] && ["fuerza", "carrera", "cardio", "otro"].includes(plan[d].tipo));
   const nHechos = diasConPlan.filter(d => hechosSemana[d]).length;
+  const kcalSemana = registros.filter(r => r.fecha >= kLunes && r.fecha <= kDomingo).reduce((a, r) => a + (Number(r.kcal) || 0), 0);
   const recientes = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || String(b.created_at || "").localeCompare(String(a.created_at || ""))).slice(0, 6);
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
@@ -9844,7 +11789,7 @@ function EntrenoTab({
     style: {
       color: palette.inkSoft
     }
-  }, nHechos, " de ", diasConPlan.length, " entrenos hechos"))), /*#__PURE__*/React.createElement("div", {
+  }, nHechos, " de ", diasConPlan.length, " entrenos hechos", kcalSemana > 0 ? ` · ≈ ${kcalSemana} kcal quemadas` : ""))), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
   }, Object.keys(plan).length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9953,10 +11898,15 @@ function EntrenoTab({
     if (doc && doc.tipo === "fuerza") {
       const n = (doc.ejercicios || []).length;
       titulo = doc.titulo || "Fuerza";
-      sub = n ? `${n} ejercicios · ~${minutosEstimados(doc.ejercicios)} min` : "Sin ejercicios todavía";
+      sub = n ? `${n} ejercicios · ~${minutosEstimados(doc.ejercicios)} min · ~${kcalFuerza(pesoKg, minutosEstimados(doc.ejercicios) * 60)} kcal` : "Sin ejercicios todavía";
     } else if (doc && doc.tipo === "carrera") {
       titulo = doc.titulo || "Carrera";
-      sub = `${String(doc.carrera && doc.carrera.km || "").replace(".", ",")} km${doc.carrera && doc.carrera.ritmo ? ` · ritmo ${doc.carrera.ritmo}` : ""}`;
+      sub = `${String(doc.carrera && doc.carrera.km || "").replace(".", ",")} km · ~${kcalCarrera(pesoKg, Number(doc.carrera && doc.carrera.km || 0))} kcal${doc.carrera && doc.carrera.ritmo ? ` · ritmo ${doc.carrera.ritmo}` : ""}`;
+    } else if (doc && doc.tipo === "cardio") {
+      const c = doc.cardio || {};
+      const m = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
+      titulo = doc.titulo || m.nombre;
+      sub = `${c.min || 0} min · ${c.intensidad || "moderada"} · ~${kcalCardio(c.maquina, c.intensidad, pesoKg, (c.min || 0) * 60)} kcal`;
     } else if (doc && doc.tipo === "otro") {
       titulo = doc.titulo || "Otro";
       sub = doc.notas || "Actividad libre";
@@ -9964,7 +11914,7 @@ function EntrenoTab({
       titulo = "Descanso";
       sub = "Recupera y come bien";
     }
-    const empezable = doc && (doc.tipo === "fuerza" && (doc.ejercicios || []).length > 0 || doc.tipo === "carrera");
+    const empezable = doc && (doc.tipo === "fuerza" && (doc.ejercicios || []).length > 0 || doc.tipo === "carrera" || doc.tipo === "cardio");
     return /*#__PURE__*/React.createElement("div", {
       key: d,
       onClick: () => setVista({
@@ -10056,7 +12006,57 @@ function EntrenoTab({
         flexShrink: 0
       }
     }, "›"));
-  }), recientes.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: "8px 12px",
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft,
+      lineHeight: 1.25
+    }
+  }, "Peso para calcular calorías", pesoManual || pesoPerfil ? "" : " (por defecto; ajústalo)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => fijarPeso(Math.max(30, pesoKg - 1)),
+    style: {
+      width: 30,
+      height: 30,
+      borderRadius: 999,
+      background: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: 700
+    }
+  }, "−"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 52,
+      textAlign: "center",
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, pesoKg, " kg"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => fijarPeso(Math.min(250, pesoKg + 1)),
+    style: {
+      width: 30,
+      height: 30,
+      borderRadius: 999,
+      background: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: 700
+    }
+  }, "+"))), recientes.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
   }, /*#__PURE__*/React.createElement(SectionTitle, null, "Últimos entrenos"), recientes.map(r => /*#__PURE__*/React.createElement("div", {
     key: r.id,
@@ -10093,7 +12093,12 @@ function EntrenoTab({
       color: palette.inkSoft,
       whiteSpace: "nowrap"
     }
-  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null)))), Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
+  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.tipo === "cardio" ? /*#__PURE__*/React.createElement("div", null, Math.round((r.duracion_s || 0) / 60), " min") : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.tipo !== "cardio" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null, r.kcal ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: palette.greenDark,
+      fontWeight: 600
+    }
+  }, "≈ ", r.kcal, " kcal") : null)))), Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
     style: {
       background: palette.paperDark,
       borderRadius: 14,
@@ -10144,6 +12149,7 @@ function EntrenoTab({
 
 // ---------- Editor de un día ----------
 function EditorDiaEntreno({
+  pesoKg,
   dia,
   doc,
   registros,
@@ -10261,7 +12267,111 @@ function EditorDiaEntreno({
       color: "#FFFFFF",
       borderRadius: 14
     }
-  }, "✓ Marcar como hecho hoy")), doc.tipo === "carrera" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "✓ Marcar como hecho hoy")), doc.tipo === "cardio" && (() => {
+    const c = doc.cardio || {
+      maquina: "bici",
+      min: 30,
+      intensidad: "moderada"
+    };
+    const setC = p => cambiar({
+      cardio: {
+        maquina: "bici",
+        min: 30,
+        intensidad: "moderada",
+        ...c,
+        ...p
+      }
+    });
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 10
+      }
+    }, Object.keys(CARDIO_MAQ).map(k => /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => setC({
+        maquina: k
+      }),
+      style: {
+        flex: 1,
+        padding: "10px 4px",
+        borderRadius: 14,
+        fontSize: 13,
+        fontWeight: 600,
+        background: (c.maquina || "bici") === k ? palette.green : palette.paperDark,
+        color: (c.maquina || "bici") === k ? "#FFFFFF" : palette.inkSoft
+      }
+    }, CARDIO_MAQ[k].icono, " ", CARDIO_MAQ[k].nombre))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Duración",
+      valor: c.min || 0,
+      paso: 5,
+      min: 5,
+      max: 300,
+      sufijo: "min",
+      onChange: v => setC({
+        min: v
+      })
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] uppercase tracking-wide mb-1 text-center",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Intensidad"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginBottom: 10
+      }
+    }, INTENSIDADES.map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+      key: k,
+      onClick: () => setC({
+        intensidad: k
+      }),
+      style: {
+        flex: 1,
+        padding: "8px 0",
+        borderRadius: 12,
+        fontSize: 12.5,
+        fontWeight: 600,
+        background: (c.intensidad || "moderada") === k ? palette.greenSoft : palette.paperDark,
+        color: (c.intensidad || "moderada") === k ? palette.greenDark : palette.inkSoft,
+        border: `1.5px solid ${(c.intensidad || "moderada") === k ? palette.green : "transparent"}`
+      }
+    }, l))), /*#__PURE__*/React.createElement("div", {
+      className: "text-[12.5px] text-center mb-3",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "≈ ", /*#__PURE__*/React.createElement("b", {
+      style: {
+        color: palette.ink
+      }
+    }, kcalCardio(c.maquina || "bici", c.intensidad || "moderada", pesoKg, (c.min || 0) * 60), " kcal"), " (con ", pesoKg, " kg)"), /*#__PURE__*/React.createElement("textarea", {
+      value: doc.notas || "",
+      onChange: e => cambiar({
+        notas: e.target.value
+      }),
+      placeholder: "Notas (resistencia, nivel, pulso…)",
+      rows: 2,
+      className: "w-full px-3 py-2 text-[13px] mb-3",
+      style: inputStyle
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: onEmpezar,
+      className: "w-full py-3 text-[13px] font-semibold",
+      style: {
+        background: palette.green,
+        color: "#FFFFFF",
+        borderRadius: 14
+      }
+    }, "▶ Empezar cardio"));
+  })(), doc.tipo === "carrera" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
@@ -10328,7 +12438,7 @@ function EditorDiaEntreno({
       color: "#FFFFFF",
       borderRadius: 14
     }
-  }, "▶ Empezar sesión · ~", minutosEstimados(ejercicios), " min"), ejercicios.map((it, i) => {
+  }, "▶ Empezar sesión · ~", minutosEstimados(ejercicios), " min · ~", kcalFuerza(pesoKg, minutosEstimados(ejercicios) * 60), " kcal"), ejercicios.map((it, i) => {
     const ej = EJ_POR_ID[it.eid];
     if (!ej) return null;
     const abierta = abierto === i;
@@ -10593,7 +12703,11 @@ function SelectorEjercicio({
 }) {
   const [grupo, setGrupo] = useState("Todos");
   const [aviso, setAviso] = useState(null);
-  const lista = EJERCICIOS.filter(e => grupo === "Todos" || e.grupo === grupo);
+  const [q, setQ] = useState("");
+  const [max, setMax] = useState(40);
+  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const nq = norm(q);
+  const lista = EJERCICIOS.filter(e => (grupo === "Todos" || e.grupo === grupo) && (!nq || norm(e.nombre + " " + e.musculos + " " + e.grupo).indexOf(nq) >= 0));
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
   }, /*#__PURE__*/React.createElement(BotonAtras, {
@@ -10605,9 +12719,23 @@ function SelectorEjercicio({
     style: {
       color: palette.inkSoft
     }
-  }, "Solo con 2 mancuernas y sin banco")), /*#__PURE__*/React.createElement("div", {
+  }, EJERCICIOS.length, " ejercicios · en casa, con o sin mancuernas")), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => {
+      setQ(e.target.value);
+      setMax(40);
+    },
+    placeholder: "Buscar (Ej. curl, glúteo, flexiones…)",
+    className: "w-full px-3 py-2 text-[13.5px] mb-2",
+    style: {
+      border: `1.5px solid ${palette.line}`,
+      background: palette.paperDark,
+      color: palette.ink,
+      borderRadius: 12
+    }
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -10617,7 +12745,10 @@ function SelectorEjercicio({
     }
   }, ["Todos", ...GRUPOS_EJ].map(g => /*#__PURE__*/React.createElement("button", {
     key: g,
-    onClick: () => setGrupo(g),
+    onClick: () => {
+      setGrupo(g);
+      setMax(40);
+    },
     style: {
       flexShrink: 0,
       padding: "6px 12px",
@@ -10632,7 +12763,12 @@ function SelectorEjercicio({
     style: {
       color: palette.greenDark
     }
-  }, aviso), lista.map(ej => {
+  }, aviso), lista.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] text-center py-6",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ningún ejercicio coincide."), lista.slice(0, max).map(ej => {
     const n = anadidos.filter(x => x === ej.id).length;
     return /*#__PURE__*/React.createElement("button", {
       key: ej.id,
@@ -10714,7 +12850,15 @@ function SelectorEjercicio({
         whiteSpace: "nowrap"
       }
     }, n ? `✓ ×${n}` : "+"));
-  }), /*#__PURE__*/React.createElement("button", {
+  }), lista.length > max && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setMax(m => m + 40),
+    className: "w-full py-2.5 mb-2 text-[13px] font-semibold",
+    style: {
+      background: palette.paperDark,
+      color: palette.greenDark,
+      borderRadius: 12
+    }
+  }, "Ver más (", lista.length - max, ")"), /*#__PURE__*/React.createElement("button", {
     onClick: onBack,
     className: "w-full py-3 mt-2 text-[13px] font-semibold",
     style: {
@@ -10730,6 +12874,7 @@ function SesionEntreno({
   doc,
   dia,
   perfilId,
+  pesoKg,
   registros,
   onSalir
 }) {
@@ -10865,6 +13010,7 @@ function SesionEntreno({
       duracion_s: duracion,
       volumen_kg: Math.round(volumen),
       series_hechas: hechasN,
+      kcal: kcalFuerza(pesoKg, duracion),
       ejercicios: ejs
     });
     onSalir(true);
@@ -10956,7 +13102,7 @@ function SesionEntreno({
         gap: 8,
         marginBottom: 14
       }
-    }, [["Duración", mmss(duracion)], ["Series", hechasN], ["Volumen", `${Math.round(volumen)} kg`]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
+    }, [["Duración", mmss(duracion)], ["Series", hechasN], ["Volumen", `${Math.round(volumen)} kg`], ["Kcal ≈", kcalFuerza(pesoKg, duracion)]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
       key: l,
       style: {
         flex: 1,
@@ -11258,7 +13404,7 @@ function SesionEntreno({
     style: {
       color: palette.inkSoft
     }
-  }, it.ej.desc), it.ej.pasos.map((t, k) => /*#__PURE__*/React.createElement("div", {
+  }, it.ej.desc || "Imita el movimiento de las fotos: la posición inicial y la final se alternan en la animación."), (it.ej.pasos || []).map((t, k) => /*#__PURE__*/React.createElement("div", {
     key: k,
     className: "text-[12.5px] mb-1",
     style: {
@@ -11390,6 +13536,7 @@ function SesionCarrera({
   doc,
   dia,
   perfilId,
+  pesoKg,
   onSalir
 }) {
   const km0 = Number(doc.carrera && doc.carrera.km || 0);
@@ -11446,6 +13593,7 @@ function SesionCarrera({
       titulo: doc.titulo || "Carrera",
       tipo: "carrera",
       km: Number(km) || 0,
+      kcal: kcalCarrera(pesoKg, Number(km) || 0),
       duracion_s: Math.round(minutos * 60)
     });
     onSalir(true);
@@ -11530,6 +13678,15 @@ function SesionCarrera({
     sufijo: "min",
     onChange: setMinutos
   })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Calorías ≈ ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.ink
+    }
+  }, kcalCarrera(pesoKg, Number(km) || 0), " kcal")), /*#__PURE__*/React.createElement("div", {
     className: "text-[13px] mb-3",
     style: {
       color: palette.inkSoft
@@ -11545,6 +13702,210 @@ function SesionCarrera({
       opacity: guardando ? 0.6 : 1
     }
   }, guardando ? "Guardando…" : "Guardar carrera"))));
+}
+
+// ---------- Sesión de cardio en máquina (bici / elíptica) ----------
+function SesionCardio({
+  doc,
+  dia,
+  perfilId,
+  pesoKg,
+  onSalir
+}) {
+  const c = doc.cardio || {
+    maquina: "bici",
+    min: 30,
+    intensidad: "moderada"
+  };
+  const maq = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
+  const objSeg = (c.min || 0) * 60;
+  const [corriendo, setCorriendo] = useState(false);
+  const [acum, setAcum] = useState(0);
+  const [t0, setT0] = useState(0);
+  const [, setTick] = useState(0);
+  const [terminada, setTerminada] = useState(false);
+  const [minutos, setMinutos] = useState(0);
+  const [inten, setInten] = useState(c.intensidad || "moderada");
+  const [guardando, setGuardando] = useState(false);
+  const avisado = useRef(false);
+  useEffect(() => {
+    let lock = null;
+    try {
+      if (navigator.wakeLock) navigator.wakeLock.request("screen").then(l => {
+        lock = l;
+      }).catch(() => {});
+    } catch (e) {}
+    return () => {
+      try {
+        if (lock) lock.release();
+      } catch (e) {}
+    };
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => setTick(n => n + 1), 500);
+    return () => clearInterval(id);
+  }, []);
+  const seg = Math.floor((acum + (corriendo ? Date.now() - t0 : 0)) / 1000);
+  useEffect(() => {
+    if (objSeg > 0 && seg >= objSeg && !avisado.current && corriendo) {
+      avisado.current = true;
+      pitido();
+      try {
+        navigator.vibrate && navigator.vibrate([200, 100, 200]);
+      } catch (e) {}
+    }
+  }, [seg]);
+  function alternar() {
+    if (corriendo) {
+      setAcum(a => a + Date.now() - t0);
+      setCorriendo(false);
+    } else {
+      setT0(Date.now());
+      setCorriendo(true);
+    }
+  }
+  function terminar() {
+    const total = acum + (corriendo ? Date.now() - t0 : 0);
+    setCorriendo(false);
+    setAcum(total);
+    setMinutos(Math.max(1, Math.round(total / 60000)));
+    setTerminada(true);
+  }
+  const kcal = kcalCardio(c.maquina, inten, pesoKg, minutos * 60);
+  async function guardar() {
+    setGuardando(true);
+    await sb.from("entreno_registros").insert({
+      perfil: perfilId,
+      fecha: toKey(hoy()),
+      dia: indiceDia(hoy()),
+      dia_plan: dia,
+      titulo: doc.titulo || maq.nombre,
+      tipo: "cardio",
+      maquina: c.maquina || "bici",
+      intensidad: inten,
+      duracion_s: minutos * 60,
+      kcal
+    });
+    onSalir(true);
+  }
+  const falta = Math.max(0, objSeg - seg);
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-5 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: () => onSalir(false)
+  }, "Salir"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, doc.titulo || maq.nombre), /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, maq.icono, " Objetivo: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.ink
+    }
+  }, c.min, " min"), " · ", c.intensidad || "moderada"), doc.notas ? /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, doc.notas) : null, !terminada ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      fontWeight: 700,
+      fontVariantNumeric: "tabular-nums",
+      margin: "26px 0 4px",
+      color: corriendo ? palette.green : palette.ink
+    }
+  }, mmss(seg)), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] mb-5",
+    style: {
+      color: palette.inkSoft
+    }
+  }, objSeg > 0 ? falta > 0 ? `Faltan ${mmss(falta)}` : "¡Objetivo cumplido!" : "", " · ≈ ", kcalCardio(c.maquina, inten, pesoKg, seg), " kcal"), /*#__PURE__*/React.createElement("button", {
+    onClick: alternar,
+    className: "w-full py-4 text-[16px] font-bold mb-2",
+    style: {
+      background: corriendo ? palette.redSoft : palette.green,
+      color: corriendo ? palette.red : "#FFFFFF",
+      borderRadius: 18
+    }
+  }, corriendo ? "⏸ Pausar" : seg > 0 ? "▶ Reanudar" : "▶ Empezar"), seg > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: terminar,
+    className: "w-full py-3 text-[13.5px] font-semibold",
+    style: {
+      border: `1.5px solid ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 16
+    }
+  }, "■ Terminar")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 40
+    }
+  }, "🏁"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mb-3"
+  }, "¡Cardio terminado!"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Tiempo",
+    valor: minutos,
+    paso: 1,
+    min: 1,
+    max: 600,
+    sufijo: "min",
+    onChange: setMinutos
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Intensidad"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 10
+    }
+  }, INTENSIDADES.map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setInten(k),
+    style: {
+      flex: 1,
+      padding: "8px 0",
+      borderRadius: 12,
+      fontSize: 12.5,
+      fontWeight: 600,
+      background: inten === k ? palette.greenSoft : palette.paperDark,
+      color: inten === k ? palette.greenDark : palette.inkSoft,
+      border: `1.5px solid ${inten === k ? palette.green : "transparent"}`
+    }
+  }, l))), /*#__PURE__*/React.createElement("div", {
+    className: "text-[15px] mb-3"
+  }, "Calorías ≈ ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.greenDark
+    }
+  }, kcal, " kcal")), /*#__PURE__*/React.createElement("button", {
+    onClick: guardar,
+    disabled: guardando,
+    className: "w-full py-3 text-[14px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14,
+      opacity: guardando ? 0.6 : 1
+    }
+  }, guardando ? "Guardando…" : "Guardar entreno"))));
 }
 
 // <<FIN_ENTRENO>>
@@ -11652,7 +14013,8 @@ function App() {
   }), tab === "recetas" && /*#__PURE__*/React.createElement(RecetasTab, {
     userId: userId
   }), tab === "productos" && /*#__PURE__*/React.createElement(ProductosTab, null), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null), tab === "entreno" && /*#__PURE__*/React.createElement(EntrenoTab, {
-    perfilId: perfilId
+    perfilId: perfilId,
+    userId: userId
   }))), /*#__PURE__*/React.createElement("div", {
     className: "fixed bottom-3 left-0 right-0 flex mx-auto",
     style: {
