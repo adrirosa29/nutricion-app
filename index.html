@@ -7551,6 +7551,8 @@ const EJERCICIOS = [
   grupo: "Pecho",
   musculos: "Pecho, tríceps, hombro",
   material: "Peso corporal",
+  prim: ["pecho", "triceps"],
+  sec: ["hombro_ant", "abdomen"],
   vista: "lado",
   ancla: "muneca",
   cx: 150,
@@ -7579,6 +7581,8 @@ const EJERCICIOS = [
   grupo: "Pecho",
   musculos: "Pecho, tríceps",
   material: "Peso corporal",
+  prim: ["pecho", "triceps"],
+  sec: ["hombro_ant", "abdomen"],
   vista: "lado",
   ancla: "muneca",
   cx: 150,
@@ -7607,6 +7611,8 @@ const EJERCICIOS = [
   grupo: "Pecho",
   musculos: "Pecho, tríceps, hombro",
   material: "2 mancuernas",
+  prim: ["pecho", "triceps"],
+  sec: ["hombro_ant"],
   vista: "lado",
   ancla: "cadera",
   cx: 110,
@@ -7637,6 +7643,8 @@ const EJERCICIOS = [
   grupo: "Pecho",
   musculos: "Pecho, dorsal, serrato",
   material: "1 mancuerna",
+  prim: ["dorsal", "pecho"],
+  sec: ["triceps"],
   vista: "lado",
   ancla: "cadera",
   cx: 120,
@@ -7670,6 +7678,8 @@ const EJERCICIOS = [
   grupo: "Espalda",
   musculos: "Dorsal, romboides, bíceps",
   material: "2 mancuernas",
+  prim: ["dorsal", "trapecio"],
+  sec: ["biceps", "hombro_post", "lumbar"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7698,6 +7708,8 @@ const EJERCICIOS = [
   grupo: "Espalda",
   musculos: "Femoral, glúteo, lumbar",
   material: "2 mancuernas",
+  prim: ["femoral", "gluteo"],
+  sec: ["lumbar", "trapecio", "antebrazo"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7726,6 +7738,8 @@ const EJERCICIOS = [
   grupo: "Espalda",
   musculos: "Lumbar, glúteo",
   material: "Peso corporal",
+  prim: ["lumbar"],
+  sec: ["gluteo", "hombro_post"],
   vista: "lado",
   ancla: "cadera",
   cx: 100,
@@ -7758,6 +7772,8 @@ const EJERCICIOS = [
   grupo: "Hombro",
   musculos: "Hombro, tríceps",
   material: "2 mancuernas",
+  prim: ["hombro_ant", "hombro_lat"],
+  sec: ["triceps", "trapecio"],
   vista: "lado",
   ancla: "tobillo",
   cx: 110,
@@ -7784,6 +7800,8 @@ const EJERCICIOS = [
   grupo: "Hombro",
   musculos: "Deltoides lateral",
   material: "2 mancuernas",
+  prim: ["hombro_lat"],
+  sec: ["trapecio"],
   vista: "frente",
   ancla: "cadera",
   cx: 110,
@@ -7810,6 +7828,8 @@ const EJERCICIOS = [
   grupo: "Hombro",
   musculos: "Deltoides anterior",
   material: "2 mancuernas",
+  prim: ["hombro_ant"],
+  sec: ["hombro_lat", "pecho"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7838,6 +7858,8 @@ const EJERCICIOS = [
   grupo: "Bíceps",
   musculos: "Bíceps",
   material: "2 mancuernas",
+  prim: ["biceps"],
+  sec: ["antebrazo"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7864,6 +7886,8 @@ const EJERCICIOS = [
   grupo: "Bíceps",
   musculos: "Bíceps, braquial, antebrazo",
   material: "2 mancuernas",
+  prim: ["biceps", "antebrazo"],
+  sec: [],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7893,6 +7917,8 @@ const EJERCICIOS = [
   grupo: "Tríceps",
   musculos: "Tríceps",
   material: "1 mancuerna",
+  prim: ["triceps"],
+  sec: [],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7920,6 +7946,8 @@ const EJERCICIOS = [
   grupo: "Tríceps",
   musculos: "Tríceps",
   material: "2 mancuernas",
+  prim: ["triceps"],
+  sec: ["hombro_post"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7948,6 +7976,8 @@ const EJERCICIOS = [
   grupo: "Pierna",
   musculos: "Cuádriceps, glúteo",
   material: "1 mancuerna",
+  prim: ["cuadriceps", "gluteo"],
+  sec: ["aductores", "abdomen", "lumbar"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -7976,6 +8006,8 @@ const EJERCICIOS = [
   musculos: "Cuádriceps, glúteo",
   material: "2 mancuernas",
   lado: "pierna",
+  prim: ["cuadriceps", "gluteo"],
+  sec: ["femoral", "aductores"],
   vista: "lado",
   ancla: "tobillo",
   cx: 120,
@@ -8010,6 +8042,8 @@ const EJERCICIOS = [
   grupo: "Pierna",
   musculos: "Glúteo, femoral",
   material: "Peso corporal (o 1 mancuerna)",
+  prim: ["gluteo"],
+  sec: ["femoral", "abdomen"],
   vista: "lado",
   ancla: "tobillo",
   cx: 120,
@@ -8040,6 +8074,8 @@ const EJERCICIOS = [
   grupo: "Pierna",
   musculos: "Gemelos",
   material: "2 mancuernas",
+  prim: ["gemelos"],
+  sec: [],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -8071,6 +8107,8 @@ const EJERCICIOS = [
   musculos: "Abdomen, core",
   material: "Peso corporal",
   unidad: "s",
+  prim: ["abdomen"],
+  sec: ["oblicuos", "hombro_ant", "lumbar", "gluteo"],
   vista: "lado",
   ancla: "tobillo",
   cx: 60,
@@ -8100,6 +8138,8 @@ const EJERCICIOS = [
   grupo: "Core",
   musculos: "Abdomen",
   material: "Peso corporal",
+  prim: ["abdomen"],
+  sec: ["oblicuos"],
   vista: "lado",
   ancla: "cadera",
   cx: 100,
@@ -8130,6 +8170,8 @@ const EJERCICIOS = [
   grupo: "Core",
   musculos: "Abdomen inferior",
   material: "Peso corporal",
+  prim: ["abdomen"],
+  sec: ["cuadriceps"],
   vista: "lado",
   ancla: "cadera",
   cx: 70,
@@ -8160,6 +8202,8 @@ const EJERCICIOS = [
   grupo: "Core",
   musculos: "Core profundo",
   material: "Peso corporal",
+  prim: ["abdomen"],
+  sec: ["oblicuos"],
   vista: "lado",
   ancla: "cadera",
   cx: 100,
@@ -8204,6 +8248,8 @@ const EJERCICIOS = [
   musculos: "Dorsal, romboides, bíceps",
   material: "1 mancuerna (apoyo en silla o rodilla)",
   lado: "brazo",
+  prim: ["dorsal", "trapecio"],
+  sec: ["biceps", "hombro_post", "lumbar"],
   vista: "lado",
   ancla: "tobillo",
   cx: 100,
@@ -8237,6 +8283,8 @@ const EJERCICIOS = [
   grupo: "Pecho",
   musculos: "Pecho, hombro anterior",
   material: "2 mancuernas",
+  prim: ["pecho"],
+  sec: ["hombro_ant"],
   vista: "lado",
   ancla: "cadera",
   cx: 110,
@@ -8273,6 +8321,8 @@ const EJERCICIOS = [
   musculos: "Cuádriceps, glúteo",
   material: "2 mancuernas + silla o sofá",
   lado: "pierna",
+  prim: ["cuadriceps", "gluteo"],
+  sec: ["femoral", "aductores"],
   vista: "lado",
   ancla: "tobillo",
   cx: 125,
@@ -8308,6 +8358,8 @@ const EJERCICIOS = [
   grupo: "Pierna",
   musculos: "Glúteo, femoral",
   material: "1 mancuerna",
+  prim: ["gluteo"],
+  sec: ["femoral"],
   vista: "lado",
   ancla: "tobillo",
   cx: 120,
@@ -8339,6 +8391,8 @@ const EJERCICIOS = [
   grupo: "Hombro",
   musculos: "Deltoides posterior, romboides",
   material: "2 mancuernas",
+  prim: ["hombro_post"],
+  sec: ["trapecio", "dorsal"],
   vista: "frente",
   ancla: "cadera",
   cx: 110,
@@ -8367,6 +8421,8 @@ const EJERCICIOS = [
   grupo: "Core",
   musculos: "Abdomen inferior",
   material: "Peso corporal",
+  prim: ["abdomen"],
+  sec: ["oblicuos"],
   vista: "lado",
   ancla: "cadera",
   cx: 100,
@@ -8397,6 +8453,8 @@ const EJERCICIOS = [
   grupo: "Core",
   musculos: "Abdomen y oblicuos",
   material: "Peso corporal",
+  prim: ["abdomen", "oblicuos"],
+  sec: [],
   vista: "lado",
   ancla: "cadera",
   cx: 100,
@@ -8433,6 +8491,25 @@ const EJERCICIOS = [
   desc: "Pedalea en el aire llevando el codo hacia la rodilla contraria. Cada repetición es un lado.",
   pasos: ["Tumbado con las manos tras la cabeza y los hombros ligeramente elevados.", "Lleva una rodilla al pecho mientras estiras la otra pierna.", "Gira el tronco llevando el codo hacia la rodilla contraria y alterna sin prisa."]
 }];
+const MUSCULOS = {
+  pecho: "Pecho",
+  hombro_ant: "Hombro (frontal)",
+  hombro_lat: "Hombro (lateral)",
+  hombro_post: "Hombro (posterior)",
+  biceps: "Bíceps",
+  triceps: "Tríceps",
+  antebrazo: "Antebrazo",
+  abdomen: "Abdomen",
+  oblicuos: "Oblicuos",
+  trapecio: "Trapecio",
+  dorsal: "Dorsal",
+  lumbar: "Lumbar",
+  gluteo: "Glúteo",
+  cuadriceps: "Cuádriceps",
+  femoral: "Femoral",
+  aductores: "Aductores",
+  gemelos: "Gemelos"
+};
 const EJ_POR_ID = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
 
 // ---------- Plantillas de día ----------
@@ -8895,6 +8972,202 @@ function cajaEjercicio(ej) {
   return caja;
 }
 
+// ---------- Mapa muscular (silueta frontal y trasera) ----------
+// Formas del lado izquierdo (x < 50); "centro" no se refleja. t: l = línea gruesa, e = elipse, p = path.
+const MAPA_BASE = [{
+  t: "c",
+  x: 50,
+  y: 14,
+  r: 9,
+  centro: true
+}, {
+  t: "l",
+  x1: 50,
+  y1: 24,
+  x2: 50,
+  y2: 33,
+  w: 8,
+  centro: true
+}, {
+  t: "p",
+  d: "M30 34 Q50 28 70 34 L73 62 Q72 86 66 102 L62 116 L38 116 L34 102 Q28 86 27 62 Z",
+  centro: true
+}, {
+  t: "l",
+  x1: 24,
+  y1: 38,
+  x2: 18,
+  y2: 72,
+  w: 10
+}, {
+  t: "l",
+  x1: 18,
+  y1: 72,
+  x2: 14,
+  y2: 106,
+  w: 8
+}, {
+  t: "c",
+  x: 13,
+  y: 110,
+  r: 4.5
+}, {
+  t: "l",
+  x1: 42,
+  y1: 118,
+  x2: 39,
+  y2: 154,
+  w: 17
+}, {
+  t: "l",
+  x1: 39,
+  y1: 154,
+  x2: 38,
+  y2: 198,
+  w: 11
+}, {
+  t: "e",
+  x: 37,
+  y: 203,
+  rx: 7,
+  ry: 3
+}];
+const MAPA_FRENTE = [{
+  m: "pecho",
+  t: "p",
+  d: "M49 38 Q40 36 31 43 Q31 55 41 58 Q49 58 49 50 Z"
+}, {
+  m: "hombro_ant",
+  t: "e",
+  x: 30,
+  y: 39,
+  rx: 5.2,
+  ry: 6.5
+}, {
+  m: "hombro_lat",
+  t: "e",
+  x: 24.5,
+  y: 41,
+  rx: 4.2,
+  ry: 6.5
+}, {
+  m: "biceps",
+  t: "l",
+  x1: 21,
+  y1: 46,
+  x2: 19,
+  y2: 66,
+  w: 7.5
+}, {
+  m: "antebrazo",
+  t: "l",
+  x1: 17,
+  y1: 76,
+  x2: 15,
+  y2: 98,
+  w: 6.5
+}, {
+  m: "abdomen",
+  t: "p",
+  d: "M43.5 62 L56.5 62 L56.5 99 Q50 106 43.5 99 Z",
+  centro: true
+}, {
+  m: "oblicuos",
+  t: "p",
+  d: "M40 62 Q33 74 36 98 L42 100 L42.5 62 Z"
+}, {
+  m: "cuadriceps",
+  t: "l",
+  x1: 42,
+  y1: 122,
+  x2: 39,
+  y2: 150,
+  w: 12.5
+}, {
+  m: "aductores",
+  t: "l",
+  x1: 46.5,
+  y1: 122,
+  x2: 45.5,
+  y2: 146,
+  w: 4.5
+}];
+const MAPA_ESPALDA = [{
+  m: "trapecio",
+  t: "p",
+  d: "M50 29 L38 37 Q41 48 45 58 L50 64 L55 58 Q59 48 62 37 Z",
+  centro: true
+}, {
+  m: "hombro_post",
+  t: "e",
+  x: 29,
+  y: 40,
+  rx: 5.5,
+  ry: 6.5
+}, {
+  m: "triceps",
+  t: "l",
+  x1: 21,
+  y1: 46,
+  x2: 19,
+  y2: 67,
+  w: 8
+}, {
+  m: "antebrazo",
+  t: "l",
+  x1: 17,
+  y1: 76,
+  x2: 15,
+  y2: 98,
+  w: 6.5
+}, {
+  m: "dorsal",
+  t: "p",
+  d: "M44.5 58 Q34 60 31 72 Q33 88 43 94 L48.5 92 L48.5 64 Z"
+}, {
+  m: "lumbar",
+  t: "p",
+  d: "M44 92 L56 92 L55 106 L45 106 Z",
+  centro: true
+}, {
+  m: "gluteo",
+  t: "e",
+  x: 43.5,
+  y: 113,
+  rx: 8.5,
+  ry: 8
+}, {
+  m: "femoral",
+  t: "l",
+  x1: 42,
+  y1: 128,
+  x2: 40,
+  y2: 152,
+  w: 12
+}, {
+  m: "gemelos",
+  t: "l",
+  x1: 39,
+  y1: 162,
+  x2: 38,
+  y2: 186,
+  w: 9.5
+}];
+// Color de un músculo: principal / secundario, o intensidad 0..1 (mapa de calor)
+function colorMusculo(m, prim, sec, calor) {
+  if (calor) {
+    const v = Math.max(0, Math.min(1, calor[m] || 0));
+    if (v <= 0) return "#E4EBE1";
+    const a = [244, 196, 160],
+      b = [214, 76, 28];
+    const c = a.map((x, i) => Math.round(x + (b[i] - x) * v));
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
+  if (prim && prim.indexOf(m) >= 0) return "#E0561E";
+  if (sec && sec.indexOf(m) >= 0) return "#F6BC9C";
+  return "#E4EBE1";
+}
+
 // ---------- Entreno: plan semanal, editor, sesión guiada ----------
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DIAS_CORTO = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
@@ -9087,6 +9360,211 @@ function AnimacionEjercicio({
     ej: ej,
     k: k
   });
+}
+
+// ---------- Mapa muscular ----------
+function FormaMapa({
+  f,
+  fill,
+  espejo
+}) {
+  const sx = x => espejo ? 100 - x : x;
+  if (f.t === "l") return /*#__PURE__*/React.createElement("line", {
+    x1: sx(f.x1),
+    y1: f.y1,
+    x2: sx(f.x2),
+    y2: f.y2,
+    stroke: fill,
+    strokeWidth: f.w,
+    strokeLinecap: "round"
+  });
+  if (f.t === "c") return /*#__PURE__*/React.createElement("circle", {
+    cx: sx(f.x),
+    cy: f.y,
+    r: f.r,
+    fill: fill
+  });
+  if (f.t === "e") return /*#__PURE__*/React.createElement("ellipse", {
+    cx: sx(f.x),
+    cy: f.y,
+    rx: f.rx,
+    ry: f.ry,
+    fill: fill
+  });
+  if (f.t === "p") return /*#__PURE__*/React.createElement("path", {
+    d: f.d,
+    fill: fill,
+    transform: espejo ? "translate(100,0) scale(-1,1)" : undefined
+  });
+  return null;
+}
+function SiluetaMapa({
+  formas,
+  musculos,
+  prim,
+  sec,
+  calor,
+  etiqueta
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 100 210",
+    style: {
+      width: "100%",
+      display: "block"
+    },
+    role: "img",
+    "aria-label": etiqueta
+  }, MAPA_BASE.map((f, i) => /*#__PURE__*/React.createElement("g", {
+    key: "b" + i
+  }, /*#__PURE__*/React.createElement(FormaMapa, {
+    f: f,
+    fill: "#CBD6C8"
+  }), !f.centro && /*#__PURE__*/React.createElement(FormaMapa, {
+    f: f,
+    fill: "#CBD6C8",
+    espejo: true
+  }))), formas.map((f, i) => {
+    const col = colorMusculo(f.m, prim, sec, calor);
+    return /*#__PURE__*/React.createElement("g", {
+      key: "m" + i
+    }, /*#__PURE__*/React.createElement(FormaMapa, {
+      f: f,
+      fill: col
+    }), !f.centro && /*#__PURE__*/React.createElement(FormaMapa, {
+      f: f,
+      fill: col,
+      espejo: true
+    }));
+  }));
+}
+function MapaMusculos({
+  prim,
+  sec,
+  calor,
+  ancho
+}) {
+  const w = ancho || 150;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      gap: 10
+    }
+  }, [["Frente", MAPA_FRENTE], ["Espalda", MAPA_ESPALDA]].map(([t, formas]) => /*#__PURE__*/React.createElement("div", {
+    key: t,
+    style: {
+      width: w,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(SiluetaMapa, {
+    formas: formas,
+    prim: prim,
+    sec: sec,
+    calor: calor,
+    etiqueta: t
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      color: palette.inkSoft,
+      marginTop: 2
+    }
+  }, t))));
+}
+function PanelMusculos({
+  ej,
+  ancho
+}) {
+  const prim = ej.prim || [],
+    sec = ej.sec || [];
+  const chip = (m, c, t) => /*#__PURE__*/React.createElement("span", {
+    key: m,
+    style: {
+      display: "inline-block",
+      fontSize: 11,
+      fontWeight: 600,
+      padding: "3px 9px",
+      borderRadius: 999,
+      background: c,
+      color: t,
+      margin: "2px 3px 2px 0"
+    }
+  }, MUSCULOS[m] || m);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFFFFF",
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 14,
+      padding: "10px 10px 8px",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(MapaMusculos, {
+    prim: prim,
+    sec: sec,
+    ancho: ancho || 96
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, prim.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: palette.inkSoft,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginRight: 6
+    }
+  }, "Principal"), prim.map(m => chip(m, "#E0561E", "#FFFFFF"))), sec.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: palette.inkSoft,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginRight: 6
+    }
+  }, "Secundario"), sec.map(m => chip(m, "#F6BC9C", "#7A2E0C")))));
+}
+// Intensidad por músculo (0..1) a partir de [{eid, series}]
+function calorDeItems(items) {
+  const t = {};
+  items.forEach(it => {
+    const ej = EJ_POR_ID[it.eid];
+    if (!ej) return;
+    const n = Number(it.series) || 0;
+    (ej.prim || []).forEach(m => {
+      t[m] = (t[m] || 0) + n;
+    });
+    (ej.sec || []).forEach(m => {
+      t[m] = (t[m] || 0) + n * 0.5;
+    });
+  });
+  const mx = Math.max(0, ...Object.values(t));
+  const r = {};
+  Object.keys(t).forEach(m => {
+    r[m] = mx ? Math.max(0.15, t[m] / mx) : 0;
+  });
+  return {
+    calor: r,
+    series: t
+  };
+}
+// ¿Algún set supera lo anterior? (peso, o repeticiones si no hay peso)
+function esRecord(registros, eid, series) {
+  let maxP = 0,
+    maxR = 0,
+    hubo = false;
+  registros.forEach(r => (r.ejercicios || []).forEach(e => {
+    if (e.eid === eid) {
+      hubo = true;
+      (e.series || []).forEach(v => {
+        maxP = Math.max(maxP, Number(v.peso) || 0);
+        maxR = Math.max(maxR, Number(v.reps) || 0);
+      });
+    }
+  }));
+  if (!hubo) return false;
+  return series.some(v => maxP > 0 || Number(v.peso) > 0 ? Number(v.peso) > maxP : Number(v.reps) > maxR);
 }
 function Stepper({
   etiqueta,
@@ -9395,7 +9873,76 @@ function EntrenoTab({
       color: "#FFFFFF",
       borderRadius: 12
     }
-  }, "Cargar esta semana")), [0, 1, 2, 3, 4, 5, 6].map(d => {
+  }, "Cargar esta semana")), diasConPlan.some(d => (plan[d].ejercicios || []).length) && (() => {
+    const {
+      calor,
+      series
+    } = calorDeItems(diasConPlan.flatMap(d => plan[d].ejercicios || []));
+    const top = Object.keys(series).sort((a, b) => series[b] - series[a]);
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#FFFFFF",
+        border: `1.5px solid ${palette.line}`,
+        borderRadius: 16,
+        padding: "10px 12px 8px",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        fontWeight: 700,
+        marginBottom: 4
+      }
+    }, "Músculos de la semana"), /*#__PURE__*/React.createElement(MapaMusculos, {
+      calor: calor,
+      ancho: 92
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 6
+      }
+    }, top.slice(0, 8).map(m => /*#__PURE__*/React.createElement("div", {
+      key: m,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        margin: "3px 0"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 104,
+        fontSize: 11.5
+      }
+    }, MUSCULOS[m]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        height: 7,
+        background: palette.paperDark,
+        borderRadius: 999,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: `${Math.round(calor[m] * 100)}%`,
+        height: "100%",
+        background: colorMusculo(m, null, null, calor),
+        borderRadius: 999
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 54,
+        fontSize: 11,
+        textAlign: "right",
+        color: palette.inkSoft
+      }
+    }, Math.round(series[m]), " series")))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        color: palette.inkSoft,
+        marginTop: 4
+      }
+    }, "Según las series planificadas (secundarios cuentan la mitad)."));
+  })(), [0, 1, 2, 3, 4, 5, 6].map(d => {
     const doc = plan[d];
     const fecha = fechaDeDia(lunes, d);
     const esHoy = toKey(fecha) === toKey(hoyD);
@@ -9850,13 +10397,15 @@ function EditorDiaEntreno({
       }
     }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
       ej: ej
-    })), /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/React.createElement(PanelMusculos, {
+      ej: ej
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: palette.inkSoft,
         marginBottom: 8
       }
-    }, ej.musculos, " · ", ej.material), ult && /*#__PURE__*/React.createElement("div", {
+    }, ej.material), ult && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         marginBottom: 8,
@@ -10126,14 +10675,36 @@ function SelectorEjercicio({
       }
     }, ej.nombre), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 11.5,
-        color: palette.inkSoft,
-        marginTop: 2
+        marginTop: 3
       }
-    }, ej.musculos), /*#__PURE__*/React.createElement("div", {
+    }, (ej.prim || []).map(m => /*#__PURE__*/React.createElement("span", {
+      key: m,
+      style: {
+        display: "inline-block",
+        fontSize: 10.5,
+        fontWeight: 600,
+        padding: "1px 7px",
+        borderRadius: 999,
+        background: "#E0561E",
+        color: "#FFFFFF",
+        margin: "1px 3px 1px 0"
+      }
+    }, MUSCULOS[m])), (ej.sec || []).slice(0, 2).map(m => /*#__PURE__*/React.createElement("span", {
+      key: m,
+      style: {
+        display: "inline-block",
+        fontSize: 10.5,
+        padding: "1px 7px",
+        borderRadius: 999,
+        background: "#F6BC9C",
+        color: "#7A2E0C",
+        margin: "1px 3px 1px 0"
+      }
+    }, MUSCULOS[m]))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
-        color: palette.inkSoft
+        color: palette.inkSoft,
+        marginTop: 2
       }
     }, ej.material)), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -10423,7 +10994,17 @@ function SesionEntreno({
           fontSize: 13,
           fontWeight: 600
         }
-      }, itm.ej.nombre), /*#__PURE__*/React.createElement("div", {
+      }, itm.ej.nombre, esRecord(registros, itm.eid, sr) && /*#__PURE__*/React.createElement("span", {
+        style: {
+          marginLeft: 8,
+          fontSize: 10.5,
+          fontWeight: 700,
+          padding: "2px 7px",
+          borderRadius: 999,
+          background: "#FFE08A",
+          color: "#6B4A00"
+        }
+      }, "🏆 Récord")), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11.5,
           color: palette.inkSoft
@@ -10655,7 +11236,10 @@ function SesionEntreno({
     }
   }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
     ej: it.ej
-  })), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement(PanelMusculos, {
+    ej: it.ej,
+    ancho: 84
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setVerInfo(v => !v),
     className: "text-[12px] mb-2",
     style: {
