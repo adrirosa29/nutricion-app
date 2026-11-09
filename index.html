@@ -8745,8 +8745,8 @@ function ejerciciosDePlantilla(pl) {
   return pl.ej.map(([eid, series, repsMin, repsMax, peso, descanso, porLado, nota]) => ({
     eid,
     series,
-    repsMin,
-    reps: repsMax,
+    repsMin: 0,
+    reps: repsMin > 0 ? repsMin : repsMax,
     peso,
     descanso,
     porLado: !!porLado,
@@ -11328,15 +11328,34 @@ function pitido() {
   } catch (e) {}
 }
 function textoReps(it, ej) {
-  const max = Number(it.reps) || 0,
-    min = Number(it.repsMin) || 0;
-  return (min > 0 && min < max ? `${min}-${max}` : `${max}`) + (ej && ej.unidad === "s" ? " s" : "");
+  return `${Number(it.reps) || 0}` + (ej && ej.unidad === "s" ? " s" : "");
 }
 function textoLado(it, ej) {
   return it.porLado ? ` por ${ej && ej.lado || "lado"}` : "";
 }
 function resumenItem(it, ej) {
   return `${it.series} × ${textoReps(it, ej)}${textoLado(it, ej)}${Number(it.peso) > 0 ? ` · ${String(it.peso).replace(".", ",")} kg` : ""} · desc. ${it.descanso}s`;
+}
+// Compara lo planificado con la última sesión registrada: "+2 repeticiones respecto a la semana pasada"
+function progresoRespecto(registros, it, ej) {
+  const hoyK = toKey(hoy());
+  const orden = registros.filter(r => r.fecha < hoyK).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  for (const r of orden) {
+    const e = (r.ejercicios || []).find(x => x.eid === it.eid);
+    if (!e || !(e.series || []).length) continue;
+    const prevReps = Math.max(...e.series.map(s => Number(s.reps) || 0));
+    const prevPeso = Math.max(...e.series.map(s => Number(s.peso) || 0));
+    const dReps = (Number(it.reps) || 0) - prevReps,
+      dPeso = Math.round(((Number(it.peso) || 0) - prevPeso) * 10) / 10;
+    const lunesAct = lunesDe(hoy()),
+      lunesAnt = fechaDeDia(lunesAct, -7);
+    const cuando = r.fecha >= toKey(lunesAnt) && r.fecha < toKey(lunesAct) ? "la semana pasada" : "la última vez";
+    const partes = [];
+    if (dPeso > 0) partes.push(`+${String(dPeso).replace(".", ",")} kg`);
+    if (dReps > 0 && dPeso >= 0) partes.push(`+${dReps} ${ej && ej.unidad === "s" ? "segundos" : dReps === 1 ? "repetición" : "repeticiones"}`);
+    return partes.length ? `▲ ${partes.join(" y ")} respecto a ${cuando}` : null;
+  }
+  return null;
 }
 function ultimaVez(registros, eid) {
   const orden = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
@@ -11866,7 +11885,16 @@ function EntrenoTab({
         o = {};
       const filas = p && p.data || [];
       const marca = filas.find(d => d.tipo === "marca");
-      filas.forEach(d => {
+      const norm = d => ({
+        ...d,
+        ejercicios: (d.ejercicios || []).map(it => Number(it.repsMin) > 0 ? {
+          ...it,
+          reps: it.repsMin,
+          repsMin: 0
+        } : it)
+      });
+      filas.forEach(d0 => {
+        const d = norm(d0);
         if (d.tipo === "marca") return;
         if (d.semana) o[d.semana + "|" + d.dia] = d;else m[d.dia] = d;
       });
@@ -13497,7 +13525,17 @@ function EditorDiaEntreno({
         color: palette.inkSoft,
         marginTop: 2
       }
-    }, resumenItem(it, ej))), /*#__PURE__*/React.createElement("div", {
+    }, resumenItem(it, ej)), (() => {
+      const m = progresoRespecto(registros, it, ej);
+      return m ? /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 700,
+          color: palette.greenDark,
+          marginTop: 2
+        }
+      }, m) : null;
+    })()), /*#__PURE__*/React.createElement("div", {
       style: {
         color: palette.inkSoft,
         fontSize: 16
@@ -13543,14 +13581,14 @@ function EditorDiaEntreno({
         series: v
       })
     }), /*#__PURE__*/React.createElement(Stepper, {
-      etiqueta: ej.unidad === "s" ? "Segundos (máx.)" : "Reps (máx.)",
+      etiqueta: ej.unidad === "s" ? "Segundos" : "Repeticiones",
       valor: it.reps,
       min: 1,
       max: 200,
       paso: ej.unidad === "s" ? 5 : 1,
       onChange: v => cambiarItem(i, {
         reps: v,
-        repsMin: Math.min(Number(it.repsMin) || 0, v)
+        repsMin: 0
       })
     })), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -13559,15 +13597,6 @@ function EditorDiaEntreno({
         marginBottom: 8
       }
     }, /*#__PURE__*/React.createElement(Stepper, {
-      etiqueta: ej.unidad === "s" ? "Segundos (mín.)" : "Reps (mín.)",
-      valor: it.repsMin || 0,
-      min: 0,
-      max: it.reps,
-      paso: ej.unidad === "s" ? 5 : 1,
-      onChange: v => cambiarItem(i, {
-        repsMin: v
-      })
-    }), /*#__PURE__*/React.createElement(Stepper, {
       etiqueta: "Peso (kg)",
       valor: it.peso,
       min: 0,
@@ -13577,11 +13606,6 @@ function EditorDiaEntreno({
         peso: v
       })
     })), /*#__PURE__*/React.createElement("div", {
-      className: "text-[10.5px] mb-2 text-center",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "Mín. a 0 = número fijo de repeticiones. Con rango (ej. 10-15) la app te lo muestra como objetivo."), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -14492,7 +14516,16 @@ function SesionEntreno({
       color: palette.inkSoft,
       minHeight: 16
     }
-  }, ult ? `Última vez: ${ult.reps}${porTiempo ? " s" : ""}${ult.peso > 0 ? ` × ${String(ult.peso).replace(".", ",")} kg` : ""}` : "Ajusta lo que hagas de verdad"), porTiempo && !finTrab && /*#__PURE__*/React.createElement("button", {
+  }, ult ? `Última vez: ${ult.reps}${porTiempo ? " s" : ""}${ult.peso > 0 ? ` × ${String(ult.peso).replace(".", ",")} kg` : ""}` : "Ajusta lo que hagas de verdad"), (() => {
+    const m = progresoRespecto(registros, it, it.ej);
+    return m ? /*#__PURE__*/React.createElement("div", {
+      className: "text-[12px] mb-2 text-center",
+      style: {
+        color: palette.greenDark,
+        fontWeight: 700
+      }
+    }, m) : null;
+  })(), porTiempo && !finTrab && /*#__PURE__*/React.createElement("button", {
     onClick: () => setFinTrab(Date.now() + (Number(val.reps) || 30) * 1000),
     className: "w-full py-3 mb-2 text-[14px] font-semibold",
     style: {
