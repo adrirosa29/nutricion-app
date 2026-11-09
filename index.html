@@ -8722,26 +8722,24 @@ const EJ_POR_ID = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
 
 // ---------- Plantillas de día ----------
 // [ejercicio, series, repsMín, repsMáx, peso kg, descanso s, porLado, nota]
-const PLANTILLAS_ENTRENO = [{
-  id: "sup_a",
-  nombre: "Tren superior A (pecho y espalda)",
-  ej: [["press_suelo", 4, 10, 15, 10, 75], ["remo_unilateral", 4, 10, 15, 10, 75, true], ["press_militar", 3, 10, 12, 8, 75], ["aperturas_suelo", 3, 12, 15, 6, 60], ["pullover", 3, 12, 15, 8, 60], ["crunch_inverso", 3, 15, 20, 0, 45]]
+const PLANTILLAS_ENTRENO = [
+// [ejercicio, series, repsMin, repsMax, peso kg, descanso s, porLado, nota]
+{
+  id: "torso_a",
+  nombre: "Torso A (pecho, espalda y hombros)",
+  ej: [["press_suelo", 4, 12, 20, 10, 75], ["remo_unilateral", 4, 12, 20, 10, 75, true], ["press_militar", 3, 8, 12, 8, 75], ["aperturas_suelo", 3, 12, 15, 6, 45], ["elevaciones_laterales", 3, 12, 20, 4, 45], ["flexiones", 2, 0, 12, 0, 75, false, "Al fallo menos 1 repetición"], ["crunch", 3, 12, 15, 0, 30, false, "Con una mancuerna sujeta contra el pecho"], ["plancha", 3, 30, 45, 0, 30]]
 }, {
-  id: "piernas",
-  nombre: "Piernas (mantenimiento y fuerza)",
-  ej: [["sentadilla_goblet", 3, 12, 15, 12, 75], ["peso_muerto_rumano", 3, 12, 15, 10, 75], ["sentadilla_bulgara", 2, 10, 10, 8, 75, true, "Pie de atrás sobre una silla o sofá"], ["hip_thrust", 3, 15, 15, 10, 60], ["elevacion_talones", 3, 15, 20, 8, 45]]
+  id: "torso_b",
+  nombre: "Torso B (espalda, pecho y brazos)",
+  ej: [["remo_inclinado", 4, 12, 20, 10, 75], ["press_suelo", 3, 12, 20, 10, 75], ["pullover", 3, 12, 15, 8, 45], ["db_Dumbbell_Alternate_Bicep_Curl", 3, 10, 15, 6, 45], ["triceps_nuca", 3, 10, 15, 6, 45], ["pajaros", 3, 15, 20, 4, 45], ["elevaciones_laterales", 3, 15, 20, 4, 45], ["elevacion_piernas", 3, 12, 15, 0, 30], ["db_Side_Bridge", 3, 30, 30, 0, 30, true]]
 }, {
-  id: "sup_b",
-  nombre: "Tren superior B (espalda y hombros)",
-  ej: [["remo_inclinado", 4, 12, 15, 10, 75], ["remo_unilateral", 3, 12, 12, 10, 60, true], ["elevaciones_laterales", 4, 15, 20, 4, 45], ["pajaros", 3, 15, 15, 4, 45], ["curl_biceps", 3, 12, 15, 6, 60], ["curl_martillo", 2, 12, 15, 6, 60], ["bicicleta_abdominal", 3, 20, 20, 0, 45, false, "10 por lado"]]
+  id: "pierna",
+  nombre: "Pierna",
+  ej: [["sentadilla_goblet", 3, 15, 20, 12, 75], ["peso_muerto_rumano", 3, 12, 20, 12, 75], ["sentadilla_bulgara", 2, 10, 12, 8, 75, true, "Pie trasero apoyado en el sofá"], ["puente_gluteo", 3, 15, 20, 12, 45, false, "Con una mancuerna sobre la cadera"], ["elevacion_talones", 3, 15, 20, 8, 45, false, "A una pierna"]]
 }, {
-  id: "sup_c",
-  nombre: "Tren superior C (pecho, brazos y abdomen)",
-  ej: [["press_suelo", 4, 10, 15, 10, 75], ["flexiones", 3, 0, 15, 0, 60, false, "Cerca del fallo técnico"], ["press_militar", 3, 10, 12, 8, 75], ["curl_biceps", 3, 12, 15, 6, 60], ["triceps_nuca", 3, 12, 15, 8, 60], ["elevaciones_laterales", 2, 15, 20, 4, 45], ["plancha", 3, 40, 60, 0, 45]]
-}, {
-  id: "full",
-  nombre: "Cuerpo entero",
-  ej: [["sentadilla_goblet", 3, 10, 12, 12, 60], ["flexiones", 3, 8, 10, 0, 60], ["remo_inclinado", 3, 10, 12, 10, 60], ["press_militar", 3, 10, 12, 8, 60], ["puente_gluteo", 3, 15, 15, 0, 45], ["plancha", 3, 40, 40, 0, 45]]
+  id: "torso_c",
+  nombre: "Torso C (hombros, brazos y pecho)",
+  ej: [["press_militar", 3, 10, 12, 8, 75], ["remo_inclinado", 3, 12, 20, 10, 75], ["elevaciones_laterales", 4, 12, 20, 4, 45], ["db_Push-Ups_With_Feet_Elevated", 3, 10, 15, 0, 75], ["curl_martillo", 3, 10, 15, 6, 45], ["patada_triceps", 3, 10, 15, 4, 45, false, "Patada o tumbado"], ["pajaros", 3, 15, 20, 4, 45], ["bicicleta_abdominal", 3, 20, 20, 0, 30], ["plancha", 3, 40, 40, 0, 30]]
 }];
 function ejerciciosDePlantilla(pl) {
   return pl.ej.map(([eid, series, repsMin, repsMax, peso, descanso, porLado, nota]) => ({
@@ -8755,29 +8753,28 @@ function ejerciciosDePlantilla(pl) {
     nota: nota || ""
   }));
 }
-// Semana completa sugerida: 3 días de tren superior, 1 de piernas, 2 de running y 1 de descanso.
+// Plan predefinido: Torso A, correr suave, Torso B, Pierna, Torso C y dos días de descanso.
+const PLAN_VERSION = 2;
 const PLAN_SEMANAL_BASE = [{
   tipo: "fuerza",
-  plantilla: "sup_a"
-}, {
-  tipo: "fuerza",
-  plantilla: "piernas"
+  plantilla: "torso_a"
 }, {
   tipo: "carrera",
-  titulo: "Running 7 km",
+  titulo: "Correr 7 km",
   km: 7,
-  notas: "Ritmo cómodo-moderado. Más adelante se pueden introducir intervalos poco a poco."
+  notas: "Ritmo suave, en el que puedas hablar mientras corres."
 }, {
   tipo: "fuerza",
-  plantilla: "sup_b"
+  plantilla: "torso_b"
 }, {
   tipo: "fuerza",
-  plantilla: "sup_c"
+  plantilla: "pierna",
+  notas: "Intensidad moderada: termina las series con 2–3 repeticiones en reserva."
 }, {
-  tipo: "carrera",
-  titulo: "Running 10 km",
-  km: 10,
-  notas: "Ritmo aeróbico suave, sin buscar el máximo rendimiento."
+  tipo: "fuerza",
+  plantilla: "torso_c"
+}, {
+  tipo: "descanso"
 }, {
   tipo: "descanso"
 }];
@@ -8788,7 +8785,7 @@ function docsDePlanSemanal() {
       return {
         tipo: "fuerza",
         titulo: pl.nombre,
-        notas: "",
+        notas: d.notas || "",
         ejercicios: ejerciciosDePlantilla(pl),
         carrera: {}
       };
@@ -11823,7 +11820,15 @@ function EntrenoTab({
   const planRef = useRef({});
   const baseRef = useRef({}); // plan fijo (se repite todas las semanas)
   const overRef = useRef({}); // ajustes de una semana concreta: "lunesKey|dia" -> doc
-  const [semOff, setSemOff] = useState(0); // 0 = esta semana, -1 = anterior, +1 = siguiente…
+  const [semOffS, setSemOffS] = useState(0); // 0 = esta semana, -1 = anterior, +1 = siguiente…
+  const semOff = semOffS;
+  const [pestana, setPestana] = useState("semana");
+  const [diaSel, setDiaSel] = useState(null);
+  const [ejSel, setEjSel] = useState(null);
+  const setSemOff = n => {
+    setSemOffS(n);
+    setDiaSel(null);
+  };
   const lunesVista = fechaDeDia(lunesDe(hoy()), semOff * 7);
   const kSem = toKey(lunesVista);
   const kSemRef = useRef(kSem);
@@ -11859,11 +11864,40 @@ function EntrenoTab({
     Promise.all([sb.from("entreno_plan").select("*").eq("perfil", perfilId), cargarRegistros()]).then(([p]) => {
       const m = {},
         o = {};
-      (p && p.data || []).forEach(d => {
+      const filas = p && p.data || [];
+      const marca = filas.find(d => d.tipo === "marca");
+      filas.forEach(d => {
+        if (d.tipo === "marca") return;
         if (d.semana) o[d.semana + "|" + d.dia] = d;else m[d.dia] = d;
       });
       baseRef.current = m;
       overRef.current = o;
+      // Plan predefinido nuevo (una sola vez, solo en tu perfil): sustituye al plan anterior
+      if (perfilId === "ti" && !(marca && Number(marca.version) >= PLAN_VERSION)) {
+        sb.from("entreno_plan").delete().eq("perfil", perfilId).then(() => {
+          const docs = docsDePlanSemanal();
+          baseRef.current = {};
+          overRef.current = {};
+          docs.forEach((d, i) => {
+            baseRef.current[i] = {
+              ...d,
+              dia: i,
+              perfil: perfilId
+            };
+            guardarDoc(baseRef.current[i], null);
+          });
+          sb.from("entreno_plan").upsert({
+            clave: `${perfilId}_marca`,
+            perfil: perfilId,
+            dia: 99,
+            tipo: "marca",
+            version: PLAN_VERSION
+          }, {
+            onConflict: "clave"
+          });
+          refrescarPlan();
+        });
+      }
       refrescarPlan();
       setCargando(false);
     });
@@ -12078,56 +12112,89 @@ function EntrenoTab({
   const nHechos = diasConPlan.filter(d => hechosSemana[d]).length;
   const kcalSemana = registros.filter(r => r.fecha >= kLunes && r.fecha <= kDomingo).reduce((a, r) => a + (Number(r.kcal) || 0), 0);
   const recientes = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || String(b.created_at || "").localeCompare(String(a.created_at || ""))).slice(0, 6);
+  const idxHoy = indiceDia(hoyD);
+  const dSel = diaSel !== null ? diaSel : semOff === 0 ? idxHoy : diasConPlan[0] !== undefined ? diasConPlan[0] : 0;
+  const infoSel = infoDia(plan[dSel], pesoKg);
+  const hechoSel = hechosSemana[dSel];
+  const numSemana = (() => {
+    const d = new Date(Date.UTC(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 3));
+    const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d - y0) / 86400000 + 1) / 7);
+  })();
+  const etiquetaSem = semOff === 0 ? "Esta semana" : semOff === -1 ? "Semana pasada" : semOff === 1 ? "Próxima semana" : semOff < 0 ? `Hace ${-semOff} semanas` : `Dentro de ${semOff} semanas`;
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 pt-5 pb-3 text-center"
+    className: "px-5 pt-5 pb-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] tracking-[0.2em] uppercase",
     style: {
-      color: palette.inkSoft
+      display: "flex",
+      background: palette.paperDark,
+      borderRadius: 999,
+      padding: 4,
+      marginBottom: 14
     }
-  }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
+  }, [["semana", "Semana"], ["progreso", "Progreso"]].map(([id, l]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setPestana(id),
+    style: {
+      flex: 1,
+      padding: "7px 0",
+      borderRadius: 999,
+      fontSize: 13,
+      fontWeight: 600,
+      background: pestana === id ? palette.green : "transparent",
+      color: pestana === id ? "#FFFFFF" : palette.inkSoft
+    }
+  }, l))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
-      justifyContent: "space-between",
-      marginTop: 4
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.18em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Entreno · ", etiquetaSem), /*#__PURE__*/React.createElement("div", {
+    className: "text-[22px] font-semibold mt-0.5"
+  }, semOff === 0 ? `${DIAS_SEMANA[idxHoy]} ${fechaCorta(hoyD)}` : `Semana del ${fechaCorta(lunes)}`)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      background: "#FFFFFF",
+      borderRadius: 999,
+      border: `1.5px solid ${palette.line}`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setSemOff(semOff - 1),
     "aria-label": "Semana anterior",
     style: {
-      width: 40,
-      height: 40,
-      borderRadius: 999,
-      background: palette.paperDark,
-      fontSize: 20,
-      fontWeight: 700,
-      color: palette.ink
+      width: 34,
+      height: 34,
+      fontSize: 18,
+      fontWeight: 700
     }
-  }, "‹"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "text-[20px] font-semibold"
-  }, "Semana del ", fechaCorta(lunes)), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px]",
+  }, "‹"), /*#__PURE__*/React.createElement("div", {
     style: {
-      color: palette.inkSoft
+      fontSize: 11.5,
+      fontWeight: 700,
+      minWidth: 34,
+      textAlign: "center"
     }
-  }, semOff === 0 ? "Esta semana" : semOff === -1 ? "Semana pasada" : semOff === 1 ? "Próxima semana" : semOff < 0 ? `Hace ${-semOff} semanas` : `Dentro de ${semOff} semanas`)), /*#__PURE__*/React.createElement("button", {
+  }, "S", numSemana), /*#__PURE__*/React.createElement("button", {
     onClick: () => setSemOff(semOff + 1),
     "aria-label": "Semana siguiente",
     style: {
-      width: 40,
-      height: 40,
-      borderRadius: 999,
-      background: palette.paperDark,
-      fontSize: 20,
-      fontWeight: 700,
-      color: palette.ink
+      width: 34,
+      height: 34,
+      fontSize: 18,
+      fontWeight: 700
     }
-  }, "›")), semOff !== 0 && /*#__PURE__*/React.createElement("div", {
+  }, "›"))), semOff !== 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
-      justifyContent: "center",
       marginTop: 8,
       flexWrap: "wrap"
     }
@@ -12151,31 +12218,70 @@ function EntrenoTab({
       background: palette.paperDark,
       color: palette.ink
     }
-  }, "Copiar semana anterior")), diasConPlan.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-2"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 8,
-      background: palette.paperDark,
-      borderRadius: 999,
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${nHechos / diasConPlan.length * 100}%`,
-      height: "100%",
-      background: palette.green,
-      borderRadius: 999,
-      transition: "width .3s"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11.5px] mt-1",
-    style: {
-      color: palette.inkSoft
-    }
-  }, nHechos, " de ", diasConPlan.length, " entrenos hechos", kcalSemana > 0 ? ` · ≈ ${kcalSemana} kcal quemadas` : ""))), /*#__PURE__*/React.createElement("div", {
+  }, "Copiar semana anterior"))), pestana === "progreso" ? /*#__PURE__*/React.createElement(ProgresoEntreno, {
+    registros: registros,
+    plan: plan,
+    lunes: lunes,
+    ejSel: ejSel,
+    setEjSel: setEjSel,
+    kcalSemana: kcalSemana,
+    pesoKg: pesoKg,
+    pesoManual: pesoManual,
+    pesoPerfil: pesoPerfil,
+    fijarPeso: fijarPeso
+  }) : /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
-  }, Object.keys(plan).length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      margin: "2px 0 14px"
+    }
+  }, [0, 1, 2, 3, 4, 5, 6].map(d => {
+    const fecha = fechaDeDia(lunes, d);
+    const esHoy = toKey(fecha) === toKey(hoyD);
+    const hecho = !!hechosSemana[d];
+    const sel = d === dSel;
+    const hayPlan = plan[d] && plan[d].tipo !== "descanso";
+    return /*#__PURE__*/React.createElement("button", {
+      key: d,
+      onClick: () => setDiaSel(d),
+      style: {
+        textAlign: "center",
+        width: 40
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        fontWeight: 700,
+        color: esHoy ? palette.greenDark : palette.inkSoft
+      }
+    }, DIAS_CORTO[d].slice(0, 1)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 38,
+        height: 38,
+        borderRadius: 999,
+        margin: "4px auto 0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 14,
+        fontWeight: 700,
+        background: hecho ? palette.green : "#FFFFFF",
+        color: hecho ? "#FFFFFF" : palette.ink,
+        border: `2px solid ${sel ? palette.greenDark : hecho ? palette.green : palette.line}`,
+        boxShadow: sel ? `0 0 0 3px ${palette.greenSoft}` : "none"
+      }
+    }, hecho ? "✓" : fecha.getDate()), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 5,
+        height: 5,
+        borderRadius: 999,
+        margin: "5px auto 0",
+        background: esHoy ? palette.green : hayPlan ? palette.line : "transparent"
+      }
+    }));
+  })), Object.keys(plan).length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: palette.greenSoft,
       borderRadius: 16,
@@ -12188,13 +12294,13 @@ function EntrenoTab({
       fontWeight: 700,
       color: palette.greenDark
     }
-  }, "✨ Plan sugerido"), /*#__PURE__*/React.createElement("div", {
+  }, "✨ Plan predefinido"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: palette.ink,
       margin: "4px 0 10px"
     }
-  }, "3 días de tren superior (A, B y C), 1 de piernas, 2 de running (7 y 10 km) y 1 de descanso, con abdominales repartidos. Luego puedes cambiar lo que quieras."), /*#__PURE__*/React.createElement("button", {
+  }, "Torso A, correr suave, Torso B, Pierna y Torso C, con dos días de descanso. Luego puedes cambiar lo que quieras."), /*#__PURE__*/React.createElement("button", {
     onClick: cargarSemana,
     className: "w-full py-2.5 text-[13px] font-semibold",
     style: {
@@ -12202,111 +12308,171 @@ function EntrenoTab({
       color: "#FFFFFF",
       borderRadius: 12
     }
-  }, "Cargar esta semana")), diasConPlan.some(d => (plan[d].ejercicios || []).length) && (() => {
-    const {
-      calor,
-      series
-    } = calorDeItems(diasConPlan.flatMap(d => plan[d].ejercicios || []));
-    const top = Object.keys(series).sort((a, b) => series[b] - series[a]);
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "#FFFFFF",
-        border: `1.5px solid ${palette.line}`,
-        borderRadius: 16,
-        padding: "10px 12px 8px",
-        marginBottom: 12
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12.5,
-        fontWeight: 700,
-        marginBottom: 4
-      }
-    }, "Músculos de la semana"), /*#__PURE__*/React.createElement(MapaMusculos, {
-      calor: calor,
-      ancho: 92
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 6
-      }
-    }, top.slice(0, 8).map(m => /*#__PURE__*/React.createElement("div", {
-      key: m,
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        margin: "3px 0"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 104,
-        fontSize: 11.5
-      }
-    }, MUSCULOS[m]), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        height: 7,
-        background: palette.paperDark,
-        borderRadius: 999,
-        overflow: "hidden"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: `${Math.round(calor[m] * 100)}%`,
-        height: "100%",
-        background: colorMusculo(m, null, null, calor),
-        borderRadius: 999
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 54,
-        fontSize: 11,
-        textAlign: "right",
-        color: palette.inkSoft
-      }
-    }, Math.round(series[m]), " series")))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10.5,
-        color: palette.inkSoft,
-        marginTop: 4
-      }
-    }, "Según las series planificadas (secundarios cuentan la mitad)."));
-  })(), [0, 1, 2, 3, 4, 5, 6].map(d => {
-    const doc = plan[d];
-    const fecha = fechaDeDia(lunes, d);
-    const esHoy = toKey(fecha) === toKey(hoyD);
-    const hecho = hechosSemana[d];
-    const tipo = doc ? TIPOS_ENTRENO.find(x => x[0] === doc.tipo) : null;
-    let titulo = "Sin plan",
-      sub = "Toca para añadir";
-    let icoFila = tipo ? tipo[1] : "";
-    if (doc && doc.tipo === "fuerza") {
-      const n = (doc.ejercicios || []).length;
-      titulo = doc.titulo || "Fuerza";
-      sub = n ? `${n} ejercicios · ~${minutosEstimados(doc.ejercicios)} min · ~${kcalFuerza(pesoKg, minutosEstimados(doc.ejercicios) * 60)} kcal` : "Sin ejercicios todavía";
-    } else if (doc && doc.tipo === "carrera") {
-      titulo = doc.titulo || "Carrera";
-      sub = `${String(doc.carrera && doc.carrera.km || "").replace(".", ",")} km · ~${kcalCarrera(pesoKg, Number(doc.carrera && doc.carrera.km || 0))} kcal${doc.carrera && doc.carrera.ritmo ? ` · ritmo ${doc.carrera.ritmo}` : ""}`;
-    } else if (doc && doc.tipo === "cardio") {
-      const c = doc.cardio || {};
-      const m = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
-      icoFila = m.icono;
-      titulo = doc.titulo || m.nombre;
-      sub = `${c.min || 0} min · ${m.vel ? `${String(Number(c.vel) || m.vel).replace(".", ",")} km/h${Number(c.incl) ? ` · ${String(c.incl).replace(".", ",")}%` : ""}` : c.intensidad || "moderada"} · ~${kcalCardio(c, pesoKg, (c.min || 0) * 60)} kcal`;
-    } else if (doc && doc.tipo === "otro") {
-      titulo = doc.titulo || "Otro";
-      sub = doc.notas || "Actividad libre";
-    } else if (doc && doc.tipo === "descanso") {
-      titulo = "Descanso";
-      sub = "Recupera y come bien";
+  }, "Cargar plan")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 26,
+      overflow: "hidden",
+      background: infoSel.descanso ? "linear-gradient(160deg,#5B6B60,#76867B)" : "linear-gradient(160deg,#1F6B3A,#2F8F4E)",
+      color: "#FFFFFF",
+      padding: 18,
+      boxShadow: "0 12px 26px rgba(47,143,78,.28)",
+      marginBottom: 6
     }
-    const empezable = doc && (doc.tipo === "fuerza" && (doc.ejercicios || []).length > 0 || doc.tipo === "carrera" || doc.tipo === "cardio");
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      letterSpacing: "0.16em",
+      opacity: 0.85,
+      textTransform: "uppercase"
+    }
+  }, dSel === idxHoy && semOff === 0 ? "Hoy" : DIAS_SEMANA[dSel], " · ", infoSel.etiqueta), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVista({
+      t: "dia",
+      dia: dSel
+    }),
+    style: {
+      background: "rgba(255,255,255,.18)",
+      borderRadius: 999,
+      padding: "4px 12px",
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#FFFFFF"
+    }
+  }, "✎ Editar")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 23,
+      fontWeight: 700,
+      margin: "6px 0 2px",
+      lineHeight: 1.15,
+      overflowWrap: "anywhere"
+    }
+  }, infoSel.titulo), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      opacity: 0.9
+    }
+  }, infoSel.sub), infoSel.chips.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      margin: "14px 0 4px"
+    }
+  }, infoSel.chips.map(([v, l]) => /*#__PURE__*/React.createElement("div", {
+    key: l,
+    style: {
+      background: "rgba(255,255,255,.16)",
+      borderRadius: 12,
+      padding: "8px 12px",
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      fontSize: 16
+    }
+  }, v), /*#__PURE__*/React.createElement("br", null), l))), infoSel.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      margin: "12px 0 4px"
+    }
+  }, infoSel.fotos.slice(0, 3).map(ej => /*#__PURE__*/React.createElement("div", {
+    key: ej.id,
+    style: {
+      width: 64,
+      height: 64,
+      borderRadius: 14,
+      overflow: "hidden",
+      background: "#E9EDE6",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 96,
+      marginLeft: -16
+    }
+  }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
+    ej: ej,
+    k: 0
+  })))), infoSel.nEj > 3 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 64,
+      height: 64,
+      borderRadius: 14,
+      background: "rgba(255,255,255,.18)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, "+", infoSel.nEj - 3)), infoSel.notas ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      opacity: 0.9,
+      margin: "10px 0 0"
+    }
+  }, infoSel.notas) : null, hechoSel ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      background: "rgba(255,255,255,.2)",
+      borderRadius: 16,
+      textAlign: "center",
+      padding: 12,
+      fontWeight: 700,
+      fontSize: 14
+    }
+  }, "✓ Hecho", hechoSel.kcal ? ` · ≈ ${hechoSel.kcal} kcal` : "") : infoSel.empezable && semOff === 0 ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVista({
+      t: "sesion",
+      dia: dSel
+    }),
+    style: {
+      marginTop: 14,
+      width: "100%",
+      background: "#FFFFFF",
+      color: "#1F6B3A",
+      borderRadius: 16,
+      padding: 13,
+      fontWeight: 700,
+      fontSize: 15
+    }
+  }, "▶ Empezar sesión") : !infoSel.tienePlan ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVista({
+      t: "dia",
+      dia: dSel
+    }),
+    style: {
+      marginTop: 14,
+      width: "100%",
+      background: "#FFFFFF",
+      color: "#1F6B3A",
+      borderRadius: 16,
+      padding: 13,
+      fontWeight: 700,
+      fontSize: 14
+    }
+  }, "+ Añadir plan") : null), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      letterSpacing: "0.12em",
+      color: palette.inkSoft,
+      margin: "16px 0 8px",
+      fontWeight: 600
+    }
+  }, semOff === 0 ? "PRÓXIMOS" : "SEMANA"), [0, 1, 2, 3, 4, 5, 6].filter(d => d !== dSel && (semOff !== 0 || d >= idxHoy || true)).map(d => {
+    const doc = plan[d];
+    const inf = infoDia(doc, pesoKg);
+    const hecho = hechosSemana[d];
+    const fecha = fechaDeDia(lunes, d);
     return /*#__PURE__*/React.createElement("div", {
       key: d,
-      onClick: () => setVista({
-        t: "dia",
-        dia: d
-      }),
+      onClick: () => setDiaSel(d),
       style: {
         display: "flex",
         alignItems: "center",
@@ -12315,26 +12481,25 @@ function EntrenoTab({
         marginBottom: 8,
         borderRadius: 16,
         cursor: "pointer",
-        background: esHoy ? palette.greenSoft : "#FFFFFF",
-        border: `1.5px solid ${esHoy ? palette.green : palette.line}`,
-        opacity: doc || esHoy ? 1 : 0.75
+        background: "#FFFFFF",
+        border: `1.5px solid ${palette.line}`
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 40,
+        width: 36,
         textAlign: "center",
         flexShrink: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 11.5,
+        fontSize: 11,
         fontWeight: 700,
-        color: esHoy ? palette.greenDark : palette.inkSoft,
+        color: palette.inkSoft,
         letterSpacing: "0.05em"
       }
     }, DIAS_CORTO[d]), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: 700
       }
     }, fecha.getDate())), /*#__PURE__*/React.createElement("div", {
@@ -12349,50 +12514,523 @@ function EntrenoTab({
         lineHeight: 1.2,
         overflowWrap: "anywhere"
       }
-    }, icoFila ? icoFila + " " : "", titulo), /*#__PURE__*/React.createElement("div", {
+    }, inf.ico ? inf.ico + " " : "", inf.titulo), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: palette.inkSoft,
         marginTop: 2
       }
-    }, sub)), hecho ? /*#__PURE__*/React.createElement("div", {
+    }, inf.sub)), hecho ? /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 30,
-        height: 30,
+        width: 26,
+        height: 26,
         borderRadius: 999,
         background: palette.green,
         color: "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 16,
+        fontSize: 14,
         flexShrink: 0
       }
-    }, "✓") : esHoy && empezable ? /*#__PURE__*/React.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        setVista({
-          t: "sesion",
-          dia: d
-        });
-      },
-      style: {
-        background: palette.green,
-        color: "#FFFFFF",
-        borderRadius: 999,
-        padding: "8px 14px",
-        fontSize: 12.5,
-        fontWeight: 700,
-        flexShrink: 0
-      }
-    }, "▶ Empezar") : /*#__PURE__*/React.createElement("div", {
+    }, "✓") : /*#__PURE__*/React.createElement("div", {
       style: {
         color: palette.inkSoft,
         fontSize: 18,
         flexShrink: 0
       }
     }, "›"));
+  }), Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: 12,
+      marginTop: 14,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] mb-2"
+  }, "Esto restaura el plan predefinido en todas las semanas. ¿Seguro?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmarPlan(false),
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: "#FFFFFF",
+      fontSize: 13
+    }
+  }, "Cancelar"), /*#__PURE__*/React.createElement("button", {
+    onClick: cargarSemana,
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: palette.green,
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, "Sí, restaurar"))) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmarPlan(true),
+    className: "w-full mt-4 py-2 text-[11.5px] uppercase tracking-wide",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Restaurar el plan predefinido…")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mt-3 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ejercicios pensados para casa: solo 2 mancuernas y tu peso corporal.")));
+}
+
+// ---------- Datos de un día del plan para la tarjeta ----------
+function infoDia(doc, pesoKg) {
+  const vacio = {
+    titulo: "Sin plan",
+    sub: "Toca para añadir",
+    etiqueta: "Libre",
+    chips: [],
+    fotos: [],
+    nEj: 0,
+    notas: "",
+    empezable: false,
+    tienePlan: false,
+    descanso: false,
+    ico: ""
+  };
+  if (!doc) return vacio;
+  if (doc.tipo === "fuerza") {
+    const ejs = (doc.ejercicios || []).filter(it => EJ_POR_ID[it.eid]);
+    const min = minutosEstimados(doc.ejercicios);
+    const series = ejs.reduce((a, it) => a + (Number(it.series) || 0), 0);
+    return {
+      titulo: doc.titulo || "Fuerza",
+      sub: ejs.length ? `${ejs.length} ejercicios` : "Añade ejercicios",
+      etiqueta: "Fuerza",
+      chips: ejs.length ? [[min, "min"], [kcalFuerza(pesoKg, min * 60), "kcal"], [series, "series"]] : [],
+      fotos: ejs.slice(0, 3).map(it => EJ_POR_ID[it.eid]),
+      nEj: ejs.length,
+      notas: doc.notas || "",
+      empezable: ejs.length > 0,
+      tienePlan: true,
+      descanso: false,
+      ico: "💪"
+    };
+  }
+  if (doc.tipo === "carrera") {
+    const km = Number(doc.carrera && doc.carrera.km || 0);
+    return {
+      titulo: doc.titulo || "Correr",
+      sub: `${String(km).replace(".", ",")} km${doc.carrera && doc.carrera.ritmo ? " · " + doc.carrera.ritmo + " /km" : ""}`,
+      etiqueta: "Cardio",
+      chips: [[String(km).replace(".", ","), "km"], [kcalCarrera(pesoKg, km), "kcal"]],
+      fotos: [],
+      nEj: 0,
+      notas: doc.notas || "",
+      empezable: true,
+      tienePlan: true,
+      descanso: false,
+      ico: "🏃"
+    };
+  }
+  if (doc.tipo === "cardio") {
+    const c = doc.cardio || {};
+    const m = CARDIO_MAQ[c.maquina] || CARDIO_MAQ.bici;
+    return {
+      titulo: doc.titulo || m.nombre,
+      sub: m.vel ? `${String(Number(c.vel) || m.vel).replace(".", ",")} km/h${Number(c.incl) ? ` · ${String(c.incl).replace(".", ",")}%` : ""}` : c.intensidad || "moderada",
+      etiqueta: "Cardio",
+      chips: [[c.min || 0, "min"], [kcalCardio(c, pesoKg, (c.min || 0) * 60), "kcal"]],
+      fotos: [],
+      nEj: 0,
+      notas: doc.notas || "",
+      empezable: true,
+      tienePlan: true,
+      descanso: false,
+      ico: m.icono
+    };
+  }
+  if (doc.tipo === "otro") return {
+    titulo: doc.titulo || "Otro",
+    sub: doc.notas || "Actividad libre",
+    etiqueta: "Libre",
+    chips: [],
+    fotos: [],
+    nEj: 0,
+    notas: "",
+    empezable: false,
+    tienePlan: true,
+    descanso: false,
+    ico: "✏️"
+  };
+  if (doc.tipo === "descanso") return {
+    titulo: "Descanso",
+    sub: "Recupera y come bien",
+    etiqueta: "Descanso",
+    chips: [],
+    fotos: [],
+    nEj: 0,
+    notas: "",
+    empezable: false,
+    tienePlan: true,
+    descanso: true,
+    ico: "😴"
+  };
+  return vacio;
+}
+
+// ---------- Gráfica de línea sencilla ----------
+function GraficaLinea({
+  puntos,
+  color
+}) {
+  if (!puntos.length) return null;
+  const W = 320,
+    H = 110,
+    pad = 12;
+  const vs = puntos.map(p => p.v);
+  const mn = Math.min(...vs),
+    mx = Math.max(...vs);
+  const rango = mx - mn || 1;
+  const xs = i => puntos.length === 1 ? W / 2 : pad + i * (W - 2 * pad) / (puntos.length - 1);
+  const ys = v => H - 22 - (v - mn) / rango * (H - 44);
+  const d = puntos.map((p, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)} ${ys(p.v).toFixed(1)}`).join(" ");
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    width: "100%",
+    style: {
+      display: "block",
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: `${d} L${xs(puntos.length - 1)} ${H - 8} L${xs(0)} ${H - 8} Z`,
+    fill: color,
+    opacity: "0.12"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: d,
+    stroke: color,
+    strokeWidth: "3",
+    fill: "none",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }), puntos.map((p, i) => /*#__PURE__*/React.createElement("circle", {
+    key: i,
+    cx: xs(i),
+    cy: ys(p.v),
+    r: i === puntos.length - 1 ? 5 : 3,
+    fill: color
+  })), /*#__PURE__*/React.createElement("text", {
+    x: pad,
+    y: H - 1,
+    fontSize: "9",
+    fill: "#8A9A8E"
+  }, puntos[0].l), /*#__PURE__*/React.createElement("text", {
+    x: W - pad,
+    y: H - 1,
+    fontSize: "9",
+    fill: "#8A9A8E",
+    textAnchor: "end"
+  }, puntos[puntos.length - 1].l));
+}
+
+// ---------- Pestaña Progreso ----------
+function ProgresoEntreno({
+  registros,
+  plan,
+  lunes,
+  ejSel,
+  setEjSel,
+  kcalSemana,
+  pesoKg,
+  pesoManual,
+  pesoPerfil,
+  fijarPeso
+}) {
+  const card = {
+    background: "#FFFFFF",
+    border: `1.5px solid ${palette.line}`,
+    borderRadius: 20,
+    padding: "12px 14px",
+    marginBottom: 12
+  };
+  const fuerza = registros.filter(r => r.tipo === "fuerza").sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  // racha: semanas seguidas con algún entreno
+  const semanasConEntreno = new Set(registros.map(r => toKey(lunesDe(new Date(r.fecha + "T12:00:00")))));
+  let racha = 0;
+  let c = lunesDe(hoy());
+  if (!semanasConEntreno.has(toKey(c))) c = fechaDeDia(c, -7);
+  while (semanasConEntreno.has(toKey(c))) {
+    racha++;
+    c = fechaDeDia(c, -7);
+  }
+  // evolución por ejercicio
+  const cuenta = {};
+  fuerza.forEach(r => (r.ejercicios || []).forEach(e => {
+    if (EJ_POR_ID[e.eid] && (e.series || []).length) cuenta[e.eid] = (cuenta[e.eid] || 0) + 1;
+  }));
+  const conHistorial = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
+  const eid = ejSel && cuenta[ejSel] ? ejSel : conHistorial[0];
+  let puntos = [],
+    esPeso = false;
+  if (eid) {
+    const todos = fuerza.map(r => {
+      const e = (r.ejercicios || []).find(x => x.eid === eid);
+      if (!e || !(e.series || []).length) return null;
+      return {
+        f: r.fecha,
+        mp: Math.max(...e.series.map(s => Number(s.peso) || 0)),
+        mr: Math.max(...e.series.map(s => Number(s.reps) || 0))
+      };
+    }).filter(Boolean);
+    esPeso = todos.some(t => t.mp > 0);
+    puntos = todos.slice(-12).map(t => ({
+      v: esPeso ? t.mp : t.mr,
+      l: fechaCorta(new Date(t.f + "T12:00:00"))
+    }));
+  }
+  const maxPunto = puntos.length ? Math.max(...puntos.map(p => p.v)) : 0;
+  const esRecordUlt = puntos.length > 1 && puntos[puntos.length - 1].v === maxPunto && puntos[puntos.length - 1].v > Math.max(...puntos.slice(0, -1).map(p => p.v));
+  // volumen semanal (últimas 6 semanas)
+  const vol = [];
+  for (let i = 5; i >= 0; i--) {
+    const l = fechaDeDia(lunesDe(hoy()), -7 * i);
+    const k0 = toKey(l),
+      k1 = toKey(fechaDeDia(l, 6));
+    vol.push({
+      l: fechaCorta(l),
+      v: fuerza.filter(r => r.fecha >= k0 && r.fecha <= k1).reduce((a, r) => a + (Number(r.volumen_kg) || 0), 0)
+    });
+  }
+  const volMax = Math.max(1, ...vol.map(x => x.v));
+  // músculos de la semana vista
+  const k0 = toKey(lunes),
+    k1 = toKey(fechaDeDia(lunes, 6));
+  const items = [];
+  registros.filter(r => r.fecha >= k0 && r.fecha <= k1 && r.tipo === "fuerza").forEach(r => (r.ejercicios || []).forEach(e => items.push({
+    eid: e.eid,
+    series: (e.series || []).length
+  })));
+  const hecho = items.length > 0;
+  const fuente = hecho ? items : [0, 1, 2, 3, 4, 5, 6].flatMap(d => plan[d] && plan[d].ejercicios || []);
+  const {
+    calor,
+    series
+  } = calorDeItems(fuente);
+  const GRUPOS = [["Pecho", ["pecho"]], ["Espalda", ["dorsal", "trapecio"]], ["Hombros", ["hombro_ant", "hombro_lat", "hombro_post"]], ["Brazos", ["biceps", "triceps"]], ["Piernas", ["cuadriceps", "femoral", "gluteo", "gemelos"]], ["Core", ["abdomen", "oblicuos"]]];
+  const poco = GRUPOS.filter(([, ms]) => ms.every(m => !(series[m] > 0))).map(([n]) => n);
+  const top = Object.keys(series).sort((a, b) => series[b] - series[a]).slice(0, 6);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...card,
+      flex: 1,
+      marginBottom: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: palette.inkSoft,
+      letterSpacing: "0.06em"
+    }
+  }, "RACHA"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      fontWeight: 800
+    }
+  }, "🔥 ", racha, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, "sem."))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...card,
+      flex: 1,
+      marginBottom: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: palette.inkSoft,
+      letterSpacing: "0.06em"
+    }
+  }, "KCAL (SEMANA)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      fontWeight: 800
+    }
+  }, kcalSemana || 0))), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, eid ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("select", {
+    value: eid,
+    onChange: e => setEjSel(e.target.value),
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      background: "transparent",
+      color: palette.ink,
+      maxWidth: 200,
+      border: "none"
+    }
+  }, conHistorial.map(id => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, EJ_POR_ID[id].nombre))), esRecordUlt && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      padding: "3px 9px",
+      borderRadius: 999,
+      background: "#FFE08A",
+      color: "#6B4A00",
+      whiteSpace: "nowrap"
+    }
+  }, "🏆 Récord ", maxPunto, esPeso ? " kg" : " reps")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft
+    }
+  }, esPeso ? "Mejor peso por sesión" : "Mejores repeticiones por sesión"), puntos.length > 1 ? /*#__PURE__*/React.createElement(GraficaLinea, {
+    puntos: puntos,
+    color: palette.green
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: palette.inkSoft,
+      padding: "14px 0"
+    }
+  }, "Con 2 sesiones de este ejercicio verás la gráfica.")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: palette.inkSoft,
+      padding: "6px 0"
+    }
+  }, "Cuando termines tu primera sesión de fuerza, aquí verás cómo evoluciona cada ejercicio.")), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700
+    }
+  }, "Volumen semanal ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 500,
+      color: palette.inkSoft
+    }
+  }, "(kg movidos)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      alignItems: "flex-end",
+      height: 92,
+      marginTop: 8
+    }
+  }, vol.map((x, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      flex: 1,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: Math.max(4, Math.round(x.v / volMax * 70)),
+      background: i === 5 ? palette.green : "#BFD9C6",
+      borderRadius: 8
+    }
   }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9.5,
+      color: palette.inkSoft,
+      marginTop: 3
+    }
+  }, x.l))))), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 700,
+      marginBottom: 4
+    }
+  }, "Músculos de la semana ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 500,
+      color: palette.inkSoft
+    }
+  }, "(", hecho ? "series hechas" : "según el plan", ")")), /*#__PURE__*/React.createElement(MapaMusculos, {
+    calor: calor,
+    ancho: 92
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, top.map(m => /*#__PURE__*/React.createElement("div", {
+    key: m,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      margin: "3px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 104,
+      fontSize: 11.5
+    }
+  }, MUSCULOS[m]), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 7,
+      background: palette.paperDark,
+      borderRadius: 999,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${Math.round(calor[m] * 100)}%`,
+      height: "100%",
+      background: colorMusculo(m, null, null, calor),
+      borderRadius: 999
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 56,
+      fontSize: 11,
+      textAlign: "right",
+      color: palette.inkSoft
+    }
+  }, Math.round(series[m]), " series")))), poco.length > 0 && Object.keys(series).length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      marginTop: 8,
+      color: palette.inkSoft
+    }
+  }, "Poco trabajado: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "#E0561E"
+    }
+  }, poco.join(", ")))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -12400,8 +13038,7 @@ function EntrenoTab({
       gap: 8,
       background: palette.paperDark,
       borderRadius: 14,
-      padding: "8px 12px",
-      marginTop: 4
+      padding: "8px 12px"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12442,95 +13079,7 @@ function EntrenoTab({
       fontSize: 16,
       fontWeight: 700
     }
-  }, "+"))), recientes.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-5"
-  }, /*#__PURE__*/React.createElement(SectionTitle, null, "Últimos entrenos"), recientes.map(r => /*#__PURE__*/React.createElement("div", {
-    key: r.id,
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      gap: 10,
-      padding: "8px 0",
-      borderBottom: `1px solid ${palette.line}`
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13.5,
-      fontWeight: 600,
-      overflowWrap: "anywhere"
-    }
-  }, r.titulo || "Entreno"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11.5,
-      color: palette.inkSoft
-    }
-  }, new Date(r.fecha + "T12:00:00").toLocaleDateString("es-ES", {
-    weekday: "short",
-    day: "numeric",
-    month: "short"
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "right",
-      fontSize: 11.5,
-      color: palette.inkSoft,
-      whiteSpace: "nowrap"
-    }
-  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.tipo === "cardio" ? /*#__PURE__*/React.createElement("div", null, Math.round((r.duracion_s || 0) / 60), " min") : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.tipo !== "cardio" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null, r.kcal ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: palette.greenDark,
-      fontWeight: 600
-    }
-  }, "≈ ", r.kcal, " kcal") : null)))), Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: palette.paperDark,
-      borderRadius: 14,
-      padding: 12,
-      marginTop: 14,
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[12.5px] mb-2"
-  }, "Esto reemplaza los 7 días del plan actual. ¿Seguro?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setConfirmarPlan(false),
-    style: {
-      flex: 1,
-      padding: "9px 0",
-      borderRadius: 12,
-      background: "#FFFFFF",
-      fontSize: 13
-    }
-  }, "Cancelar"), /*#__PURE__*/React.createElement("button", {
-    onClick: cargarSemana,
-    style: {
-      flex: 1,
-      padding: "9px 0",
-      borderRadius: 12,
-      background: palette.green,
-      color: "#FFFFFF",
-      fontSize: 13,
-      fontWeight: 600
-    }
-  }, "Sí, reemplazar"))) : /*#__PURE__*/React.createElement("button", {
-    onClick: () => setConfirmarPlan(true),
-    className: "w-full mt-4 py-2 text-[11.5px] uppercase tracking-wide",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Cargar el plan semanal sugerido…")), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] mt-4 text-center",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Ejercicios pensados para casa: solo 2 mancuernas y tu peso corporal, sin banco.")));
+  }, "+"))));
 }
 
 // ---------- Editor de un día ----------
