@@ -2021,7 +2021,8 @@ re2js/build/index.js:
 <script>
 const {
   useState,
-  useEffect
+  useEffect,
+  useRef
 } = React;
 const {
   createClient
@@ -2427,6 +2428,80 @@ function SectionTitle({
       fontWeight: 700
     }
   }, right));
+}
+
+// ---------- Botón de atrás (pantalla + botón/gesto "atrás" del móvil) ----------
+// Cada BotonAtras montado se apunta en una pila; el botón atrás del móvil ejecuta el de arriba.
+const _pilaAtras = [];
+let _fichasHist = 0; // entradas de historial que hemos empujado y siguen vivas
+let _popsPropios = 0; // popstate provocados por nosotros (se ignoran)
+function _sincronizarHistorial() {
+  try {
+    while (_fichasHist < _pilaAtras.length) {
+      history.pushState({
+        atras: true
+      }, "");
+      _fichasHist++;
+    }
+    if (_fichasHist > _pilaAtras.length) {
+      const sobra = _fichasHist - _pilaAtras.length;
+      _fichasHist = _pilaAtras.length;
+      _popsPropios++;
+      history.go(-sobra);
+    }
+  } catch (e) {}
+}
+if (typeof window !== "undefined" && !window.__atrasInstalado) {
+  window.__atrasInstalado = true;
+  window.addEventListener("popstate", () => {
+    if (_popsPropios > 0) {
+      _popsPropios--;
+      return;
+    }
+    _fichasHist = Math.max(0, _fichasHist - 1);
+    const top = _pilaAtras[_pilaAtras.length - 1];
+    if (top) top.fn();
+    setTimeout(_sincronizarHistorial, 80);
+  });
+}
+function BotonAtras({
+  onClick,
+  children
+}) {
+  const ref = useRef(onClick);
+  ref.current = onClick;
+  useEffect(() => {
+    const ficha = {
+      fn: () => ref.current && ref.current()
+    };
+    _pilaAtras.push(ficha);
+    _sincronizarHistorial();
+    return () => {
+      const i = _pilaAtras.indexOf(ficha);
+      if (i >= 0) _pilaAtras.splice(i, 1);
+      setTimeout(_sincronizarHistorial, 0);
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: () => ref.current && ref.current(),
+    className: "mb-2 text-[13px] font-semibold",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      background: palette.paperDark,
+      color: palette.ink,
+      borderRadius: 999,
+      padding: "7px 14px 7px 10px",
+      border: `1px solid ${palette.line}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18,
+      lineHeight: 1,
+      marginTop: -2
+    }
+  }, "‹"), /*#__PURE__*/React.createElement("span", null, children));
 }
 function Loading({
   text
@@ -3128,13 +3203,9 @@ function ObjetivoForm({
   }) : null;
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onCancel,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Cancelar"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
     className: "text-[20px] font-semibold mt-1"
   }, "Tu objetivo diario"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] mt-1",
@@ -3451,13 +3522,9 @@ function AjusteReceta({
   };
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onCancel,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, textoCancelar), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, String(textoCancelar).replace(/^‹\s*/, "")), /*#__PURE__*/React.createElement("div", {
     className: "text-[19px] font-semibold"
   }, recipe.name), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] mt-1",
@@ -3683,13 +3750,9 @@ function DiarioTab({
   if (view === "meal") {
     return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
       className: "px-5 pt-5 pb-3 text-center"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setView("diario"),
-      className: "text-[11px] uppercase tracking-wide mb-2",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "‹ Cancelar"), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(BotonAtras, {
+      onClick: () => setView("diario")
+    }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
       className: "text-[20px] font-semibold mt-1"
     }, "¿Para cuándo?")), /*#__PURE__*/React.createElement("div", {
       className: "px-5 pb-5"
@@ -3707,13 +3770,9 @@ function DiarioTab({
   if (view === "receta") {
     return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
       className: "px-5 pt-5 pb-3 text-center"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setView("meal"),
-      className: "text-[11px] uppercase tracking-wide mb-2",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "‹ Cambiar franja"), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(BotonAtras, {
+      onClick: () => setView("meal")
+    }, "Cambiar franja"), /*#__PURE__*/React.createElement("div", {
       className: "text-[11px] tracking-[0.2em] uppercase",
       style: {
         color: palette.inkSoft
@@ -4400,13 +4459,9 @@ function PlanSemana({
   };
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onCancel,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Volver al calendario"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, "Volver al calendario"), /*#__PURE__*/React.createElement("div", {
     className: "text-[20px] font-semibold mt-1"
   }, "Planificar semana"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] mt-1",
@@ -4833,13 +4888,9 @@ function NuevaReceta({
   const productosFiltrados = busqueda.trim() ? productos.filter(p => p.name.toLowerCase().includes(busqueda.trim().toLowerCase())) : productos;
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onCancel,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Cancelar"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
     className: "text-[20px] font-semibold mt-1"
   }, esEdicion ? "Editar receta" : "Nueva receta")), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
@@ -5053,13 +5104,9 @@ function RecetaDetalle({
   const racionesN = recipe.servings || 1;
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onBack,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Volver a recetas"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onBack
+  }, "Volver a recetas"), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-[19px] font-semibold"
@@ -5367,13 +5414,9 @@ function ProductoDetalle({
   const [editandoCat, setEditandoCat] = useState(false);
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onBack,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Volver a productos"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onBack
+  }, "Volver a productos"), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-[19px] font-semibold"
@@ -5629,13 +5672,9 @@ function NuevoProducto({
   }
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onCancel,
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Cancelar"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onCancel
+  }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
     className: "text-[20px] font-semibold mt-1"
   }, esEdicion ? "Editar producto" : "Nuevo producto")), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
@@ -6312,13 +6351,9 @@ function ListaCompraTab() {
   if (eligiendoCategoriaPara) {
     return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
       className: "px-5 pt-5 pb-3 text-center"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setEligiendoCategoriaPara(null),
-      className: "text-[11px] uppercase tracking-wide mb-2",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "‹ Cancelar"), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(BotonAtras, {
+      onClick: () => setEligiendoCategoriaPara(null)
+    }, "Cancelar"), /*#__PURE__*/React.createElement("div", {
       className: "text-[11px] tracking-[0.2em] uppercase",
       style: {
         color: palette.inkSoft
@@ -6980,13 +7015,9 @@ function VincularMercadona({
   const candidatos = busqueda.trim().length >= 2 ? buscarMercadona(busqueda) : sugerirMercadona(actual.name);
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-5 pb-3 text-center"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => onDone(),
-    className: "text-[11px] uppercase tracking-wide mb-2",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "‹ Salir"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: () => onDone()
+  }, "Salir"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] tracking-[0.2em] uppercase",
     style: {
       color: palette.inkSoft
@@ -7366,21 +7397,2906 @@ function ProfileSwitcher({
     }
   }, "Cerrar sesión")));
 }
+
+// <<ENTRENO>>
+// ---------- Entreno: muñeco animado (esqueleto con ángulos absolutos) ----------
+// Ángulos en grados: 0 = derecha, 90 = arriba, 180 = izquierda, 270 = abajo.
+const LONG = {
+  torso: 34,
+  cabeza: 10,
+  ua: 19,
+  fa: 18,
+  th: 28,
+  sh: 27,
+  pie: 8
+};
+const POSE_BASE = {
+  t: 90,
+  cab: 0,
+  th: 270,
+  sh: 270,
+  pie: 0,
+  ua: 270,
+  fa: 270
+};
+const SUELO_Y = 128;
+function _polar(p, L, ang) {
+  const r = ang * Math.PI / 180;
+  return [p[0] + L * Math.cos(r), p[1] - L * Math.sin(r)];
+}
+function _lerpPose(A, B, k) {
+  const out = {};
+  const keys = new Set([...Object.keys(A), ...Object.keys(B)]);
+  keys.forEach(key => {
+    const a = A[key] !== undefined ? A[key] : B[key];
+    const b = B[key] !== undefined ? B[key] : A[key];
+    out[key] = a + (b - a) * k;
+  });
+  return out;
+}
+// Calcula las posiciones de todas las articulaciones para una pose.
+function _articulaciones(P, vista) {
+  const base = {
+    ...POSE_BASE,
+    ...P
+  };
+  const g = (k, d) => base[k] !== undefined ? base[k] : d;
+  const J = {};
+  if (vista === "frente") {
+    const hip = [0, 0];
+    const neck = _polar(hip, LONG.torso, g("t"));
+    J.hip = hip;
+    J.neck = neck;
+    J.head = _polar(neck, LONG.cabeza, g("t") + g("cab"));
+    const lado = signo => {
+      const a = x => signo < 0 ? x : 180 - x;
+      const sh0 = [neck[0] + signo * 10, neck[1]];
+      const el = _polar(sh0, LONG.ua, a(g("ua")));
+      const mu = _polar(el, LONG.fa, a(g("fa")));
+      const hp = [signo * 5, 0];
+      const kn = _polar(hp, LONG.th, a(g("th")));
+      const an = _polar(kn, LONG.sh, a(g("sh")));
+      return {
+        sh0,
+        el,
+        mu,
+        hp,
+        kn,
+        an
+      };
+    };
+    J.A = lado(1);
+    J.B = lado(-1);
+    J.dosLados = true;
+    return J;
+  }
+  const hip = [0, 0];
+  const neck = _polar(hip, LONG.torso, g("t"));
+  J.hip = hip;
+  J.neck = neck;
+  J.head = _polar(neck, LONG.cabeza, g("t") + g("cab"));
+  const brazo = (ua, fa) => {
+    const el = _polar(neck, LONG.ua, ua);
+    const mu = _polar(el, LONG.fa, fa);
+    return {
+      sh0: [neck[0], neck[1]],
+      el,
+      mu
+    };
+  };
+  const pierna = (th, sh, pie) => {
+    const kn = _polar(hip, LONG.th, th);
+    const an = _polar(kn, LONG.sh, sh);
+    const to = _polar(an, LONG.pie, pie);
+    return {
+      hp: [hip[0], hip[1]],
+      kn,
+      an,
+      to
+    };
+  };
+  J.A = {
+    ...brazo(g("ua"), g("fa")),
+    ...pierna(g("th"), g("sh"), g("pie"))
+  };
+  const hayB2 = ["ua2", "fa2", "th2", "sh2", "pie2"].some(k => base[k] !== undefined);
+  if (hayB2) {
+    const b2 = {
+      ...brazo(g("ua2", g("ua")), g("fa2", g("fa"))),
+      ...pierna(g("th2", g("th")), g("sh2", g("sh")), g("pie2", g("pie")))
+    };
+    J.B = b2;
+  }
+  return J;
+}
+// Desplaza para que el cuerpo toque el suelo y el punto de anclaje no se mueva.
+function _colocar(J, ancla, cx) {
+  const pts = [J.hip, J.neck];
+  [J.A, J.B].forEach(s => {
+    if (!s) return;
+    ["el", "mu", "kn", "an", "to"].forEach(k => s[k] && pts.push(s[k]));
+  });
+  let maxY = -1e9;
+  pts.forEach(p => {
+    if (p[1] > maxY) maxY = p[1];
+  });
+  const dy = SUELO_Y - 2.5 - maxY;
+  const puntoAncla = ancla === "muneca" ? J.A.mu : ancla === "cadera" ? J.hip : ancla === "hombro" ? J.neck : J.A.an;
+  const dx = cx - puntoAncla[0];
+  const mover = p => {
+    if (p) {
+      p[0] += dx;
+      p[1] += dy;
+    }
+  };
+  mover(J.hip);
+  mover(J.neck);
+  mover(J.head);
+  [J.A, J.B].forEach(s => {
+    if (!s) return;
+    ["sh0", "el", "mu", "hp", "kn", "an", "to"].forEach(k => mover(s[k]));
+  });
+  return J;
+}
+
+// ---------- Biblioteca de ejercicios (solo mancuernas + peso corporal, sin banco) ----------
+// poses: [A, B]. resalta: segmentos que se colorean (ua, fa, th, sh, t).
+const GRUPOS_EJ = ["Pecho", "Espalda", "Hombro", "Bíceps", "Tríceps", "Pierna", "Core"];
+const EJERCICIOS = [
+// ---------- PECHO ----------
+{
+  id: "flexiones",
+  nombre: "Flexiones",
+  grupo: "Pecho",
+  musculos: "Pecho, tríceps, hombro",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "muneca",
+  cx: 150,
+  resalta: ["ua", "fa"],
+  mancuernas: false,
+  poses: [{
+    t: 21,
+    th: 201,
+    sh: 201,
+    pie: -62,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 5,
+    th: 185,
+    sh: 185,
+    pie: -62,
+    ua: 160,
+    fa: 270
+  }],
+  desc: "Clásica y completa. Si no puedes hacer las repeticiones, pasa a «Flexiones de rodillas».",
+  pasos: ["Manos algo más anchas que los hombros, cuerpo recto como una tabla.", "Baja el pecho hasta casi tocar el suelo con los codos a unos 45°.", "Empuja el suelo y estira los brazos sin hundir la cadera."]
+}, {
+  id: "flexiones_rodillas",
+  nombre: "Flexiones de rodillas",
+  grupo: "Pecho",
+  musculos: "Pecho, tríceps",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "muneca",
+  cx: 150,
+  resalta: ["ua", "fa"],
+  mancuernas: false,
+  poses: [{
+    t: 32,
+    th: 212,
+    sh: 145,
+    pie: 90,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 8,
+    th: 188,
+    sh: 135,
+    pie: 90,
+    ua: 160,
+    fa: 270
+  }],
+  desc: "Versión más fácil de la flexión, con las rodillas apoyadas.",
+  pasos: ["Rodillas en el suelo y cuerpo recto de rodillas a cabeza.", "Baja el pecho controlando, codos a 45°.", "Sube estirando los brazos, sin arquear la espalda."]
+}, {
+  id: "press_suelo",
+  nombre: "Press de suelo con mancuernas",
+  grupo: "Pecho",
+  musculos: "Pecho, tríceps, hombro",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 110,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 0,
+    fa: 90
+  }, {
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 90,
+    fa: 90
+  }],
+  desc: "Sustituye al press de banca: tumbado en el suelo, el recorrido se frena cuando los codos tocan el suelo.",
+  pasos: ["Tumbado, rodillas flexionadas y pies apoyados. Mancuernas sobre el pecho.", "Baja hasta que los codos rozan el suelo.", "Empuja hacia arriba hasta estirar los brazos sin bloquear los codos."]
+}, {
+  id: "pullover",
+  nombre: "Pullover con mancuerna",
+  grupo: "Pecho",
+  musculos: "Pecho, dorsal, serrato",
+  material: "1 mancuerna",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 120,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  mancuerna: "vertical",
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 90,
+    fa: 90
+  }, {
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 172,
+    fa: 176
+  }],
+  desc: "Abre el pecho y estira el dorsal. Usa una sola mancuerna con las dos manos.",
+  pasos: ["Tumbado, mancuerna sujeta con las dos manos sobre el pecho.", "Baja los brazos casi rectos por detrás de la cabeza, notando el estiramiento.", "Vuelve al punto de partida sin despegar la zona lumbar del suelo."]
+},
+// ---------- ESPALDA ----------
+{
+  id: "remo_inclinado",
+  nombre: "Remo inclinado con mancuernas",
+  grupo: "Espalda",
+  musculos: "Dorsal, romboides, bíceps",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["ua"],
+  mancuernas: true,
+  poses: [{
+    t: 40,
+    th: 285,
+    sh: 262,
+    pie: 0,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 40,
+    th: 285,
+    sh: 262,
+    pie: 0,
+    ua: 212,
+    fa: 262
+  }],
+  desc: "El ejercicio clave de espalda en casa. Mantén la espalda recta.",
+  pasos: ["Inclina el torso con la espalda recta y rodillas ligeramente flexionadas.", "Tira de las mancuernas hacia la cadera llevando los codos hacia atrás.", "Aprieta los omóplatos arriba y baja controlando."]
+}, {
+  id: "peso_muerto_rumano",
+  nombre: "Peso muerto rumano",
+  grupo: "Espalda",
+  musculos: "Femoral, glúteo, lumbar",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["th", "t"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    pie: 0,
+    ua: 268,
+    fa: 270
+  }, {
+    t: 22,
+    th: 286,
+    sh: 262,
+    pie: 0,
+    ua: 268,
+    fa: 270
+  }],
+  desc: "Bisagra de cadera: trabaja la parte de atrás de la pierna y la espalda baja.",
+  pasos: ["De pie con las mancuernas delante de los muslos y rodillas casi rectas.", "Lleva la cadera hacia atrás, bajando las mancuernas pegadas a las piernas, espalda recta.", "Sube empujando la cadera hacia delante y aprietando el glúteo."]
+}, {
+  id: "superman",
+  nombre: "Superman",
+  grupo: "Espalda",
+  musculos: "Lumbar, glúteo",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 100,
+  resalta: ["t"],
+  mancuernas: false,
+  poses: [{
+    t: 0,
+    cab: 55,
+    th: 180,
+    sh: 180,
+    pie: 180,
+    ua: 0,
+    fa: 0
+  }, {
+    t: 12,
+    cab: 20,
+    th: 168,
+    sh: 168,
+    pie: 168,
+    ua: 14,
+    fa: 14
+  }],
+  desc: "Lumbares y glúteos sin material. Movimiento corto y controlado.",
+  pasos: ["Boca abajo con los brazos estirados hacia delante.", "Levanta a la vez brazos, pecho y piernas del suelo.", "Mantén 1–2 segundos y baja despacio."]
+},
+// ---------- HOMBRO ----------
+{
+  id: "press_militar",
+  nombre: "Press militar con mancuernas",
+  grupo: "Hombro",
+  musculos: "Hombro, tríceps",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 110,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 285,
+    fa: 88
+  }, {
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 88,
+    fa: 88
+  }],
+  desc: "De pie, empuja las mancuernas por encima de la cabeza.",
+  pasos: ["Mancuernas a la altura de los hombros, abdomen apretado.", "Empuja hacia arriba hasta estirar los brazos.", "Baja controlando hasta los hombros sin arquear la espalda."]
+}, {
+  id: "elevaciones_laterales",
+  nombre: "Elevaciones laterales",
+  grupo: "Hombro",
+  musculos: "Deltoides lateral",
+  material: "2 mancuernas",
+  vista: "frente",
+  ancla: "cadera",
+  cx: 110,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 262,
+    sh: 262,
+    ua: 262,
+    fa: 264
+  }, {
+    t: 90,
+    th: 262,
+    sh: 262,
+    ua: 186,
+    fa: 192
+  }],
+  desc: "Sube los brazos a los lados hasta la altura de los hombros.",
+  pasos: ["De pie, mancuernas junto a los muslos, codos ligeramente flexionados.", "Sube los brazos hacia los lados hasta la altura de los hombros.", "Baja despacio, sin balancear el cuerpo."]
+}, {
+  id: "elevaciones_frontales",
+  nombre: "Elevaciones frontales",
+  grupo: "Hombro",
+  musculos: "Deltoides anterior",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["ua"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 268,
+    fa: 270
+  }, {
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 8,
+    fa: 8
+  }],
+  desc: "Sube las mancuernas hacia delante hasta la altura de los ojos o los hombros.",
+  pasos: ["De pie con las mancuernas delante de los muslos.", "Sube los brazos casi rectos hasta la altura de los hombros.", "Baja controlando, sin impulso de la espalda."]
+},
+// ---------- BÍCEPS ----------
+{
+  id: "curl_biceps",
+  nombre: "Curl de bíceps",
+  grupo: "Bíceps",
+  musculos: "Bíceps",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 272,
+    fa: 275
+  }, {
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 272,
+    fa: 78
+  }],
+  desc: "El clásico. Codos pegados al cuerpo.",
+  pasos: ["De pie, mancuernas colgando con las palmas hacia delante.", "Dobla los codos subiendo las mancuernas sin mover los codos.", "Baja despacio hasta estirar casi del todo."]
+}, {
+  id: "curl_martillo",
+  nombre: "Curl martillo",
+  grupo: "Bíceps",
+  musculos: "Bíceps, braquial, antebrazo",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  mancuerna: "eje",
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 272,
+    fa: 275
+  }, {
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 272,
+    fa: 78
+  }],
+  desc: "Como el curl, pero con las palmas enfrentadas (agarre de martillo).",
+  pasos: ["Mancuernas colgando con las palmas mirando a los muslos.", "Sube sin girar la muñeca, codos pegados.", "Baja controlando."]
+},
+// ---------- TRÍCEPS ----------
+{
+  id: "triceps_nuca",
+  nombre: "Extensión de tríceps sobre la cabeza",
+  grupo: "Tríceps",
+  musculos: "Tríceps",
+  material: "1 mancuerna",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["fa"],
+  mancuernas: true,
+  mancuerna: "vertical",
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 90,
+    fa: 90
+  }, {
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 92,
+    fa: 242
+  }],
+  desc: "Una mancuerna con las dos manos, por encima de la cabeza.",
+  pasos: ["De pie, mancuerna sujeta con las dos manos sobre la cabeza.", "Dobla los codos bajando la mancuerna por detrás de la cabeza.", "Estira los brazos sin abrir los codos."]
+}, {
+  id: "patada_triceps",
+  nombre: "Patada de tríceps",
+  grupo: "Tríceps",
+  musculos: "Tríceps",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["fa"],
+  mancuernas: true,
+  poses: [{
+    t: 40,
+    th: 285,
+    sh: 262,
+    ua: 190,
+    fa: 268
+  }, {
+    t: 40,
+    th: 285,
+    sh: 262,
+    ua: 190,
+    fa: 192
+  }],
+  desc: "Inclinado hacia delante, estira el brazo hacia atrás.",
+  pasos: ["Torso inclinado, codo pegado al costado y doblado a 90°.", "Estira el antebrazo hacia atrás hasta alinearlo con el brazo.", "Vuelve despacio sin mover el codo."]
+},
+// ---------- PIERNA ----------
+{
+  id: "sentadilla_goblet",
+  nombre: "Sentadilla goblet",
+  grupo: "Pierna",
+  musculos: "Cuádriceps, glúteo",
+  material: "1 mancuerna",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["th", "sh"],
+  mancuernas: true,
+  mancuerna: "vertical",
+  poses: [{
+    t: 90,
+    th: 272,
+    sh: 268,
+    ua: 282,
+    fa: 78
+  }, {
+    t: 62,
+    th: -8,
+    sh: 252,
+    ua: 282,
+    fa: 78
+  }],
+  desc: "Mancuerna pegada al pecho: te ayuda a mantener la espalda recta.",
+  pasos: ["Pies a la anchura de hombros, mancuerna agarrada contra el pecho.", "Baja la cadera hacia atrás y abajo, rodillas en línea con los pies.", "Sube empujando el suelo con todo el pie."]
+}, {
+  id: "zancada",
+  nombre: "Zancada",
+  grupo: "Pierna",
+  musculos: "Cuádriceps, glúteo",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 120,
+  resalta: ["th", "sh"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 282,
+    sh: 262,
+    pie: 0,
+    th2: 252,
+    sh2: 252,
+    pie2: -60,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 90,
+    th: 355,
+    sh: 268,
+    pie: 0,
+    th2: 262,
+    sh2: 178,
+    pie2: -85,
+    ua: 270,
+    fa: 270
+  }],
+  desc: "Un paso largo hacia delante y baja. Alterna las piernas.",
+  pasos: ["De pie con una mancuerna en cada mano y da un paso largo.", "Baja hasta que ambas rodillas estén a unos 90°, tronco recto.", "Empuja con la pierna de delante para volver."]
+}, {
+  id: "puente_gluteo",
+  nombre: "Puente de glúteo",
+  grupo: "Pierna",
+  musculos: "Glúteo, femoral",
+  material: "Peso corporal (o 1 mancuerna)",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 120,
+  resalta: ["th", "t"],
+  mancuernas: false,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 60,
+    sh: -52,
+    pie: 0,
+    ua: 0,
+    fa: 0
+  }, {
+    t: 202,
+    cab: -20,
+    th: 22,
+    sh: -72,
+    pie: 0,
+    ua: 0,
+    fa: 0
+  }],
+  desc: "Glúteo en estado puro. Puedes poner una mancuerna sobre la cadera.",
+  pasos: ["Tumbado boca arriba, rodillas flexionadas y pies apoyados.", "Sube la cadera apretando glúteos hasta formar una línea hombros–rodillas.", "Pausa 1 segundo arriba y baja despacio."]
+}, {
+  id: "elevacion_talones",
+  nombre: "Elevación de talones",
+  grupo: "Pierna",
+  musculos: "Gemelos",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["sh"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    th: 270,
+    sh: 270,
+    pie: 0,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 90,
+    th: 270,
+    sh: 270,
+    pie: -55,
+    ua: 270,
+    fa: 270
+  }],
+  desc: "Gemelos con mancuernas en las manos.",
+  pasos: ["De pie con una mancuerna en cada mano.", "Sube de puntillas todo lo que puedas.", "Baja despacio hasta apoyar el talón."]
+},
+// ---------- CORE ----------
+{
+  id: "plancha",
+  nombre: "Plancha",
+  grupo: "Core",
+  musculos: "Abdomen, core",
+  material: "Peso corporal",
+  unidad: "s",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 60,
+  resalta: ["t"],
+  mancuernas: false,
+  periodo: 3600,
+  poses: [{
+    t: 8,
+    th: 188,
+    sh: 188,
+    pie: -70,
+    ua: 270,
+    fa: 0
+  }, {
+    t: 9,
+    th: 189,
+    sh: 189,
+    pie: -70,
+    ua: 270,
+    fa: 0
+  }],
+  desc: "Isométrico: mantén la posición el tiempo indicado.",
+  pasos: ["Antebrazos en el suelo con los codos bajo los hombros.", "Cuerpo recto, abdomen y glúteo apretados.", "Respira con calma y no hundas la cadera."]
+}, {
+  id: "crunch",
+  nombre: "Crunch abdominal",
+  grupo: "Core",
+  musculos: "Abdomen",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 100,
+  resalta: ["t"],
+  mancuernas: false,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 18,
+    fa: 18
+  }, {
+    t: 148,
+    cab: -10,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 18,
+    fa: 18
+  }],
+  desc: "Elevación corta del tronco. Menos recorrido, más control.",
+  pasos: ["Tumbado con las rodillas flexionadas y los brazos hacia las rodillas.", "Enrolla el tronco despegando los hombros del suelo.", "Baja despacio sin dejar caer la cabeza."]
+}, {
+  id: "elevacion_piernas",
+  nombre: "Elevación de piernas",
+  grupo: "Core",
+  musculos: "Abdomen inferior",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 70,
+  resalta: ["th", "sh"],
+  mancuernas: false,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 12,
+    sh: 8,
+    pie: 90,
+    ua: 0,
+    fa: 0
+  }, {
+    t: 180,
+    cab: -30,
+    th: 88,
+    sh: 88,
+    pie: 178,
+    ua: 0,
+    fa: 0
+  }],
+  desc: "Sube las piernas rectas sin despegar la zona lumbar.",
+  pasos: ["Tumbado, manos bajo la cadera, piernas estiradas.", "Sube las piernas juntas hasta la vertical.", "Baja sin llegar a tocar el suelo."]
+}, {
+  id: "bicho_muerto",
+  nombre: "Bicho muerto (dead bug)",
+  grupo: "Core",
+  musculos: "Core profundo",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 100,
+  resalta: ["t"],
+  mancuernas: false,
+  periodo: 3200,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 90,
+    sh: 0,
+    pie: 90,
+    ua: 90,
+    fa: 90,
+    th2: 90,
+    sh2: 0,
+    pie2: 90,
+    ua2: 90,
+    fa2: 90
+  }, {
+    t: 180,
+    cab: -30,
+    th: 90,
+    sh: 0,
+    pie: 90,
+    ua: 176,
+    fa: 178,
+    th2: 8,
+    sh2: 6,
+    pie2: 90,
+    ua2: 90,
+    fa2: 90
+  }],
+  desc: "Brazo y pierna contrarios se estiran a la vez, con la espalda pegada al suelo.",
+  pasos: ["Boca arriba, brazos al techo y rodillas a 90°.", "Estira un brazo hacia atrás y la pierna contraria hacia delante.", "Vuelve y cambia de lado, lumbar siempre pegada al suelo."]
+}];
+const EJ_POR_ID = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
+
+// ---------- Plantillas de día ----------
+const PLANTILLAS_ENTRENO = [{
+  id: "pecho",
+  nombre: "Pecho + tríceps",
+  ej: [["flexiones", 3, 12, 0, 60], ["press_suelo", 4, 10, 10, 75], ["pullover", 3, 12, 8, 60], ["triceps_nuca", 3, 12, 8, 60], ["patada_triceps", 3, 12, 4, 45]]
+}, {
+  id: "espalda",
+  nombre: "Espalda + bíceps",
+  ej: [["remo_inclinado", 4, 10, 10, 75], ["peso_muerto_rumano", 3, 12, 10, 75], ["superman", 3, 12, 0, 45], ["curl_biceps", 3, 12, 8, 60], ["curl_martillo", 3, 12, 8, 60]]
+}, {
+  id: "pierna",
+  nombre: "Pierna + glúteo",
+  ej: [["sentadilla_goblet", 4, 12, 12, 75], ["zancada", 3, 10, 6, 75], ["peso_muerto_rumano", 3, 12, 10, 75], ["puente_gluteo", 4, 15, 0, 60], ["elevacion_talones", 4, 15, 8, 45]]
+}, {
+  id: "hombro",
+  nombre: "Hombro + core",
+  ej: [["press_militar", 4, 10, 8, 75], ["elevaciones_laterales", 3, 12, 4, 60], ["elevaciones_frontales", 3, 12, 4, 60], ["plancha", 3, 40, 0, 45], ["crunch", 3, 15, 0, 45], ["bicho_muerto", 3, 10, 0, 45]]
+}, {
+  id: "full",
+  nombre: "Cuerpo entero",
+  ej: [["sentadilla_goblet", 3, 12, 12, 60], ["flexiones", 3, 10, 0, 60], ["remo_inclinado", 3, 10, 10, 60], ["press_militar", 3, 10, 8, 60], ["puente_gluteo", 3, 15, 0, 45], ["plancha", 3, 40, 0, 45]]
+}];
+function ejerciciosDePlantilla(pl) {
+  return pl.ej.map(([eid, series, reps, peso, descanso]) => ({
+    eid,
+    series,
+    reps,
+    peso,
+    descanso
+  }));
+}
+function _mancPrims(mu, ang, tipo, color) {
+  if (tipo === "redonda") return [{
+    k: "c",
+    x: mu[0],
+    y: mu[1],
+    r: 5,
+    c: color,
+    s: "#7A2F10"
+  }];
+  const eje = tipo === "vertical" ? 90 : ang;
+  const r = eje * Math.PI / 180,
+    ux = Math.cos(r),
+    uy = -Math.sin(r),
+    px = -uy,
+    py = ux;
+  const P = (d, q) => [mu[0] + ux * d + px * q, mu[1] + uy * d + py * q];
+  return [{
+    k: "l",
+    x1: P(-5.5, 0)[0],
+    y1: P(-5.5, 0)[1],
+    x2: P(5.5, 0)[0],
+    y2: P(5.5, 0)[1],
+    c: "#4A3A30",
+    w: 2.5
+  }, {
+    k: "l",
+    x1: P(-6, -5)[0],
+    y1: P(-6, -5)[1],
+    x2: P(-6, 5)[0],
+    y2: P(-6, 5)[1],
+    c: color,
+    w: 4
+  }, {
+    k: "l",
+    x1: P(6, -5)[0],
+    y1: P(6, -5)[1],
+    x2: P(6, 5)[0],
+    y2: P(6, 5)[1],
+    c: color,
+    w: 4
+  }];
+}
+
+// ---------- Dibujo: devuelve primitivas (líneas, círculos, mancuernas) ----------
+const COL_CUERPO = "#2B3A2E",
+  COL_LEJANO = "#A3AFA5",
+  COL_TORSO = "#2F8F3E",
+  COL_RESALTA = "#E0672F",
+  COL_MANC = "#E0672F";
+function dibujoEjercicio(ej, k) {
+  const pose = _lerpPose(ej.poses[0], ej.poses[1], k);
+  const J = _colocar(_articulaciones(pose, ej.vista), ej.ancla || "tobillo", ej.cx || 110);
+  const res = new Set(ej.resalta || []);
+  const col = (seg, base) => res.has(seg) ? COL_RESALTA : base;
+  const prims = [];
+  const L = (a, b, color, w) => prims.push({
+    k: "l",
+    x1: a[0],
+    y1: a[1],
+    x2: b[0],
+    y2: b[1],
+    c: color,
+    w
+  });
+  const mancs = [];
+  const manc = (mu, ang, color) => {
+    if (ej.mancuernas) _mancPrims(mu, ang, ej.mancuerna || "redonda", color).forEach(p => mancs.push(p));
+  };
+  if (ej.vista === "frente") {
+    [J.B, J.A].forEach((s, idx) => {
+      L(s.hp, s.kn, COL_CUERPO, 5);
+      L(s.kn, s.an, COL_CUERPO, 5);
+      L([s.an[0] - 3, s.an[1]], [s.an[0] + 3, s.an[1]], COL_CUERPO, 5);
+    });
+    L(J.A.hp, J.B.hp, COL_CUERPO, 6);
+    L(J.A.sh0, J.B.sh0, COL_TORSO, 6);
+    L(J.hip, J.neck, col("t", COL_TORSO), 11);
+    [J.A, J.B].forEach(s => {
+      L(s.sh0, s.el, col("ua", COL_CUERPO), 5);
+      L(s.el, s.mu, col("fa", COL_CUERPO), 5);
+      manc(s.mu, 0, COL_MANC);
+    });
+    prims.push({
+      k: "c",
+      x: J.head[0],
+      y: J.head[1],
+      r: 7.5,
+      c: "#F3D9C4",
+      s: COL_CUERPO
+    });
+    return {
+      prims: prims.concat(mancs),
+      vista: "frente"
+    };
+  }
+  const B = J.B;
+  if (B) {
+    L(B.hp, B.kn, COL_LEJANO, 5);
+    L(B.kn, B.an, COL_LEJANO, 5);
+    L(B.an, B.to, COL_LEJANO, 4);
+    L(B.sh0, B.el, COL_LEJANO, 5);
+    L(B.el, B.mu, COL_LEJANO, 5);
+    manc(B.mu, pose.fa2 !== undefined ? pose.fa2 : pose.fa, "#F0A98A");
+  }
+  const A = J.A;
+  L(J.hip, J.neck, col("t", COL_TORSO), 9);
+  L(A.hp, A.kn, col("th", COL_CUERPO), 5);
+  L(A.kn, A.an, col("sh", COL_CUERPO), 5);
+  L(A.an, A.to, COL_CUERPO, 4);
+  L(A.sh0, A.el, col("ua", COL_CUERPO), 5);
+  L(A.el, A.mu, col("fa", COL_CUERPO), 5);
+  prims.push({
+    k: "c",
+    x: J.head[0],
+    y: J.head[1],
+    r: 7.5,
+    c: "#F3D9C4",
+    s: COL_CUERPO
+  });
+  manc(A.mu, pose.fa, COL_MANC);
+  return {
+    prims: prims.concat(mancs),
+    vista: "lado"
+  };
+}
+// k (0..1) a partir del tiempo: sube y baja suave
+function progresoAnim(ms, periodo) {
+  const x = ms % periodo / periodo;
+  const v = 0.5 - 0.5 * Math.cos(2 * Math.PI * x);
+  return Math.min(1, Math.max(0, (v - 0.5) * 1.3 + 0.5)); // pequeña pausa en los extremos
+}
+
+// Encuadre automático: recuadro (viewBox) que contiene todo el recorrido del ejercicio.
+const _cajas = {};
+function cajaEjercicio(ej) {
+  if (_cajas[ej.id]) return _cajas[ej.id];
+  let x0 = 1e9,
+    x1 = -1e9,
+    y0 = 1e9;
+  [0, 0.25, 0.5, 0.75, 1].forEach(k => {
+    dibujoEjercicio(ej, k).prims.forEach(p => {
+      const pts = p.k === "l" ? [[p.x1, p.y1], [p.x2, p.y2]] : [[p.x - p.r, p.y - p.r], [p.x + p.r, p.y + p.r]];
+      pts.forEach(([x, y]) => {
+        x0 = Math.min(x0, x);
+        x1 = Math.max(x1, x);
+        y0 = Math.min(y0, y);
+      });
+    });
+  });
+  const asp = 220 / 150,
+    m = 14,
+    bottom = SUELO_Y + 8;
+  const top = y0 - m;
+  let w = Math.max(x1 - x0 + 2 * m, (bottom - top) * asp, 130);
+  let h = w / asp;
+  const caja = {
+    x: (x0 + x1) / 2 - w / 2,
+    y: bottom - h,
+    w,
+    h
+  };
+  _cajas[ej.id] = caja;
+  return caja;
+}
+
+// ---------- Entreno: plan semanal, editor, sesión guiada ----------
+const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const DIAS_CORTO = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
+const TIPOS_ENTRENO = [["fuerza", "💪", "Fuerza"], ["carrera", "🏃", "Carrera"], ["otro", "✏️", "Otro"], ["descanso", "😴", "Descanso"]];
+function indiceDia(date) {
+  return (date.getDay() + 6) % 7;
+}
+function lunesDe(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - indiceDia(d));
+  return d;
+}
+function fechaDeDia(lunes, i) {
+  const d = new Date(lunes);
+  d.setDate(d.getDate() + i);
+  return d;
+}
+function fechaCorta(d) {
+  return d.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short"
+  }).replace(".", "");
+}
+function mmss(seg) {
+  const s = Math.max(0, Math.round(seg));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor(s % 3600 / 60);
+  const r = s % 60;
+  return (h > 0 ? h + ":" + pad(m) : m) + ":" + pad(r);
+}
+function minutosEstimados(ejs) {
+  let t = 0;
+  (ejs || []).forEach(it => {
+    const ej = EJ_POR_ID[it.eid];
+    const trabajo = ej && ej.unidad === "s" ? Number(it.reps) || 30 : 40;
+    t += (Number(it.series) || 1) * (trabajo + (Number(it.descanso) || 0));
+  });
+  return Math.max(1, Math.round(t / 60));
+}
+function pitido() {
+  try {
+    if (navigator.vibrate) navigator.vibrate([220, 90, 220]);
+  } catch (e) {}
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    [0, 0.22].forEach(d => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = 880;
+      g.gain.value = 0.15;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(ctx.currentTime + d);
+      o.stop(ctx.currentTime + d + 0.15);
+    });
+    setTimeout(() => {
+      try {
+        ctx.close();
+      } catch (e) {}
+    }, 800);
+  } catch (e) {}
+}
+function resumenItem(it, ej) {
+  const reps = ej && ej.unidad === "s" ? `${it.reps} s` : `${it.reps}`;
+  return `${it.series} × ${reps}${Number(it.peso) > 0 ? ` · ${String(it.peso).replace(".", ",")} kg` : ""} · desc. ${it.descanso}s`;
+}
+function ultimaVez(registros, eid) {
+  const orden = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  for (const r of orden) {
+    const e = (r.ejercicios || []).find(x => x.eid === eid);
+    if (e && e.series && e.series.length) {
+      const u = e.series[e.series.length - 1];
+      return {
+        reps: u.reps,
+        peso: u.peso,
+        fecha: r.fecha,
+        unidad: e.unidad
+      };
+    }
+  }
+  return null;
+}
+function FiguraEjercicio({
+  ej,
+  k
+}) {
+  const d = dibujoEjercicio(ej, k || 0);
+  const c = cajaEjercicio(ej);
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: `${c.x} ${c.y} ${c.w} ${c.h}`,
+    style: {
+      width: "100%",
+      display: "block"
+    },
+    role: "img",
+    "aria-label": ej.nombre
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: c.x,
+    x2: c.x + c.w,
+    y1: SUELO_Y,
+    y2: SUELO_Y,
+    stroke: "#CFD8CD",
+    strokeWidth: "2"
+  }), d.prims.map((p, i) => p.k === "l" ? /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: p.x1,
+    y1: p.y1,
+    x2: p.x2,
+    y2: p.y2,
+    stroke: p.c,
+    strokeWidth: p.w,
+    strokeLinecap: "round"
+  }) : /*#__PURE__*/React.createElement("circle", {
+    key: i,
+    cx: p.x,
+    cy: p.y,
+    r: p.r,
+    fill: p.c,
+    stroke: p.s || "none",
+    strokeWidth: "2"
+  })));
+}
+function AnimacionEjercicio({
+  ej
+}) {
+  const [k, setK] = useState(0);
+  useEffect(() => {
+    let raf;
+    const t0 = performance.now();
+    const periodo = ej.periodo || 2600;
+    const paso = t => {
+      setK(progresoAnim(t - t0, periodo));
+      raf = requestAnimationFrame(paso);
+    };
+    raf = requestAnimationFrame(paso);
+    return () => cancelAnimationFrame(raf);
+  }, [ej.id]);
+  return /*#__PURE__*/React.createElement(FiguraEjercicio, {
+    ej: ej,
+    k: k
+  });
+}
+function Stepper({
+  etiqueta,
+  valor,
+  onChange,
+  paso,
+  min,
+  max,
+  sufijo,
+  grande
+}) {
+  const v = Number(valor) || 0;
+  const mn = min === undefined ? 0 : min;
+  const mx = max === undefined ? 999 : max;
+  const st = paso || 1;
+  const ajustar = d => onChange(Math.min(mx, Math.max(mn, Math.round((v + d) * 100) / 100)));
+  const bw = grande ? 46 : 34;
+  const bh = grande ? 52 : 36;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, etiqueta), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 14,
+      background: "#FFFFFF"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => ajustar(-st),
+    style: {
+      width: bw,
+      height: bh,
+      fontSize: 22,
+      color: palette.ink
+    }
+  }, "−"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      fontWeight: 700,
+      fontSize: grande ? 26 : 16,
+      fontVariantNumeric: "tabular-nums",
+      lineHeight: 1
+    }
+  }, String(v).replace(".", ","), sufijo ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: grande ? 12 : 10,
+      fontWeight: 500,
+      color: palette.inkSoft
+    }
+  }, " ", sufijo) : null), /*#__PURE__*/React.createElement("button", {
+    onClick: () => ajustar(st),
+    style: {
+      width: bw,
+      height: bh,
+      fontSize: 22,
+      color: palette.ink
+    }
+  }, "+")));
+}
+
+// ---------- Pestaña principal ----------
+function EntrenoTab({
+  perfilId
+}) {
+  const [plan, setPlan] = useState({});
+  const [registros, setRegistros] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [vista, setVista] = useState({
+    t: "semana"
+  });
+  const planRef = useRef({});
+  const timers = useRef({});
+  function cargarRegistros() {
+    return sb.from("entreno_registros").select("*").eq("perfil", perfilId).then(({
+      data
+    }) => setRegistros(data || []));
+  }
+  useEffect(() => {
+    setCargando(true);
+    setVista({
+      t: "semana"
+    });
+    Promise.all([sb.from("entreno_plan").select("*").eq("perfil", perfilId), cargarRegistros()]).then(([p]) => {
+      const m = {};
+      (p && p.data || []).forEach(d => {
+        m[d.dia] = d;
+      });
+      planRef.current = m;
+      setPlan(m);
+      setCargando(false);
+    });
+  }, [perfilId]);
+  function docDia(dia) {
+    return planRef.current[dia] || {
+      clave: `${perfilId}_${dia}`,
+      perfil: perfilId,
+      dia,
+      tipo: "fuerza",
+      titulo: "",
+      notas: "",
+      ejercicios: [],
+      carrera: {
+        km: 5,
+        ritmo: ""
+      }
+    };
+  }
+  function cambiarDia(dia, parche) {
+    const nuevo = {
+      ...docDia(dia),
+      ...parche
+    };
+    planRef.current = {
+      ...planRef.current,
+      [dia]: nuevo
+    };
+    setPlan(planRef.current);
+    clearTimeout(timers.current[dia]);
+    timers.current[dia] = setTimeout(() => {
+      const d = planRef.current[dia];
+      sb.from("entreno_plan").upsert({
+        clave: `${perfilId}_${dia}`,
+        perfil: perfilId,
+        dia,
+        tipo: d.tipo,
+        titulo: d.titulo || "",
+        notas: d.notas || "",
+        ejercicios: d.ejercicios || [],
+        carrera: d.carrera || {}
+      }, {
+        onConflict: "clave"
+      });
+    }, 600);
+  }
+  if (cargando) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
+  if (vista.t === "dia") {
+    return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
+      dia: vista.dia,
+      doc: docDia(vista.dia),
+      registros: registros,
+      cambiar: p => cambiarDia(vista.dia, p),
+      onBack: () => setVista({
+        t: "semana"
+      }),
+      onPicker: () => setVista({
+        t: "picker",
+        dia: vista.dia
+      }),
+      onEmpezar: () => setVista({
+        t: "sesion",
+        dia: vista.dia
+      }),
+      onHecho: async () => {
+        const d = docDia(vista.dia);
+        await sb.from("entreno_registros").insert({
+          perfil: perfilId,
+          fecha: toKey(hoy()),
+          dia: indiceDia(hoy()),
+          dia_plan: vista.dia,
+          titulo: d.titulo || "Entreno",
+          tipo: "otro",
+          duracion_s: 0,
+          notas: d.notas || ""
+        });
+        await cargarRegistros();
+        setVista({
+          t: "semana"
+        });
+      }
+    });
+  }
+  if (vista.t === "picker") {
+    const d = docDia(vista.dia);
+    return /*#__PURE__*/React.createElement(SelectorEjercicio, {
+      onBack: () => setVista({
+        t: "dia",
+        dia: vista.dia
+      }),
+      anadidos: (d.ejercicios || []).map(x => x.eid),
+      onAnadir: ej => {
+        const nuevo = {
+          eid: ej.id,
+          series: 3,
+          reps: ej.unidad === "s" ? 40 : 12,
+          peso: /mancuerna/i.test(ej.material) ? 8 : 0,
+          descanso: ej.unidad === "s" ? 45 : 60
+        };
+        cambiarDia(vista.dia, {
+          ejercicios: [...(docDia(vista.dia).ejercicios || []), nuevo]
+        });
+      }
+    });
+  }
+  if (vista.t === "sesion") {
+    const d = docDia(vista.dia);
+    const salir = async guardado => {
+      if (guardado) await cargarRegistros();
+      setVista({
+        t: "semana"
+      });
+    };
+    if (d.tipo === "carrera") return /*#__PURE__*/React.createElement(SesionCarrera, {
+      doc: d,
+      dia: vista.dia,
+      perfilId: perfilId,
+      onSalir: salir
+    });
+    return /*#__PURE__*/React.createElement(SesionEntreno, {
+      doc: d,
+      dia: vista.dia,
+      perfilId: perfilId,
+      registros: registros,
+      onSalir: salir
+    });
+  }
+
+  // ---- Vista semana ----
+  const hoyD = hoy();
+  const lunes = lunesDe(hoyD);
+  const kLunes = toKey(lunes);
+  const kDomingo = toKey(fechaDeDia(lunes, 6));
+  const hechosSemana = {}; // índice de día del plan -> registro de esta semana
+  registros.filter(r => r.fecha >= kLunes && r.fecha <= kDomingo).forEach(r => {
+    const idx = r.dia_plan !== undefined && r.dia_plan !== null ? r.dia_plan : indiceDia(new Date(r.fecha + "T12:00:00"));
+    hechosSemana[idx] = r;
+  });
+  const diasConPlan = [0, 1, 2, 3, 4, 5, 6].filter(d => plan[d] && ["fuerza", "carrera", "otro"].includes(plan[d].tipo));
+  const nHechos = diasConPlan.filter(d => hechosSemana[d]).length;
+  const recientes = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || String(b.created_at || "").localeCompare(String(a.created_at || ""))).slice(0, 6);
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-3 text-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mt-1"
+  }, "Semana del ", fechaCorta(lunes)), diasConPlan.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 8,
+      background: palette.paperDark,
+      borderRadius: 999,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${nHechos / diasConPlan.length * 100}%`,
+      height: "100%",
+      background: palette.green,
+      borderRadius: 999,
+      transition: "width .3s"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11.5px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, nHechos, " de ", diasConPlan.length, " entrenos hechos"))), /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, [0, 1, 2, 3, 4, 5, 6].map(d => {
+    const doc = plan[d];
+    const fecha = fechaDeDia(lunes, d);
+    const esHoy = toKey(fecha) === toKey(hoyD);
+    const hecho = hechosSemana[d];
+    const tipo = doc ? TIPOS_ENTRENO.find(x => x[0] === doc.tipo) : null;
+    let titulo = "Sin plan",
+      sub = "Toca para añadir";
+    if (doc && doc.tipo === "fuerza") {
+      const n = (doc.ejercicios || []).length;
+      titulo = doc.titulo || "Fuerza";
+      sub = n ? `${n} ejercicios · ~${minutosEstimados(doc.ejercicios)} min` : "Sin ejercicios todavía";
+    } else if (doc && doc.tipo === "carrera") {
+      titulo = doc.titulo || "Carrera";
+      sub = `${String(doc.carrera && doc.carrera.km || "").replace(".", ",")} km${doc.carrera && doc.carrera.ritmo ? ` · ritmo ${doc.carrera.ritmo}` : ""}`;
+    } else if (doc && doc.tipo === "otro") {
+      titulo = doc.titulo || "Otro";
+      sub = doc.notas || "Actividad libre";
+    } else if (doc && doc.tipo === "descanso") {
+      titulo = "Descanso";
+      sub = "Recupera y come bien";
+    }
+    const empezable = doc && (doc.tipo === "fuerza" && (doc.ejercicios || []).length > 0 || doc.tipo === "carrera");
+    return /*#__PURE__*/React.createElement("div", {
+      key: d,
+      onClick: () => setVista({
+        t: "dia",
+        dia: d
+      }),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 12px",
+        marginBottom: 8,
+        borderRadius: 16,
+        cursor: "pointer",
+        background: esHoy ? palette.greenSoft : "#FFFFFF",
+        border: `1.5px solid ${esHoy ? palette.green : palette.line}`,
+        opacity: doc || esHoy ? 1 : 0.75
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 40,
+        textAlign: "center",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: 700,
+        color: esHoy ? palette.greenDark : palette.inkSoft,
+        letterSpacing: "0.05em"
+      }
+    }, DIAS_CORTO[d]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 17,
+        fontWeight: 700
+      }
+    }, fecha.getDate())), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600,
+        lineHeight: 1.2,
+        overflowWrap: "anywhere"
+      }
+    }, tipo ? tipo[1] + " " : "", titulo), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft,
+        marginTop: 2
+      }
+    }, sub)), hecho ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 30,
+        height: 30,
+        borderRadius: 999,
+        background: palette.green,
+        color: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 16,
+        flexShrink: 0
+      }
+    }, "✓") : esHoy && empezable ? /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        setVista({
+          t: "sesion",
+          dia: d
+        });
+      },
+      style: {
+        background: palette.green,
+        color: "#FFFFFF",
+        borderRadius: 999,
+        padding: "8px 14px",
+        fontSize: 12.5,
+        fontWeight: 700,
+        flexShrink: 0
+      }
+    }, "▶ Empezar") : /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: palette.inkSoft,
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, "›"));
+  }), recientes.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, /*#__PURE__*/React.createElement(SectionTitle, null, "Últimos entrenos"), recientes.map(r => /*#__PURE__*/React.createElement("div", {
+    key: r.id,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 10,
+      padding: "8px 0",
+      borderBottom: `1px solid ${palette.line}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 600,
+      overflowWrap: "anywhere"
+    }
+  }, r.titulo || "Entreno"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft
+    }
+  }, new Date(r.fecha + "T12:00:00").toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right",
+      fontSize: 11.5,
+      color: palette.inkSoft,
+      whiteSpace: "nowrap"
+    }
+  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null)))), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mt-4 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ejercicios pensados para casa: solo 2 mancuernas y tu peso corporal, sin banco.")));
+}
+
+// ---------- Editor de un día ----------
+function EditorDiaEntreno({
+  dia,
+  doc,
+  registros,
+  cambiar,
+  onBack,
+  onPicker,
+  onEmpezar,
+  onHecho
+}) {
+  const [abierto, setAbierto] = useState(null);
+  const [verPlantillas, setVerPlantillas] = useState(false);
+  const ejercicios = doc.ejercicios || [];
+  const inputStyle = {
+    border: `1.5px solid ${palette.line}`,
+    background: palette.paperDark,
+    color: palette.ink,
+    borderRadius: 12
+  };
+  const mover = (i, d) => {
+    const j = i + d;
+    if (j < 0 || j >= ejercicios.length) return;
+    const n = [...ejercicios];
+    [n[i], n[j]] = [n[j], n[i]];
+    cambiar({
+      ejercicios: n
+    });
+    setAbierto(j);
+  };
+  const cambiarItem = (i, parche) => cambiar({
+    ejercicios: ejercicios.map((it, k) => k === i ? {
+      ...it,
+      ...parche
+    } : it)
+  });
+  const quitar = i => {
+    cambiar({
+      ejercicios: ejercicios.filter((_, k) => k !== i)
+    });
+    setAbierto(null);
+  };
+  const cargarPlantilla = pl => {
+    cambiar({
+      tipo: "fuerza",
+      titulo: doc.titulo || pl.nombre,
+      ejercicios: ejerciciosDePlantilla(pl)
+    });
+    setVerPlantillas(false);
+    setAbierto(null);
+  };
+  const carrera = doc.carrera || {};
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-3 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onBack
+  }, "Semana"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[22px] font-semibold mt-1"
+  }, DIAS_SEMANA[dia])), /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 12
+    }
+  }, TIPOS_ENTRENO.map(([id, ico, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => cambiar({
+      tipo: id
+    }),
+    style: {
+      flex: 1,
+      padding: "8px 2px",
+      borderRadius: 12,
+      fontSize: 11.5,
+      fontWeight: 600,
+      background: doc.tipo === id ? palette.green : palette.paperDark,
+      color: doc.tipo === id ? "#FFFFFF" : palette.inkSoft
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 17
+    }
+  }, ico), label))), doc.tipo !== "descanso" && /*#__PURE__*/React.createElement("input", {
+    value: doc.titulo || "",
+    onChange: e => cambiar({
+      titulo: e.target.value
+    }),
+    placeholder: doc.tipo === "fuerza" ? "Nombre de la sesión (Ej. Pecho y tríceps)" : doc.tipo === "carrera" ? "Ej. Carrera suave" : "Ej. Bici, natación…",
+    className: "w-full px-3 py-2 text-[13px] mb-3",
+    style: inputStyle
+  }), doc.tipo === "descanso" && /*#__PURE__*/React.createElement("div", {
+    className: "text-center py-6 text-[13px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "😴 Día de descanso. También cuenta para progresar."), doc.tipo === "otro" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("textarea", {
+    value: doc.notas || "",
+    onChange: e => cambiar({
+      notas: e.target.value
+    }),
+    placeholder: "Qué vas a hacer (Ej. 45 min de bici)",
+    rows: 3,
+    className: "w-full px-3 py-2 text-[13px] mb-3",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: onHecho,
+    className: "w-full py-3 text-[13px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14
+    }
+  }, "✓ Marcar como hecho hoy")), doc.tipo === "carrera" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Distancia",
+    valor: carrera.km || 0,
+    paso: 0.5,
+    min: 0,
+    max: 100,
+    sufijo: "km",
+    onChange: v => cambiar({
+      carrera: {
+        ...carrera,
+        km: v
+      }
+    })
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-wide mb-1 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ritmo objetivo"), /*#__PURE__*/React.createElement("input", {
+    value: carrera.ritmo || "",
+    onChange: e => cambiar({
+      carrera: {
+        ...carrera,
+        ritmo: e.target.value
+      }
+    }),
+    placeholder: "5:30 /km",
+    className: "w-full text-center text-[15px] font-semibold",
+    style: {
+      ...inputStyle,
+      height: 38
+    }
+  }))), /*#__PURE__*/React.createElement("textarea", {
+    value: doc.notas || "",
+    onChange: e => cambiar({
+      notas: e.target.value
+    }),
+    placeholder: "Notas (series, cuestas, zona de pulso…)",
+    rows: 2,
+    className: "w-full px-3 py-2 text-[13px] mb-3",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: onEmpezar,
+    className: "w-full py-3 text-[13px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14
+    }
+  }, "▶ Empezar carrera")), doc.tipo === "fuerza" && /*#__PURE__*/React.createElement("div", null, ejercicios.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: onEmpezar,
+    className: "w-full py-3 text-[13.5px] font-semibold mb-3",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14
+    }
+  }, "▶ Empezar sesión · ~", minutosEstimados(ejercicios), " min"), ejercicios.map((it, i) => {
+    const ej = EJ_POR_ID[it.eid];
+    if (!ej) return null;
+    const abierta = abierto === i;
+    const ult = ultimaVez(registros, it.eid);
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        border: `1.5px solid ${abierta ? palette.green : palette.line}`,
+        borderRadius: 16,
+        marginBottom: 8,
+        overflow: "hidden",
+        background: "#FFFFFF"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: () => setAbierto(abierta ? null : i),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 10px",
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 64,
+        flexShrink: 0,
+        borderRadius: 10,
+        overflow: "hidden",
+        background: "#F7FAF5"
+      }
+    }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
+      ej: ej,
+      k: 1
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13.5,
+        fontWeight: 600,
+        lineHeight: 1.2,
+        overflowWrap: "anywhere"
+      }
+    }, ej.nombre), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft,
+        marginTop: 2
+      }
+    }, resumenItem(it, ej))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: palette.inkSoft,
+        fontSize: 16
+      }
+    }, abierta ? "⌄" : "›")), abierta && /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "0 12px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderRadius: 12,
+        background: "#F7FAF5",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
+      ej: ej
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft,
+        marginBottom: 8
+      }
+    }, ej.musculos, " · ", ej.material), ult && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        marginBottom: 8,
+        color: palette.greenDark
+      }
+    }, "Última vez: ", ult.reps, ej.unidad === "s" ? " s" : "", ult.peso > 0 ? ` × ${String(ult.peso).replace(".", ",")} kg` : ""), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Series",
+      valor: it.series,
+      min: 1,
+      max: 10,
+      onChange: v => cambiarItem(i, {
+        series: v
+      })
+    }), /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: ej.unidad === "s" ? "Segundos" : "Repeticiones",
+      valor: it.reps,
+      min: 1,
+      max: 200,
+      paso: ej.unidad === "s" ? 5 : 1,
+      onChange: v => cambiarItem(i, {
+        reps: v
+      })
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Peso (kg)",
+      valor: it.peso,
+      min: 0,
+      max: 100,
+      paso: 0.5,
+      onChange: v => cambiarItem(i, {
+        peso: v
+      })
+    }), /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Descanso (s)",
+      valor: it.descanso,
+      min: 0,
+      max: 300,
+      paso: 15,
+      onChange: v => cambiarItem(i, {
+        descanso: v
+      })
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => mover(i, -1),
+      style: {
+        flex: 1,
+        padding: "7px 0",
+        borderRadius: 12,
+        background: palette.paperDark,
+        fontSize: 12,
+        color: palette.inkSoft
+      }
+    }, "▲ Subir"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => mover(i, 1),
+      style: {
+        flex: 1,
+        padding: "7px 0",
+        borderRadius: 12,
+        background: palette.paperDark,
+        fontSize: 12,
+        color: palette.inkSoft
+      }
+    }, "▼ Bajar"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => quitar(i),
+      style: {
+        flex: 1,
+        padding: "7px 0",
+        borderRadius: 12,
+        background: palette.redSoft,
+        fontSize: 12,
+        color: palette.red
+      }
+    }, "✕ Quitar"))));
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: onPicker,
+    className: "w-full py-2.5 text-[12.5px] font-semibold",
+    style: {
+      border: `1.5px dashed ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 14
+    }
+  }, "+ Añadir ejercicio"), ejercicios.length === 0 || verPlantillas ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-4"
+  }, /*#__PURE__*/React.createElement(SectionTitle, null, ejercicios.length === 0 ? "O empieza con una plantilla" : "Cargar plantilla (reemplaza la lista)"), PLANTILLAS_ENTRENO.map(pl => /*#__PURE__*/React.createElement("button", {
+    key: pl.id,
+    onClick: () => cargarPlantilla(pl),
+    className: "w-full text-left",
+    style: {
+      padding: "9px 12px",
+      borderRadius: 14,
+      background: palette.paperDark,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 600
+    }
+  }, pl.nombre), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft
+    }
+  }, pl.ej.map(e => EJ_POR_ID[e[0]].nombre).join(" · "))))) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerPlantillas(true),
+    className: "w-full mt-3 py-2 text-[11.5px] uppercase tracking-wide",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Cargar una plantilla…"))));
+}
+
+// ---------- Selector de ejercicios ----------
+function SelectorEjercicio({
+  onBack,
+  onAnadir,
+  anadidos
+}) {
+  const [grupo, setGrupo] = useState("Todos");
+  const [aviso, setAviso] = useState(null);
+  const lista = EJERCICIOS.filter(e => grupo === "Todos" || e.grupo === grupo);
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-3 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onBack
+  }, "Volver al día"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mt-1"
+  }, "Añadir ejercicio"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11.5px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Solo con 2 mancuernas y sin banco")), /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      overflowX: "auto",
+      paddingBottom: 8,
+      marginBottom: 6
+    }
+  }, ["Todos", ...GRUPOS_EJ].map(g => /*#__PURE__*/React.createElement("button", {
+    key: g,
+    onClick: () => setGrupo(g),
+    style: {
+      flexShrink: 0,
+      padding: "6px 12px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 600,
+      background: grupo === g ? palette.green : palette.paperDark,
+      color: grupo === g ? "#FFFFFF" : palette.inkSoft
+    }
+  }, g))), aviso && /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] text-center mb-2",
+    style: {
+      color: palette.greenDark
+    }
+  }, aviso), lista.map(ej => {
+    const n = anadidos.filter(x => x === ej.id).length;
+    return /*#__PURE__*/React.createElement("button", {
+      key: ej.id,
+      onClick: () => {
+        onAnadir(ej);
+        setAviso(`✓ ${ej.nombre} añadido`);
+      },
+      className: "w-full text-left",
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 10px",
+        marginBottom: 8,
+        borderRadius: 16,
+        border: `1.5px solid ${palette.line}`,
+        background: "#FFFFFF"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 84,
+        flexShrink: 0,
+        borderRadius: 10,
+        overflow: "hidden",
+        background: "#F7FAF5"
+      }
+    }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
+      ej: ej,
+      k: 1
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13.5,
+        fontWeight: 600,
+        lineHeight: 1.2
+      }
+    }, ej.nombre), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft,
+        marginTop: 2
+      }
+    }, ej.musculos), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: palette.inkSoft
+      }
+    }, ej.material)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: n ? palette.green : palette.inkSoft,
+        whiteSpace: "nowrap"
+      }
+    }, n ? `✓ ×${n}` : "+"));
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: onBack,
+    className: "w-full py-3 mt-2 text-[13px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14
+    }
+  }, "Listo")));
+}
+
+// ---------- Sesión guiada de fuerza ----------
+function SesionEntreno({
+  doc,
+  dia,
+  perfilId,
+  registros,
+  onSalir
+}) {
+  const items = (doc.ejercicios || []).map(it => ({
+    ...it,
+    ej: EJ_POR_ID[it.eid]
+  })).filter(it => it.ej);
+  const pasos = [];
+  items.forEach((it, ei) => {
+    for (let s = 0; s < (Number(it.series) || 1); s++) pasos.push({
+      ei,
+      s
+    });
+  });
+  const [i, setI] = useState(0);
+  const [fase, setFase] = useState("trabajo"); // trabajo | descanso | fin
+  const [valores, setValores] = useState({});
+  const [hechas, setHechas] = useState({});
+  const [finDesc, setFinDesc] = useState(0);
+  const [finTrab, setFinTrab] = useState(0);
+  const [, setTick] = useState(0);
+  const [verInfo, setVerInfo] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [inicio] = useState(() => Date.now());
+  const [fin, setFin] = useState(null);
+  useEffect(() => {
+    let lock = null;
+    try {
+      if (navigator.wakeLock) navigator.wakeLock.request("screen").then(l => {
+        lock = l;
+      }).catch(() => {});
+    } catch (e) {}
+    return () => {
+      try {
+        if (lock) lock.release();
+      } catch (e) {}
+    };
+  }, []);
+  useEffect(() => {
+    if (fase === "fin") return;
+    const id = setInterval(() => setTick(n => n + 1), 250);
+    return () => clearInterval(id);
+  }, [fase]);
+  const ahora = Date.now();
+  const restante = fase === "descanso" ? Math.max(0, Math.ceil((finDesc - ahora) / 1000)) : 0;
+  const restTrab = finTrab ? Math.max(0, Math.ceil((finTrab - ahora) / 1000)) : null;
+  const p = pasos[i];
+  const it = p ? items[p.ei] : null;
+  const valorDe = pp => valores[pp.ei + "-" + pp.s] || {
+    reps: items[pp.ei].reps,
+    peso: items[pp.ei].peso
+  };
+  function cambiar(pp, parche) {
+    setValores(prev => {
+      const n = {
+        ...prev
+      };
+      const itm = items[pp.ei];
+      for (let s = pp.s; s < itm.series; s++) {
+        const k = pp.ei + "-" + s;
+        n[k] = {
+          ...(prev[k] || {
+            reps: itm.reps,
+            peso: itm.peso
+          }),
+          ...parche
+        };
+      }
+      return n;
+    });
+  }
+  function hecha() {
+    if (!p) return;
+    const v = valorDe(p);
+    setHechas(h => ({
+      ...h,
+      [p.ei + "-" + p.s]: v
+    }));
+    setFinTrab(0);
+    if (i >= pasos.length - 1) {
+      setFin(Date.now());
+      setFase("fin");
+    } else {
+      setFinDesc(Date.now() + (Number(it.descanso) || 0) * 1000);
+      setFase("descanso");
+    }
+  }
+  function saltarEjercicio() {
+    const j = pasos.findIndex(x => x.ei > p.ei);
+    setFinTrab(0);
+    setVerInfo(false);
+    if (j < 0) {
+      setFin(Date.now());
+      setFase("fin");
+    } else setI(j);
+  }
+  // fin del descanso / fin de la cuenta atrás de un ejercicio por tiempo
+  useEffect(() => {
+    if (fase === "descanso" && restante === 0) {
+      pitido();
+      setI(x => x + 1);
+      setFase("trabajo");
+      setVerInfo(false);
+    } else if (fase === "trabajo" && finTrab && restTrab === 0) {
+      pitido();
+      hecha();
+    }
+  });
+  const hechasN = Object.keys(hechas).length;
+  const volumen = Object.values(hechas).reduce((s2, v) => s2 + (Number(v.peso) > 0 ? (Number(v.reps) || 0) * Number(v.peso) : 0), 0);
+  const duracion = Math.round(((fin || Date.now()) - inicio) / 1000);
+  async function guardar() {
+    setGuardando(true);
+    const ejs = items.map((itm, ei) => ({
+      eid: itm.eid,
+      nombre: itm.ej.nombre,
+      unidad: itm.ej.unidad || "reps",
+      series: Array.from({
+        length: Number(itm.series) || 1
+      }, (_, s) => hechas[ei + "-" + s]).filter(Boolean).map(v => ({
+        reps: Number(v.reps) || 0,
+        peso: Number(v.peso) || 0
+      }))
+    })).filter(e => e.series.length);
+    await sb.from("entreno_registros").insert({
+      perfil: perfilId,
+      fecha: toKey(hoy()),
+      dia: indiceDia(hoy()),
+      dia_plan: dia,
+      titulo: doc.titulo || "Entreno de fuerza",
+      tipo: "fuerza",
+      duracion_s: duracion,
+      volumen_kg: Math.round(volumen),
+      series_hechas: hechasN,
+      ejercicios: ejs
+    });
+    onSalir(true);
+  }
+  if (!p && fase !== "fin") {
+    return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+      className: "px-5 py-8 text-center"
+    }, /*#__PURE__*/React.createElement(BotonAtras, {
+      onClick: () => onSalir(false)
+    }, "Volver"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[13px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Esta sesión no tiene ejercicios.")));
+  }
+
+  // ----- Pantalla de salida -----
+  const salida = saliendo && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(28,43,31,0.45)",
+      zIndex: 60,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFFFFF",
+      borderRadius: 20,
+      padding: 18,
+      width: "100%",
+      maxWidth: 320
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[16px] font-semibold mb-1 text-center"
+  }, "¿Salir de la sesión?"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] mb-3 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, hechasN, " series hechas"), hechasN > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: guardar,
+    className: "w-full py-2.5 mb-2 text-[13px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14
+    }
+  }, "Guardar lo hecho y salir"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSalir(false),
+    className: "w-full py-2.5 mb-2 text-[13px] font-semibold",
+    style: {
+      background: palette.redSoft,
+      color: palette.red,
+      borderRadius: 14
+    }
+  }, "Salir sin guardar"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSaliendo(false),
+    className: "w-full py-2.5 text-[13px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Seguir entrenando")));
+
+  // ----- Fin -----
+  if (fase === "fin") {
+    return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+      className: "px-5 pt-6 pb-5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-center mb-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 44
+      }
+    }, "💪"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[22px] font-semibold"
+    }, "¡Sesión completada!"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[12.5px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, doc.titulo || "Entreno de fuerza")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 14
+      }
+    }, [["Duración", mmss(duracion)], ["Series", hechasN], ["Volumen", `${Math.round(volumen)} kg`]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
+      key: l,
+      style: {
+        flex: 1,
+        background: palette.greenSoft,
+        borderRadius: 14,
+        padding: "10px 4px",
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 700,
+        color: palette.greenDark
+      }
+    }, v), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+        color: palette.inkSoft
+      }
+    }, l)))), items.map((itm, ei) => {
+      const sr = Array.from({
+        length: Number(itm.series) || 1
+      }, (_, s) => hechas[ei + "-" + s]).filter(Boolean);
+      if (!sr.length) return null;
+      return /*#__PURE__*/React.createElement("div", {
+        key: ei,
+        style: {
+          padding: "7px 0",
+          borderBottom: `1px solid ${palette.line}`
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 13,
+          fontWeight: 600
+        }
+      }, itm.ej.nombre), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11.5,
+          color: palette.inkSoft
+        }
+      }, sr.map(v => `${v.reps}${itm.ej.unidad === "s" ? "s" : ""}${Number(v.peso) > 0 ? "×" + String(v.peso).replace(".", ",") : ""}`).join("  ·  ")));
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: guardar,
+      disabled: guardando,
+      className: "w-full py-3 mt-4 text-[14px] font-semibold",
+      style: {
+        background: palette.green,
+        color: "#FFFFFF",
+        borderRadius: 14,
+        opacity: guardando ? 0.6 : 1
+      }
+    }, guardando ? "Guardando…" : "Guardar entrenamiento"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => onSalir(false),
+      className: "w-full py-2.5 mt-1 text-[12px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Descartar")));
+  }
+  const nEj = items.length;
+  const esUltimaSerie = p.s >= (Number(it.series) || 1) - 1;
+  const siguiente = pasos[i + 1];
+  const sigIt = siguiente ? items[siguiente.ei] : null;
+  const val = valorDe(p);
+  const ult = ultimaVez(registros, it.eid);
+  const porTiempo = it.ej.unidad === "s";
+
+  // ----- Descanso -----
+  if (fase === "descanso") {
+    const total = Math.max(1, Number(it.descanso) || 1);
+    const frac = Math.min(1, restante / Math.max(total, restante));
+    const R = 62,
+      C = 2 * Math.PI * R;
+    const hecho = hechas[p.ei + "-" + p.s];
+    return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+      className: "px-5 pt-5 pb-5 text-center"
+    }, /*#__PURE__*/React.createElement(BotonAtras, {
+      onClick: () => setSaliendo(true)
+    }, "Salir"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] tracking-[0.2em] uppercase",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Descanso"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "relative",
+        width: 160,
+        height: 160,
+        margin: "10px auto"
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "160",
+      height: "160",
+      viewBox: "0 0 160 160",
+      style: {
+        transform: "rotate(-90deg)"
+      }
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "80",
+      cy: "80",
+      r: R,
+      fill: "none",
+      stroke: palette.paperDark,
+      strokeWidth: "12"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "80",
+      cy: "80",
+      r: R,
+      fill: "none",
+      stroke: palette.green,
+      strokeWidth: "12",
+      strokeLinecap: "round",
+      strokeDasharray: C,
+      strokeDashoffset: C * (1 - frac),
+      style: {
+        transition: "stroke-dashoffset .25s linear"
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 44,
+        fontWeight: 700,
+        fontVariantNumeric: "tabular-nums",
+        lineHeight: 1
+      }
+    }, restante), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: palette.inkSoft
+      }
+    }, "segundos"))), hecho && /*#__PURE__*/React.createElement("div", {
+      className: "text-[12px] mb-3",
+      style: {
+        color: palette.greenDark
+      }
+    }, "✓ Serie ", p.s + 1, " hecha: ", hecho.reps, porTiempo ? " s" : "", Number(hecho.peso) > 0 ? ` × ${String(hecho.peso).replace(".", ",")} kg` : ""), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setFinDesc(f => f - 15000),
+      style: {
+        flex: 1,
+        padding: "10px 0",
+        borderRadius: 14,
+        background: palette.paperDark,
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, "− 15 s"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setFinDesc(f => f + 15000),
+      style: {
+        flex: 1,
+        padding: "10px 0",
+        borderRadius: 14,
+        background: palette.paperDark,
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, "+ 15 s"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setFinDesc(0),
+      style: {
+        flex: 1.3,
+        padding: "10px 0",
+        borderRadius: 14,
+        background: palette.green,
+        color: "#FFFFFF",
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, "Saltar")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: palette.paperDark,
+        borderRadius: 16,
+        padding: 12,
+        textAlign: "left"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] uppercase tracking-wide mb-1",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Siguiente"), siguiente && siguiente.ei === p.ei ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600
+      }
+    }, "Serie ", siguiente.s + 1, " de ", sigIt.series, " · ", valorDe(siguiente).reps, porTiempo ? " s" : " reps", Number(valorDe(siguiente).peso) > 0 ? ` × ${String(valorDe(siguiente).peso).replace(".", ",")} kg` : "") : sigIt ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600
+      }
+    }, "Ejercicio ", siguiente.ei + 1, "/", nEj, ": ", sigIt.ej.nombre) : null, sigIt && /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderRadius: 12,
+        background: "#FFFFFF",
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
+      ej: sigIt.ej
+    })))), salida);
+  }
+
+  // ----- Trabajo -----
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: () => setSaliendo(true)
+  }, "Salir")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] uppercase tracking-wide",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ejercicio ", p.ei + 1, " de ", nEj), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px]",
+    style: {
+      color: palette.inkSoft,
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, "⏱ ", mmss(duracion))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 3,
+      marginBottom: 10
+    }
+  }, items.map((_, k) => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    style: {
+      flex: 1,
+      height: 5,
+      borderRadius: 999,
+      background: k < p.ei ? palette.green : k === p.ei ? "#9FD0A6" : palette.paperDark
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold leading-tight"
+  }, it.ej.nombre), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-2",
+    style: {
+      color: palette.inkSoft
+    }
+  }, it.ej.musculos), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 16,
+      background: "#F7FAF5",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
+    ej: it.ej
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerInfo(v => !v),
+    className: "text-[12px] mb-2",
+    style: {
+      color: palette.greenDark,
+      textDecoration: "underline"
+    }
+  }, verInfo ? "Ocultar" : "ℹ Cómo se hace"), verInfo && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: "10px 12px",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, it.ej.desc), it.ej.pasos.map((t, k) => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    className: "text-[12.5px] mb-1",
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.green
+    }
+  }, k + 1, "."), /*#__PURE__*/React.createElement("span", null, t)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700
+    }
+  }, "Serie ", p.s + 1, " de ", it.series), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5
+    }
+  }, Array.from({
+    length: Number(it.series) || 1
+  }, (_, s) => /*#__PURE__*/React.createElement("div", {
+    key: s,
+    style: {
+      width: 11,
+      height: 11,
+      borderRadius: 999,
+      background: hechas[p.ei + "-" + s] ? palette.green : s === p.s ? "#9FD0A6" : palette.line
+    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    grande: true,
+    etiqueta: porTiempo ? "Segundos" : "Reps",
+    valor: val.reps,
+    min: 1,
+    max: 300,
+    paso: porTiempo ? 5 : 1,
+    onChange: v => cambiar(p, {
+      reps: v
+    })
+  }), /*#__PURE__*/React.createElement(Stepper, {
+    grande: true,
+    etiqueta: "Peso (kg)",
+    valor: val.peso,
+    min: 0,
+    max: 100,
+    paso: 0.5,
+    onChange: v => cambiar(p, {
+      peso: v
+    })
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11.5px] mb-3 text-center",
+    style: {
+      color: palette.inkSoft,
+      minHeight: 16
+    }
+  }, ult ? `Última vez: ${ult.reps}${porTiempo ? " s" : ""}${ult.peso > 0 ? ` × ${String(ult.peso).replace(".", ",")} kg` : ""}` : "Ajusta lo que hagas de verdad"), porTiempo && !finTrab && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setFinTrab(Date.now() + (Number(val.reps) || 30) * 1000),
+    className: "w-full py-3 mb-2 text-[14px] font-semibold",
+    style: {
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      borderRadius: 14
+    }
+  }, "▶ Empezar cuenta atrás (", val.reps, " s)"), porTiempo && finTrab ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center mb-2",
+    style: {
+      fontSize: 40,
+      fontWeight: 700,
+      fontVariantNumeric: "tabular-nums",
+      color: palette.green
+    }
+  }, restTrab) : null, /*#__PURE__*/React.createElement("button", {
+    onClick: hecha,
+    className: "w-full py-4 text-[16px] font-bold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 18,
+      boxShadow: "0 6px 16px rgba(47,143,62,0.35)"
+    }
+  }, "✓ Serie hecha"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11.5px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, esUltimaSerie && siguiente ? `Después: ${sigIt.ej.nombre}` : esUltimaSerie ? "Última serie 🎉" : `Descanso: ${it.descanso} s`), /*#__PURE__*/React.createElement("button", {
+    onClick: saltarEjercicio,
+    className: "text-[11.5px]",
+    style: {
+      color: palette.inkSoft,
+      textDecoration: "underline"
+    }
+  }, "Saltar ejercicio"))), salida);
+}
+
+// ---------- Sesión de carrera (cronómetro) ----------
+function SesionCarrera({
+  doc,
+  dia,
+  perfilId,
+  onSalir
+}) {
+  const km0 = Number(doc.carrera && doc.carrera.km || 0);
+  const [corriendo, setCorriendo] = useState(false);
+  const [acum, setAcum] = useState(0);
+  const [t0, setT0] = useState(0);
+  const [, setTick] = useState(0);
+  const [terminada, setTerminada] = useState(false);
+  const [km, setKm] = useState(km0);
+  const [minutos, setMinutos] = useState(0);
+  const [guardando, setGuardando] = useState(false);
+  useEffect(() => {
+    let lock = null;
+    try {
+      if (navigator.wakeLock) navigator.wakeLock.request("screen").then(l => {
+        lock = l;
+      }).catch(() => {});
+    } catch (e) {}
+    return () => {
+      try {
+        if (lock) lock.release();
+      } catch (e) {}
+    };
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => setTick(n => n + 1), 500);
+    return () => clearInterval(id);
+  }, []);
+  const seg = Math.floor((acum + (corriendo ? Date.now() - t0 : 0)) / 1000);
+  function alternar() {
+    if (corriendo) {
+      setAcum(a => a + Date.now() - t0);
+      setCorriendo(false);
+    } else {
+      setT0(Date.now());
+      setCorriendo(true);
+    }
+  }
+  function terminar() {
+    const total = acum + (corriendo ? Date.now() - t0 : 0);
+    setCorriendo(false);
+    setAcum(total);
+    setMinutos(Math.round(total / 60000 * 10) / 10);
+    setTerminada(true);
+  }
+  const ritmo = km > 0 && minutos > 0 ? minutos / km : 0;
+  async function guardar() {
+    setGuardando(true);
+    await sb.from("entreno_registros").insert({
+      perfil: perfilId,
+      fecha: toKey(hoy()),
+      dia: indiceDia(hoy()),
+      dia_plan: dia,
+      titulo: doc.titulo || "Carrera",
+      tipo: "carrera",
+      km: Number(km) || 0,
+      duracion_s: Math.round(minutos * 60)
+    });
+    onSalir(true);
+  }
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-5 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: () => onSalir(false)
+  }, "Salir"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, doc.titulo || "Carrera"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Objetivo: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.ink
+    }
+  }, String(km0).replace(".", ","), " km"), doc.carrera && doc.carrera.ritmo ? ` · ${doc.carrera.ritmo}` : ""), doc.notas ? /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mt-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, doc.notas) : null, !terminada ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      fontWeight: 700,
+      fontVariantNumeric: "tabular-nums",
+      margin: "26px 0",
+      color: corriendo ? palette.green : palette.ink
+    }
+  }, mmss(seg)), /*#__PURE__*/React.createElement("button", {
+    onClick: alternar,
+    className: "w-full py-4 text-[16px] font-bold mb-2",
+    style: {
+      background: corriendo ? palette.redSoft : palette.green,
+      color: corriendo ? palette.red : "#FFFFFF",
+      borderRadius: 18
+    }
+  }, corriendo ? "⏸ Pausar" : seg > 0 ? "▶ Continuar" : "▶ Empezar"), seg > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: terminar,
+    className: "w-full py-3 text-[13.5px] font-semibold",
+    style: {
+      border: `1.5px solid ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 16
+    }
+  }, "■ Terminar")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 40
+    }
+  }, "🏁"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mb-3"
+  }, "¡Carrera terminada!"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Distancia real",
+    valor: km,
+    paso: 0.1,
+    min: 0,
+    max: 100,
+    sufijo: "km",
+    onChange: setKm
+  }), /*#__PURE__*/React.createElement(Stepper, {
+    etiqueta: "Tiempo",
+    valor: minutos,
+    paso: 1,
+    min: 0,
+    max: 600,
+    sufijo: "min",
+    onChange: setMinutos
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] mb-3",
+    style: {
+      color: palette.inkSoft
+    }
+  }, ritmo > 0 ? `Ritmo medio: ${Math.floor(ritmo)}:${pad(Math.round(ritmo % 1 * 60) % 60)} min/km` : ""), /*#__PURE__*/React.createElement("button", {
+    onClick: guardar,
+    disabled: guardando,
+    className: "w-full py-3 text-[14px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 14,
+      opacity: guardando ? 0.6 : 1
+    }
+  }, guardando ? "Guardando…" : "Guardar carrera"))));
+}
+
+// <<FIN_ENTRENO>>
+
 const TABS = [{
   id: "diario",
-  label: "Diario"
+  label: "Diario",
+  icono: "🍽️"
 }, {
   id: "calendario",
-  label: "Calendario"
+  label: "Calendario",
+  icono: "📅"
 }, {
   id: "recetas",
-  label: "Recetas"
+  label: "Recetas",
+  icono: "📖"
 }, {
   id: "productos",
-  label: "Productos"
+  label: "Productos",
+  icono: "🏷️"
 }, {
   id: "lista",
-  label: "Lista compra"
+  label: "Compra",
+  icono: "🛒"
+}, {
+  id: "entreno",
+  label: "Entreno",
+  icono: "🏋️"
 }];
 function App() {
   const [session, setSession] = useState(undefined); // undefined=cargando, null=sin sesión
@@ -7459,7 +10375,9 @@ function App() {
     perfilId: perfilId
   }), tab === "recetas" && /*#__PURE__*/React.createElement(RecetasTab, {
     userId: userId
-  }), tab === "productos" && /*#__PURE__*/React.createElement(ProductosTab, null), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null))), /*#__PURE__*/React.createElement("div", {
+  }), tab === "productos" && /*#__PURE__*/React.createElement(ProductosTab, null), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null), tab === "entreno" && /*#__PURE__*/React.createElement(EntrenoTab, {
+    perfilId: perfilId
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "fixed bottom-3 left-0 right-0 flex mx-auto",
     style: {
       maxWidth: 356,
@@ -7472,14 +10390,26 @@ function App() {
   }, TABS.map(t => /*#__PURE__*/React.createElement("button", {
     key: t.id,
     onClick: () => setTab(t.id),
-    className: "flex-1 py-2.5 text-[11.5px] uppercase tracking-tight px-0.5 leading-tight font-medium",
+    className: "flex-1 font-medium",
     style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 1,
+      padding: "6px 0 5px",
+      fontSize: 10.5,
+      lineHeight: 1.15,
       background: tab === t.id ? palette.green : "transparent",
       color: tab === t.id ? "#FFFFFF" : palette.inkSoft,
       borderRadius: 16,
       transition: "all 0.15s ease"
     }
-  }, t.label))));
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16,
+      lineHeight: 1.1
+    }
+  }, t.icono), t.label))));
 }ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
 </body>
