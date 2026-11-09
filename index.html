@@ -11880,6 +11880,8 @@ function EntrenoTab({
   const [pestana, setPestana] = useState("semana");
   const [diaSel, setDiaSel] = useState(null);
   const [ejSel, setEjSel] = useState(null);
+  const [packs, setPacks] = useState([]);
+  const [avisoPack, setAvisoPack] = useState("");
   const setSemOff = n => {
     setSemOffS(n);
     setDiaSel(null);
@@ -11916,7 +11918,8 @@ function EntrenoTab({
     setVista({
       t: "semana"
     });
-    Promise.all([sb.from("entreno_plan").select("*").eq("perfil", perfilId), cargarRegistros()]).then(([p]) => {
+    Promise.all([sb.from("entreno_plan").select("*").eq("perfil", perfilId), cargarRegistros(), sb.from("entreno_packs").select("*").eq("perfil", perfilId)]).then(([p,, pk]) => {
+      cargarPacks(pk && pk.data || []);
       const m = {},
         o = {};
       const filas = p && p.data || [];
@@ -11966,6 +11969,87 @@ function EntrenoTab({
       setCargando(false);
     });
   }, [perfilId]);
+  function cargarPacks(filas) {
+    const marca = filas.find(x => x.tipo === "marca");
+    let lista = filas.filter(x => x.tipo !== "marca");
+    if (!marca && lista.length === 0) {
+      // Primera vez: tus entrenamientos predefinidos pasan a ser packs editables
+      const semilla = [...PLANTILLAS_ENTRENO.map(pl => ({
+        titulo: pl.nombre,
+        tipo: "fuerza",
+        notas: pl.id === "pierna" ? "Intensidad moderada: termina las series con 2–3 repeticiones en reserva." : "",
+        ejercicios: ejerciciosDePlantilla(pl),
+        carrera: {},
+        cardio: {}
+      })), {
+        titulo: "Correr 7 km",
+        tipo: "carrera",
+        notas: "Ritmo suave, en el que puedas hablar mientras corres.",
+        ejercicios: [],
+        carrera: {
+          km: 7,
+          ritmo: ""
+        },
+        cardio: {}
+      }];
+      lista = semilla.map((x, i) => ({
+        ...x,
+        clave: `${perfilId}_p${Date.now()}_${i}`,
+        perfil: perfilId,
+        orden: i
+      }));
+      lista.forEach(x => sb.from("entreno_packs").upsert(x, {
+        onConflict: "clave"
+      }));
+      sb.from("entreno_packs").upsert({
+        clave: `${perfilId}_marca`,
+        perfil: perfilId,
+        tipo: "marca",
+        titulo: ""
+      }, {
+        onConflict: "clave"
+      });
+    }
+    setPacks(lista.sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0)));
+  }
+  async function guardarPack(doc, nuevo) {
+    const clave = !nuevo && doc.clave ? doc.clave : `${perfilId}_p${Date.now()}`;
+    const reg = {
+      clave,
+      perfil: perfilId,
+      titulo: (doc.titulo || "").trim() || "Mi entrenamiento",
+      tipo: doc.tipo === "descanso" ? "fuerza" : doc.tipo,
+      notas: doc.notas || "",
+      ejercicios: (doc.ejercicios || []).map(it => ({
+        ...it
+      })),
+      carrera: doc.carrera || {},
+      cardio: doc.cardio || {},
+      orden: nuevo || !doc.clave ? packs.length : Number(doc.orden) || 0
+    };
+    await sb.from("entreno_packs").upsert(reg, {
+      onConflict: "clave"
+    });
+    setPacks(ps => ps.some(x => x.clave === clave) ? ps.map(x => x.clave === clave ? reg : x) : [...ps, reg]);
+    return reg;
+  }
+  async function eliminarPack(clave) {
+    await sb.from("entreno_packs").delete().eq("clave", clave);
+    setPacks(ps => ps.filter(x => x.clave !== clave));
+  }
+  function datosDePack(p) {
+    return {
+      tipo: p.tipo,
+      titulo: p.titulo,
+      notas: p.notas || "",
+      ejercicios: (p.ejercicios || []).map(it => ({
+        ...it
+      })),
+      carrera: p.carrera || {},
+      cardio: p.cardio || {},
+      packId: p.clave
+    };
+  }
   function docDia(dia) {
     return planRef.current[dia] || {
       clave: `${perfilId}_${dia}`,
@@ -11997,7 +12081,8 @@ function EntrenoTab({
       notas: d.notas || "",
       ejercicios: d.ejercicios || [],
       carrera: d.carrera || {},
-      cardio: d.cardio || {}
+      cardio: d.cardio || {},
+      packId: d.packId || ""
     };
     if (semana) reg.semana = semana;
     return sb.from("entreno_plan").upsert(reg, {
@@ -12068,6 +12153,9 @@ function EntrenoTab({
   if (cargando || !catOk) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
   if (vista.t === "dia") {
     return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
+      packs: packs,
+      onGuardarPack: guardarPack,
+      datosDePack: datosDePack,
       semOff: semOff,
       onTodas: () => aplicarATodas(vista.dia),
       pesoKg: pesoKg,
@@ -12099,6 +12187,61 @@ function EntrenoTab({
           notas: d.notas || ""
         });
         await cargarRegistros();
+        setVista({
+          t: "semana"
+        });
+      }
+    });
+  }
+  if (vista.t === "pack") {
+    const base = vista.clave ? packs.find(x => x.clave === vista.clave) : null;
+    return /*#__PURE__*/React.createElement(EditorPack, {
+      key: vista.clave || "nuevo",
+      pack: base,
+      pesoKg: pesoKg,
+      registros: registros,
+      onGuardar: async (d, nuevo) => {
+        const r = await guardarPack(d, nuevo);
+        return r;
+      },
+      onEliminar: base ? async () => {
+        await eliminarPack(base.clave);
+        setPestana("entrenos");
+        setVista({
+          t: "semana"
+        });
+      } : null,
+      onBack: () => {
+        setPestana("entrenos");
+        setVista({
+          t: "semana"
+        });
+      }
+    });
+  }
+  if (vista.t === "asignar") {
+    const pk = packs.find(x => x.clave === vista.clave);
+    if (!pk) {
+      setVista({
+        t: "semana"
+      });
+      return null;
+    }
+    return /*#__PURE__*/React.createElement(AsignarPack, {
+      pack: pk,
+      lunes: lunesVista,
+      plan: plan,
+      semOff: semOff,
+      onBack: () => {
+        setPestana("entrenos");
+        setVista({
+          t: "semana"
+        });
+      },
+      onAsignar: (dias, aBase) => {
+        dias.forEach(d => cambiarDia(d, datosDePack(pk), aBase));
+        setAvisoPack(`✓ «${pk.titulo}» asignado a ${dias.map(d => DIAS_SEMANA[d].toLowerCase()).join(", ")}${aBase ? " (todas las semanas)" : ""}`);
+        setPestana("semana");
         setVista({
           t: "semana"
         });
@@ -12196,7 +12339,7 @@ function EntrenoTab({
       padding: 4,
       marginBottom: 14
     }
-  }, [["semana", "Semana"], ["progreso", "Progreso"]].map(([id, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["semana", "Semana"], ["entrenos", "Entrenos"], ["progreso", "Progreso"]].map(([id, l]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     onClick: () => setPestana(id),
     style: {
@@ -12282,7 +12425,22 @@ function EntrenoTab({
       background: palette.paperDark,
       color: palette.ink
     }
-  }, "Copiar semana anterior"))), pestana === "progreso" ? /*#__PURE__*/React.createElement(ProgresoEntreno, {
+  }, "Copiar semana anterior"))), pestana === "entrenos" ? /*#__PURE__*/React.createElement(ListaPacks, {
+    packs: packs,
+    pesoKg: pesoKg,
+    onNuevo: () => setVista({
+      t: "pack",
+      clave: null
+    }),
+    onEditar: c => setVista({
+      t: "pack",
+      clave: c
+    }),
+    onAsignar: c => setVista({
+      t: "asignar",
+      clave: c
+    })
+  }) : pestana === "progreso" ? /*#__PURE__*/React.createElement(ProgresoEntreno, {
     registros: registros,
     plan: plan,
     lunes: lunes,
@@ -12295,7 +12453,18 @@ function EntrenoTab({
     fijarPeso: fijarPeso
   }) : /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, avisoPack ? /*#__PURE__*/React.createElement("div", {
+    onClick: () => setAvisoPack(""),
+    style: {
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      borderRadius: 12,
+      padding: "9px 12px",
+      fontSize: 12.5,
+      fontWeight: 600,
+      marginBottom: 10
+    }
+  }, avisoPack) : null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -13148,6 +13317,13 @@ function ProgresoEntreno({
 
 // ---------- Editor de un día ----------
 function EditorDiaEntreno({
+  packs,
+  onGuardarPack,
+  datosDePack,
+  modoPack,
+  onGuardar,
+  onEliminar,
+  dirty,
   semOff,
   onTodas,
   pesoKg,
@@ -13162,6 +13338,9 @@ function EditorDiaEntreno({
 }) {
   const [abierto, setAbierto] = useState(null);
   const [verPlantillas, setVerPlantillas] = useState(false);
+  const [verPacks, setVerPacks] = useState(false);
+  const [guardarOpc, setGuardarOpc] = useState(false);
+  const [okGuardado, setOkGuardado] = useState("");
   const ejercicios = doc.ejercicios || [];
   const inputStyle = {
     border: `1.5px solid ${palette.line}`,
@@ -13205,19 +13384,19 @@ function EditorDiaEntreno({
     className: "px-5 pt-5 pb-3 text-center"
   }, /*#__PURE__*/React.createElement(BotonAtras, {
     onClick: onBack
-  }, "Semana"), /*#__PURE__*/React.createElement("div", {
+  }, modoPack ? "Mis entrenos" : "Semana"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] tracking-[0.2em] uppercase",
     style: {
       color: palette.inkSoft
     }
-  }, "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
+  }, modoPack ? "Mis entrenamientos" : "Plan de entrenamiento"), /*#__PURE__*/React.createElement("div", {
     className: "text-[22px] font-semibold mt-1"
-  }, DIAS_SEMANA[dia]), /*#__PURE__*/React.createElement("div", {
+  }, modoPack ? doc.clave ? "Editar entrenamiento" : "Nuevo entrenamiento" : DIAS_SEMANA[dia]), !modoPack && /*#__PURE__*/React.createElement("div", {
     className: "text-[11.5px] mt-1",
     style: {
       color: palette.inkSoft
     }
-  }, "Los cambios se guardan solo en esta semana", semOff !== 0 ? "" : "", "."), /*#__PURE__*/React.createElement("button", {
+  }, "Los cambios se guardan solo en esta semana."), !modoPack && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onTodas();
       alert("Este día queda como plan fijo en todas las semanas.");
@@ -13229,13 +13408,59 @@ function EditorDiaEntreno({
     }
   }, "Usar este día en todas las semanas")), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
+  }, !modoPack && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerPacks(!verPacks),
+    className: "w-full py-2.5 text-[13px] font-semibold",
+    style: {
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      borderRadius: 14
+    }
+  }, "📦 ", verPacks ? "Cerrar" : "Elegir de mis entrenamientos"), verPacks && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, (packs || []).length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: palette.inkSoft,
+      padding: "6px 2px"
+    }
+  }, "Aún no tienes entrenamientos guardados."), (packs || []).map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.clave,
+    onClick: () => {
+      cambiar(datosDePack(p));
+      setVerPacks(false);
+      setAbierto(null);
+    },
+    className: "w-full text-left",
+    style: {
+      padding: "9px 12px",
+      borderRadius: 14,
+      background: palette.paperDark,
+      marginBottom: 6
+    }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 600
+    }
+  }, p.titulo), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft
+    }
+  }, p.tipo === "fuerza" ? `${(p.ejercicios || []).length} ejercicios` : p.tipo === "carrera" ? "Correr" : "Cardio", " · reemplaza este día"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
       marginBottom: 12
     }
-  }, TIPOS_CHIPS.map(([id, ico, label]) => {
+  }, TIPOS_CHIPS.filter(t => !modoPack || t[0] !== "descanso").map(([id, ico, label]) => {
     const act = doc.tipo === id || id === "cardio" && doc.tipo === "carrera";
     return /*#__PURE__*/React.createElement("button", {
       key: id,
@@ -13324,7 +13549,7 @@ function EditorDiaEntreno({
     rows: 3,
     className: "w-full px-3 py-2 text-[13px] mb-3",
     style: inputStyle
-  }), /*#__PURE__*/React.createElement("button", {
+  }), onHecho && /*#__PURE__*/React.createElement("button", {
     onClick: onHecho,
     className: "w-full py-3 text-[13px] font-semibold",
     style: {
@@ -13731,35 +13956,454 @@ function EditorDiaEntreno({
       color: palette.greenDark,
       borderRadius: 14
     }
-  }, "+ Añadir ejercicio"), ejercicios.length === 0 || verPlantillas ? /*#__PURE__*/React.createElement("div", {
-    className: "mt-4"
-  }, /*#__PURE__*/React.createElement(SectionTitle, null, ejercicios.length === 0 ? "O empieza con una plantilla" : "Cargar plantilla (reemplaza la lista)"), PLANTILLAS_ENTRENO.map(pl => /*#__PURE__*/React.createElement("button", {
-    key: pl.id,
-    onClick: () => cargarPlantilla(pl),
-    className: "w-full text-left",
+  }, "+ Añadir ejercicio")), modoPack ? /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "9px 12px",
-      borderRadius: 14,
-      background: palette.paperDark,
-      marginBottom: 6
+      marginTop: 16
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onGuardar,
+    disabled: !dirty,
+    className: "w-full py-3.5 text-[14.5px] font-bold",
     style: {
-      fontSize: 13.5,
+      background: dirty ? palette.green : palette.greenSoft,
+      color: dirty ? "#FFFFFF" : palette.greenDark,
+      borderRadius: 16
+    }
+  }, dirty ? "💾 Guardar entrenamiento" : "✓ Guardado"), onEliminar && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (confirm("¿Eliminar este entrenamiento? Los días donde ya lo asignaste no cambian.")) onEliminar();
+    },
+    className: "w-full mt-3 py-2 text-[12px]",
+    style: {
+      color: palette.red
+    }
+  }, "Eliminar entrenamiento")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16
+    }
+  }, okGuardado ? /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] text-center mb-2",
+    style: {
+      color: palette.greenDark,
       fontWeight: 600
     }
-  }, pl.nombre), /*#__PURE__*/React.createElement("div", {
+  }, okGuardado) : null, !guardarOpc ? /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      const existe = doc.packId && (packs || []).some(p => p.clave === doc.packId);
+      if (existe) setGuardarOpc(true);else {
+        const r = await onGuardarPack({
+          ...doc
+        }, true);
+        setOkGuardado(`✓ Guardado en Mis entrenamientos como «${r.titulo}»`);
+        cambiar({
+          packId: r.clave
+        });
+      }
+    },
+    className: "w-full py-3 text-[13.5px] font-semibold",
     style: {
-      fontSize: 11.5,
+      border: `1.5px solid ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 16
+    }
+  }, "💾 Guardar como entrenamiento") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] text-center mb-2"
+  }, "Este día viene de un entrenamiento guardado."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      const base = (packs || []).find(p => p.clave === doc.packId);
+      const r = await onGuardarPack({
+        ...doc,
+        clave: base.clave,
+        orden: base.orden
+      }, false);
+      setGuardarOpc(false);
+      setOkGuardado(`✓ «${r.titulo}» actualizado`);
+    },
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: palette.green,
+      color: "#FFFFFF",
+      fontSize: 12.5,
+      fontWeight: 600
+    }
+  }, "Actualizar el original"), /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      const r = await onGuardarPack({
+        ...doc
+      }, true);
+      setGuardarOpc(false);
+      setOkGuardado(`✓ Guardado como nuevo: «${r.titulo}»`);
+      cambiar({
+        packId: r.clave
+      });
+    },
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: "#FFFFFF",
+      fontSize: 12.5,
+      fontWeight: 600
+    }
+  }, "Guardar como nuevo"))))));
+}
+
+// ---------- Mis entrenamientos (packs reutilizables) ----------
+function ListaPacks({
+  packs,
+  pesoKg,
+  onNuevo,
+  onEditar,
+  onAsignar
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-3",
+    style: {
       color: palette.inkSoft
     }
-  }, pl.ej.map(e => EJ_POR_ID[e[0]].nombre).join(" · "))))) : /*#__PURE__*/React.createElement("button", {
-    onClick: () => setVerPlantillas(true),
-    className: "w-full mt-3 py-2 text-[11.5px] uppercase tracking-wide",
+  }, "Guarda tus entrenamientos y asígnalos a los días que quieras."), /*#__PURE__*/React.createElement("button", {
+    onClick: onNuevo,
+    className: "w-full py-3 text-[13.5px] font-semibold mb-3",
+    style: {
+      border: `1.5px dashed ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 16
+    }
+  }, "+ Nuevo entrenamiento"), packs.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] text-center py-6",
     style: {
       color: palette.inkSoft
     }
-  }, "Cargar una plantilla…"))));
+  }, "Todavía no tienes entrenamientos guardados."), packs.map(p => {
+    const inf = infoDia({
+      tipo: p.tipo,
+      titulo: p.titulo,
+      notas: p.notas,
+      ejercicios: p.ejercicios,
+      carrera: p.carrera,
+      cardio: p.cardio
+    }, pesoKg);
+    return /*#__PURE__*/React.createElement("div", {
+      key: p.clave,
+      style: {
+        background: "#FFFFFF",
+        border: `1.5px solid ${palette.line}`,
+        borderRadius: 20,
+        padding: 14,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        lineHeight: 1.2,
+        overflowWrap: "anywhere"
+      }
+    }, inf.ico, " ", p.titulo), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: palette.inkSoft,
+        marginTop: 3
+      }
+    }, inf.sub, inf.chips.length ? " · " + inf.chips.map(([v, l]) => `${v} ${l}`).join(" · ") : ""), inf.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        margin: "10px 0 0"
+      }
+    }, inf.fotos.slice(0, 4).map(ej => /*#__PURE__*/React.createElement("div", {
+      key: ej.id,
+      style: {
+        width: 52,
+        height: 52,
+        borderRadius: 12,
+        overflow: "hidden",
+        background: "#E9EDE6",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 78,
+        marginLeft: -13
+      }
+    }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
+      ej: ej,
+      k: 0
+    })))), inf.nEj > 4 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 52,
+        height: 52,
+        borderRadius: 12,
+        background: palette.paperDark,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 700,
+        fontSize: 13,
+        color: palette.inkSoft
+      }
+    }, "+", inf.nEj - 4)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginTop: 12
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => onAsignar(p.clave),
+      style: {
+        flex: 1.3,
+        padding: "9px 0",
+        borderRadius: 12,
+        background: palette.green,
+        color: "#FFFFFF",
+        fontSize: 13,
+        fontWeight: 700
+      }
+    }, "Asignar a días"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => onEditar(p.clave),
+      style: {
+        flex: 1,
+        padding: "9px 0",
+        borderRadius: 12,
+        background: palette.paperDark,
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, "✎ Editar")));
+  }));
+}
+function EditorPack({
+  pack,
+  pesoKg,
+  registros,
+  onGuardar,
+  onEliminar,
+  onBack
+}) {
+  const [doc, setDoc] = useState(pack ? {
+    ...pack,
+    ejercicios: (pack.ejercicios || []).map(it => ({
+      ...it
+    }))
+  } : {
+    tipo: "fuerza",
+    titulo: "",
+    notas: "",
+    ejercicios: [],
+    carrera: {
+      km: 5,
+      ritmo: ""
+    },
+    cardio: {
+      maquina: "bici",
+      min: 30,
+      intensidad: "moderada"
+    }
+  });
+  const [dirty, setDirty] = useState(!pack);
+  const [picking, setPicking] = useState(false);
+  const cambiar = p => {
+    setDoc(d => ({
+      ...d,
+      ...p
+    }));
+    setDirty(true);
+  };
+  async function guardar() {
+    const r = await onGuardar(doc, false);
+    setDoc(d => ({
+      ...d,
+      clave: r.clave,
+      orden: r.orden
+    }));
+    setDirty(false);
+  }
+  function salir() {
+    if (dirty && !confirm("Tienes cambios sin guardar. ¿Salir sin guardar?")) return;
+    onBack();
+  }
+  if (picking) {
+    return /*#__PURE__*/React.createElement(SelectorEjercicio, {
+      onBack: () => setPicking(false),
+      anadidos: (doc.ejercicios || []).map(x => x.eid),
+      onAnadir: ej => {
+        const nuevo = {
+          eid: ej.id,
+          series: 3,
+          repsMin: 0,
+          reps: ej.unidad === "s" ? 40 : 12,
+          peso: /mancuerna/i.test(ej.material) ? 8 : 0,
+          descanso: ej.unidad === "s" ? 45 : 60,
+          porLado: false,
+          nota: ""
+        };
+        setDoc(d => ({
+          ...d,
+          ejercicios: [...(d.ejercicios || []), nuevo]
+        }));
+        setDirty(true);
+      }
+    });
+  }
+  return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
+    modoPack: true,
+    dirty: dirty,
+    onGuardar: guardar,
+    onEliminar: onEliminar,
+    pesoKg: pesoKg,
+    dia: 0,
+    doc: doc,
+    registros: registros,
+    cambiar: cambiar,
+    onBack: salir,
+    onPicker: () => setPicking(true),
+    onEmpezar: null,
+    onHecho: null,
+    packs: [],
+    onGuardarPack: null,
+    datosDePack: null,
+    semOff: 0,
+    onTodas: null
+  });
+}
+function AsignarPack({
+  pack,
+  lunes,
+  plan,
+  semOff,
+  onBack,
+  onAsignar
+}) {
+  const [dias, setDias] = useState([]);
+  const [aBase, setABase] = useState(false);
+  const alternar = d => setDias(x => x.includes(d) ? x.filter(y => y !== d) : [...x, d].sort());
+  return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pt-5 pb-3 text-center"
+  }, /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onBack
+  }, "Mis entrenos"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] tracking-[0.2em] uppercase",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Asignar entrenamiento"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mt-1",
+    style: {
+      overflowWrap: "anywhere"
+    }
+  }, pack.titulo)), /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-2",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "¿Qué días?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      marginBottom: 14
+    }
+  }, [0, 1, 2, 3, 4, 5, 6].map(d => {
+    const on = dias.includes(d);
+    const act = plan[d];
+    const inf = infoDia(act, 70);
+    return /*#__PURE__*/React.createElement("button", {
+      key: d,
+      onClick: () => alternar(d),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px",
+        borderRadius: 14,
+        textAlign: "left",
+        background: on ? palette.greenSoft : "#FFFFFF",
+        border: `1.5px solid ${on ? palette.green : palette.line}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 22,
+        height: 22,
+        borderRadius: 7,
+        border: `2px solid ${on ? palette.green : palette.line}`,
+        background: on ? palette.green : "transparent",
+        color: "#FFFFFF",
+        fontSize: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, on ? "✓" : ""), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600
+      }
+    }, DIAS_SEMANA[d], " ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 400,
+        color: palette.inkSoft
+      }
+    }, fechaCorta(fechaDeDia(lunes, d)))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft
+      }
+    }, "Ahora: ", inf.tienePlan ? inf.titulo : "sin plan")));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [[false, `Solo esa semana (${fechaCorta(lunes)})`], [true, "Todas las semanas"]].map(([v, l]) => /*#__PURE__*/React.createElement("button", {
+    key: String(v),
+    onClick: () => setABase(v),
+    style: {
+      flex: 1,
+      padding: "9px 6px",
+      borderRadius: 12,
+      fontSize: 12.5,
+      fontWeight: 600,
+      background: aBase === v ? palette.green : palette.paperDark,
+      color: aBase === v ? "#FFFFFF" : palette.inkSoft
+    }
+  }, l))), /*#__PURE__*/React.createElement("button", {
+    disabled: dias.length === 0,
+    onClick: () => onAsignar(dias, aBase),
+    className: "w-full py-3.5 text-[14.5px] font-bold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 16,
+      opacity: dias.length ? 1 : 0.45
+    }
+  }, "Asignar", dias.length ? ` a ${dias.length} día${dias.length > 1 ? "s" : ""}` : ""), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] mt-3 text-center",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Reemplaza lo que hubiera en esos días.")));
 }
 
 // ---------- Selector de ejercicios ----------
