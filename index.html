@@ -7444,7 +7444,7 @@ function _articulaciones(P, vista) {
   const J = {};
   if (vista === "frente") {
     const hip = [0, 0];
-    const neck = _polar(hip, LONG.torso, g("t"));
+    const neck = _polar(hip, LONG.torso * g("tc", 1), g("t"));
     J.hip = hip;
     J.neck = neck;
     J.head = _polar(neck, LONG.cabeza, g("t") + g("cab"));
@@ -7510,11 +7510,12 @@ function _articulaciones(P, vista) {
   return J;
 }
 // Desplaza para que el cuerpo toque el suelo y el punto de anclaje no se mueva.
-function _colocar(J, ancla, cx) {
+function _colocar(J, ancla, cx, excluir) {
   const pts = [J.hip, J.neck];
+  const ex = excluir || [];
   [J.A, J.B].forEach(s => {
     if (!s) return;
-    ["el", "mu", "kn", "an", "to"].forEach(k => s[k] && pts.push(s[k]));
+    ["el", "mu", "kn", "an", "to"].forEach(k => s[k] && ex.indexOf(k) < 0 && pts.push(s[k]));
   });
   let maxY = -1e9;
   pts.forEach(p => {
@@ -7602,7 +7603,7 @@ const EJERCICIOS = [
   pasos: ["Rodillas en el suelo y cuerpo recto de rodillas a cabeza.", "Baja el pecho controlando, codos a 45°.", "Sube estirando los brazos, sin arquear la espalda."]
 }, {
   id: "press_suelo",
-  nombre: "Press de suelo con mancuernas",
+  nombre: "Press de pecho en suelo",
   grupo: "Pecho",
   musculos: "Pecho, tríceps, hombro",
   material: "2 mancuernas",
@@ -7974,6 +7975,7 @@ const EJERCICIOS = [
   grupo: "Pierna",
   musculos: "Cuádriceps, glúteo",
   material: "2 mancuernas",
+  lado: "pierna",
   vista: "lado",
   ancla: "tobillo",
   cx: 120,
@@ -8034,7 +8036,7 @@ const EJERCICIOS = [
   pasos: ["Tumbado boca arriba, rodillas flexionadas y pies apoyados.", "Sube la cadera apretando glúteos hasta formar una línea hombros–rodillas.", "Pausa 1 segundo arriba y baja despacio."]
 }, {
   id: "elevacion_talones",
-  nombre: "Elevación de talones",
+  nombre: "Elevación de talones (gemelos)",
   grupo: "Pierna",
   musculos: "Gemelos",
   material: "2 mancuernas",
@@ -8193,48 +8195,429 @@ const EJERCICIOS = [
   }],
   desc: "Brazo y pierna contrarios se estiran a la vez, con la espalda pegada al suelo.",
   pasos: ["Boca arriba, brazos al techo y rodillas a 90°.", "Estira un brazo hacia atrás y la pierna contraria hacia delante.", "Vuelve y cambia de lado, lumbar siempre pegada al suelo."]
+},
+// ---------- NUEVOS (plan tren superior / piernas) ----------
+{
+  id: "remo_unilateral",
+  nombre: "Remo unilateral con mancuerna",
+  grupo: "Espalda",
+  musculos: "Dorsal, romboides, bíceps",
+  material: "1 mancuerna (apoyo en silla o rodilla)",
+  lado: "brazo",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 100,
+  resalta: ["ua"],
+  mancuernas: true,
+  mancSolo: true,
+  poses: [{
+    t: 35,
+    th: 285,
+    sh: 262,
+    pie: 0,
+    ua: 270,
+    fa: 270,
+    ua2: 250,
+    fa2: 250
+  }, {
+    t: 35,
+    th: 285,
+    sh: 262,
+    pie: 0,
+    ua: 212,
+    fa: 262,
+    ua2: 250,
+    fa2: 250
+  }],
+  desc: "Remo a una mano. Apoya la otra mano en una silla, el sofá o tu propia rodilla.",
+  pasos: ["Torso inclinado con la espalda recta y la mano libre apoyada.", "Lleva la mancuerna hacia la cadera, codo pegado al cuerpo.", "Aprieta la espalda arriba, baja controlando y cambia de lado."]
+}, {
+  id: "aperturas_suelo",
+  nombre: "Aperturas en suelo",
+  grupo: "Pecho",
+  musculos: "Pecho, hombro anterior",
+  material: "2 mancuernas",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 110,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  excluir: ["el", "mu"],
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 300,
+    fa: 312,
+    ua2: 240,
+    fa2: 228
+  }, {
+    t: 180,
+    cab: -30,
+    th: 55,
+    sh: -62,
+    pie: 0,
+    ua: 90,
+    fa: 88,
+    ua2: 92,
+    fa2: 90
+  }],
+  desc: "Abre los brazos hasta que los codos rozan el suelo y ciérralos como si abrazaras un árbol. Vista en perspectiva.",
+  pasos: ["Tumbado con una mancuerna en cada mano sobre el pecho, codos ligeramente flexionados.", "Abre los brazos hacia los lados hasta rozar el suelo con los codos.", "Junta de nuevo las mancuernas arriba apretando el pecho."]
+}, {
+  id: "sentadilla_bulgara",
+  nombre: "Sentadilla búlgara",
+  grupo: "Pierna",
+  musculos: "Cuádriceps, glúteo",
+  material: "2 mancuernas + silla o sofá",
+  lado: "pierna",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 125,
+  resalta: ["th", "sh"],
+  mancuernas: true,
+  soporte: "pie2",
+  poses: [{
+    t: 88,
+    th: 275,
+    sh: 268,
+    pie: 0,
+    th2: 232,
+    sh2: 195,
+    pie2: 195,
+    ua: 270,
+    fa: 270
+  }, {
+    t: 80,
+    th: 350,
+    sh: 262,
+    pie: 0,
+    th2: 259,
+    sh2: 126,
+    pie2: 195,
+    ua: 270,
+    fa: 270
+  }],
+  desc: "Zancada con el pie de atrás apoyado en una silla o en el sofá. Muy exigente: empieza con poco peso.",
+  pasos: ["Pie de atrás apoyado en una silla o sofá y pie de delante a un paso largo.", "Baja la cadera en vertical hasta que el muslo de delante quede casi paralelo al suelo.", "Empuja con el talón de delante para subir. Haz todas las reps y cambia de pierna."]
+}, {
+  id: "hip_thrust",
+  nombre: "Hip thrust en suelo",
+  grupo: "Pierna",
+  musculos: "Glúteo, femoral",
+  material: "1 mancuerna",
+  vista: "lado",
+  ancla: "tobillo",
+  cx: 120,
+  resalta: ["th", "t"],
+  mancuernas: true,
+  mancEn: "cadera",
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 60,
+    sh: -52,
+    pie: 0,
+    ua: 0,
+    fa: 0
+  }, {
+    t: 204,
+    cab: -18,
+    th: 20,
+    sh: -72,
+    pie: 0,
+    ua: 0,
+    fa: 0
+  }],
+  desc: "Como el puente de glúteo pero con una mancuerna sobre la cadera. Si tienes un sofá, apoya los omóplatos en él para más recorrido.",
+  pasos: ["Tumbado con una mancuerna sujeta sobre la cadera y los pies bien apoyados.", "Empuja con los talones y sube la cadera apretando los glúteos.", "Pausa 1 segundo arriba y baja despacio."]
+}, {
+  id: "pajaros",
+  nombre: "Pájaros inclinados",
+  grupo: "Hombro",
+  musculos: "Deltoides posterior, romboides",
+  material: "2 mancuernas",
+  vista: "frente",
+  ancla: "cadera",
+  cx: 110,
+  resalta: ["ua", "fa"],
+  mancuernas: true,
+  poses: [{
+    t: 90,
+    tc: 0.5,
+    th: 264,
+    sh: 266,
+    ua: 262,
+    fa: 266
+  }, {
+    t: 90,
+    tc: 0.5,
+    th: 264,
+    sh: 266,
+    ua: 188,
+    fa: 186
+  }],
+  desc: "Con el torso inclinado, abre los brazos hacia los lados. Visto desde detrás.",
+  pasos: ["Inclínate hacia delante con la espalda recta y los brazos colgando.", "Abre los brazos hacia los lados hasta la altura de los hombros, codos ligeramente flexionados.", "Baja despacio sin balancear el cuerpo."]
+}, {
+  id: "crunch_inverso",
+  nombre: "Crunch inverso (elevación de rodillas)",
+  grupo: "Core",
+  musculos: "Abdomen inferior",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 100,
+  resalta: ["t"],
+  mancuernas: false,
+  poses: [{
+    t: 180,
+    cab: -30,
+    th: 92,
+    sh: 6,
+    pie: 80,
+    ua: 0,
+    fa: 0
+  }, {
+    t: 192,
+    cab: -26,
+    th: 118,
+    sh: 24,
+    pie: 80,
+    ua: 0,
+    fa: 0
+  }],
+  desc: "Lleva las rodillas hacia el pecho enrollando la pelvis. Trabaja el abdomen inferior y el control de la pelvis.",
+  pasos: ["Tumbado, brazos junto al cuerpo y rodillas flexionadas sobre la cadera.", "Sube la pelvis del suelo llevando las rodillas hacia el pecho.", "Baja despacio sin balancear las piernas."]
+}, {
+  id: "bicicleta_abdominal",
+  nombre: "Bicicleta abdominal",
+  grupo: "Core",
+  musculos: "Abdomen y oblicuos",
+  material: "Peso corporal",
+  vista: "lado",
+  ancla: "cadera",
+  cx: 100,
+  resalta: ["t"],
+  mancuernas: false,
+  periodo: 2200,
+  poses: [{
+    t: 150,
+    cab: -5,
+    ua: 125,
+    fa: 300,
+    th: 118,
+    sh: 15,
+    pie: 60,
+    th2: 12,
+    sh2: 8,
+    pie2: 90,
+    ua2: 125,
+    fa2: 300
+  }, {
+    t: 152,
+    cab: -5,
+    ua: 125,
+    fa: 300,
+    th: 12,
+    sh: 8,
+    pie: 90,
+    th2: 118,
+    sh2: 15,
+    pie2: 60,
+    ua2: 125,
+    fa2: 300
+  }],
+  desc: "Pedalea en el aire llevando el codo hacia la rodilla contraria. Cada repetición es un lado.",
+  pasos: ["Tumbado con las manos tras la cabeza y los hombros ligeramente elevados.", "Lleva una rodilla al pecho mientras estiras la otra pierna.", "Gira el tronco llevando el codo hacia la rodilla contraria y alterna sin prisa."]
 }];
 const EJ_POR_ID = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
 
 // ---------- Plantillas de día ----------
+// [ejercicio, series, repsMín, repsMáx, peso kg, descanso s, porLado, nota]
 const PLANTILLAS_ENTRENO = [{
-  id: "pecho",
-  nombre: "Pecho + tríceps",
-  ej: [["flexiones", 3, 12, 0, 60], ["press_suelo", 4, 10, 10, 75], ["pullover", 3, 12, 8, 60], ["triceps_nuca", 3, 12, 8, 60], ["patada_triceps", 3, 12, 4, 45]]
+  id: "sup_a",
+  nombre: "Tren superior A (pecho y espalda)",
+  ej: [["press_suelo", 4, 10, 15, 10, 75], ["remo_unilateral", 4, 10, 15, 10, 75, true], ["press_militar", 3, 10, 12, 8, 75], ["aperturas_suelo", 3, 12, 15, 6, 60], ["pullover", 3, 12, 15, 8, 60], ["crunch_inverso", 3, 15, 20, 0, 45]]
 }, {
-  id: "espalda",
-  nombre: "Espalda + bíceps",
-  ej: [["remo_inclinado", 4, 10, 10, 75], ["peso_muerto_rumano", 3, 12, 10, 75], ["superman", 3, 12, 0, 45], ["curl_biceps", 3, 12, 8, 60], ["curl_martillo", 3, 12, 8, 60]]
+  id: "piernas",
+  nombre: "Piernas (mantenimiento y fuerza)",
+  ej: [["sentadilla_goblet", 3, 12, 15, 12, 75], ["peso_muerto_rumano", 3, 12, 15, 10, 75], ["sentadilla_bulgara", 2, 10, 10, 8, 75, true, "Pie de atrás sobre una silla o sofá"], ["hip_thrust", 3, 15, 15, 10, 60], ["elevacion_talones", 3, 15, 20, 8, 45]]
 }, {
-  id: "pierna",
-  nombre: "Pierna + glúteo",
-  ej: [["sentadilla_goblet", 4, 12, 12, 75], ["zancada", 3, 10, 6, 75], ["peso_muerto_rumano", 3, 12, 10, 75], ["puente_gluteo", 4, 15, 0, 60], ["elevacion_talones", 4, 15, 8, 45]]
+  id: "sup_b",
+  nombre: "Tren superior B (espalda y hombros)",
+  ej: [["remo_inclinado", 4, 12, 15, 10, 75], ["remo_unilateral", 3, 12, 12, 10, 60, true], ["elevaciones_laterales", 4, 15, 20, 4, 45], ["pajaros", 3, 15, 15, 4, 45], ["curl_biceps", 3, 12, 15, 6, 60], ["curl_martillo", 2, 12, 15, 6, 60], ["bicicleta_abdominal", 3, 20, 20, 0, 45, false, "10 por lado"]]
 }, {
-  id: "hombro",
-  nombre: "Hombro + core",
-  ej: [["press_militar", 4, 10, 8, 75], ["elevaciones_laterales", 3, 12, 4, 60], ["elevaciones_frontales", 3, 12, 4, 60], ["plancha", 3, 40, 0, 45], ["crunch", 3, 15, 0, 45], ["bicho_muerto", 3, 10, 0, 45]]
+  id: "sup_c",
+  nombre: "Tren superior C (pecho, brazos y abdomen)",
+  ej: [["press_suelo", 4, 10, 15, 10, 75], ["flexiones", 3, 0, 15, 0, 60, false, "Cerca del fallo técnico"], ["press_militar", 3, 10, 12, 8, 75], ["curl_biceps", 3, 12, 15, 6, 60], ["triceps_nuca", 3, 12, 15, 8, 60], ["elevaciones_laterales", 2, 15, 20, 4, 45], ["plancha", 3, 40, 60, 0, 45]]
 }, {
   id: "full",
   nombre: "Cuerpo entero",
-  ej: [["sentadilla_goblet", 3, 12, 12, 60], ["flexiones", 3, 10, 0, 60], ["remo_inclinado", 3, 10, 10, 60], ["press_militar", 3, 10, 8, 60], ["puente_gluteo", 3, 15, 0, 45], ["plancha", 3, 40, 0, 45]]
+  ej: [["sentadilla_goblet", 3, 10, 12, 12, 60], ["flexiones", 3, 8, 10, 0, 60], ["remo_inclinado", 3, 10, 12, 10, 60], ["press_militar", 3, 10, 12, 8, 60], ["puente_gluteo", 3, 15, 15, 0, 45], ["plancha", 3, 40, 40, 0, 45]]
 }];
 function ejerciciosDePlantilla(pl) {
-  return pl.ej.map(([eid, series, reps, peso, descanso]) => ({
+  return pl.ej.map(([eid, series, repsMin, repsMax, peso, descanso, porLado, nota]) => ({
     eid,
     series,
-    reps,
+    repsMin,
+    reps: repsMax,
     peso,
-    descanso
+    descanso,
+    porLado: !!porLado,
+    nota: nota || ""
   }));
 }
-function _mancPrims(mu, ang, tipo, color) {
+// Semana completa sugerida: 3 días de tren superior, 1 de piernas, 2 de running y 1 de descanso.
+const PLAN_SEMANAL_BASE = [{
+  tipo: "fuerza",
+  plantilla: "sup_a"
+}, {
+  tipo: "fuerza",
+  plantilla: "piernas"
+}, {
+  tipo: "carrera",
+  titulo: "Running 7 km",
+  km: 7,
+  notas: "Ritmo cómodo-moderado. Más adelante se pueden introducir intervalos poco a poco."
+}, {
+  tipo: "fuerza",
+  plantilla: "sup_b"
+}, {
+  tipo: "fuerza",
+  plantilla: "sup_c"
+}, {
+  tipo: "carrera",
+  titulo: "Running 10 km",
+  km: 10,
+  notas: "Ritmo aeróbico suave, sin buscar el máximo rendimiento."
+}, {
+  tipo: "descanso"
+}];
+function docsDePlanSemanal() {
+  return PLAN_SEMANAL_BASE.map(d => {
+    if (d.tipo === "fuerza") {
+      const pl = PLANTILLAS_ENTRENO.find(p => p.id === d.plantilla);
+      return {
+        tipo: "fuerza",
+        titulo: pl.nombre,
+        notas: "",
+        ejercicios: ejerciciosDePlantilla(pl),
+        carrera: {}
+      };
+    }
+    if (d.tipo === "carrera") return {
+      tipo: "carrera",
+      titulo: d.titulo,
+      notas: d.notas,
+      ejercicios: [],
+      carrera: {
+        km: d.km,
+        ritmo: ""
+      }
+    };
+    return {
+      tipo: "descanso",
+      titulo: "",
+      notas: "",
+      ejercicios: [],
+      carrera: {}
+    };
+  });
+}
+
+// ---------- Dibujo realista: primitivas p (polígono), c (círculo), l (línea), r (rect), e (elipse) ----------
+const COL = {
+  piel: "#F2C9A6",
+  pielSombra: "#D3A27C",
+  camiseta: "#2F8F3E",
+  camisetaSombra: "#236F31",
+  short: "#26324A",
+  shortSombra: "#1A2336",
+  pelo: "#4A3426",
+  zapa: "#F6F6F1",
+  zapaSombra: "#D9DCD5",
+  manc: "#38423C",
+  mancLuz: "#76827A",
+  cromo: "#B9C1BB",
+  resalta: "#E0672F",
+  suelo: "#E7EEE4",
+  lineaSuelo: "#C9D4C7",
+  caja: "#D9C7A6",
+  cajaTop: "#BDA67C"
+};
+function _lerp2(P, Q, t) {
+  return [P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t];
+}
+function _capsula(P, Q, r1, r2, color, o) {
+  const dx = Q[0] - P[0],
+    dy = Q[1] - P[1];
+  const len = Math.hypot(dx, dy) || 1,
+    nx = -dy / len,
+    ny = dx / len;
+  const pts = [[P[0] + nx * r1, P[1] + ny * r1], [Q[0] + nx * r2, Q[1] + ny * r2], [Q[0] - nx * r2, Q[1] - ny * r2], [P[0] - nx * r1, P[1] - ny * r1]];
+  const d = "M" + pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L") + "Z";
+  const op = o === undefined ? 1 : o;
+  return [{
+    k: "p",
+    d,
+    c: color,
+    o: op,
+    pts
+  }, {
+    k: "c",
+    x: P[0],
+    y: P[1],
+    r: r1,
+    c: color,
+    o: op
+  }, {
+    k: "c",
+    x: Q[0],
+    y: Q[1],
+    r: r2,
+    c: color,
+    o: op
+  }];
+}
+function _sector(C0, r, a0, a1, color) {
+  const pts = [C0];
+  const n = 12;
+  for (let i = 0; i <= n; i++) {
+    const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180;
+    pts.push([C0[0] + r * Math.cos(a), C0[1] - r * Math.sin(a)]);
+  }
+  return {
+    k: "p",
+    d: "M" + pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L") + "Z",
+    c: color,
+    o: 1,
+    pts
+  };
+}
+function _manc(mu, ang, tipo) {
+  const x = mu[0],
+    y = mu[1];
   if (tipo === "redonda") return [{
     k: "c",
-    x: mu[0],
-    y: mu[1],
-    r: 5,
-    c: color,
-    s: "#7A2F10"
+    x,
+    y,
+    r: 6,
+    c: COL.manc
+  }, {
+    k: "c",
+    x,
+    y,
+    r: 3,
+    c: COL.mancLuz
+  }, {
+    k: "c",
+    x: x - 1.6,
+    y: y - 1.8,
+    r: 1.1,
+    c: "#A7B2AB"
   }];
   const eje = tipo === "vertical" ? 90 : ang;
   const r = eje * Math.PI / 180,
@@ -8242,113 +8625,225 @@ function _mancPrims(mu, ang, tipo, color) {
     uy = -Math.sin(r),
     px = -uy,
     py = ux;
-  const P = (d, q) => [mu[0] + ux * d + px * q, mu[1] + uy * d + py * q];
+  const P = (d, q) => [x + ux * d + px * q, y + uy * d + py * q];
+  const ln = (d, h, w, c) => {
+    const a = P(d, -h),
+      b = P(d, h);
+    return {
+      k: "l",
+      x1: a[0],
+      y1: a[1],
+      x2: b[0],
+      y2: b[1],
+      c,
+      w
+    };
+  };
+  const h1 = P(-6, 0),
+    h2 = P(6, 0);
   return [{
     k: "l",
-    x1: P(-5.5, 0)[0],
-    y1: P(-5.5, 0)[1],
-    x2: P(5.5, 0)[0],
-    y2: P(5.5, 0)[1],
-    c: "#4A3A30",
-    w: 2.5
-  }, {
-    k: "l",
-    x1: P(-6, -5)[0],
-    y1: P(-6, -5)[1],
-    x2: P(-6, 5)[0],
-    y2: P(-6, 5)[1],
-    c: color,
-    w: 4
-  }, {
-    k: "l",
-    x1: P(6, -5)[0],
-    y1: P(6, -5)[1],
-    x2: P(6, 5)[0],
-    y2: P(6, 5)[1],
-    c: color,
-    w: 4
-  }];
+    x1: h1[0],
+    y1: h1[1],
+    x2: h2[0],
+    y2: h2[1],
+    c: COL.cromo,
+    w: 2.8
+  }, ln(-6.6, 5.4, 5.4, COL.manc), ln(6.6, 5.4, 5.4, COL.manc), ln(-10, 3.8, 3.4, COL.manc), ln(10, 3.8, 3.4, COL.manc)];
 }
-
-// ---------- Dibujo: devuelve primitivas (líneas, círculos, mancuernas) ----------
-const COL_CUERPO = "#2B3A2E",
-  COL_LEJANO = "#A3AFA5",
-  COL_TORSO = "#2F8F3E",
-  COL_RESALTA = "#E0672F",
-  COL_MANC = "#E0672F";
+function _pierna(h, k, a, t, sombra, frente) {
+  const piel = sombra ? COL.pielSombra : COL.piel,
+    sh = sombra ? COL.shortSombra : COL.short,
+    za = sombra ? COL.zapaSombra : COL.zapa;
+  let out = [];
+  out = out.concat(_capsula(h, k, 5.8, 4.4, piel));
+  out = out.concat(_capsula(k, a, 4.3, 3.1, piel));
+  out = out.concat(_capsula(h, _lerp2(h, k, 0.62), 6.6, 5.6, sh));
+  if (frente) out = out.concat(_capsula([a[0] - 4.5, a[1] + 1], [a[0] + 4.5, a[1] + 1], 3.2, 3.2, za));else out = out.concat(_capsula(a, t, 3.6, 2.9, za));
+  return out;
+}
+function _brazo(sh0, el, mu, sombra) {
+  const piel = sombra ? COL.pielSombra : COL.piel,
+    cam = sombra ? COL.camisetaSombra : COL.camiseta;
+  let out = [];
+  out = out.concat(_capsula(sh0, el, 4.2, 3.4, piel));
+  out = out.concat(_capsula(el, mu, 3.3, 2.6, piel));
+  out = out.concat(_capsula(sh0, _lerp2(sh0, el, 0.5), 4.8, 4.4, cam));
+  out.push({
+    k: "c",
+    x: mu[0],
+    y: mu[1],
+    r: 3.1,
+    c: piel
+  });
+  return out;
+}
 function dibujoEjercicio(ej, k) {
   const pose = _lerpPose(ej.poses[0], ej.poses[1], k);
-  const J = _colocar(_articulaciones(pose, ej.vista), ej.ancla || "tobillo", ej.cx || 110);
+  const J = _colocar(_articulaciones(pose, ej.vista), ej.ancla || "tobillo", ej.cx || 110, ej.excluir);
   const res = new Set(ej.resalta || []);
-  const col = (seg, base) => res.has(seg) ? COL_RESALTA : base;
   const prims = [];
-  const L = (a, b, color, w) => prims.push({
-    k: "l",
-    x1: a[0],
-    y1: a[1],
-    x2: b[0],
-    y2: b[1],
-    c: color,
-    w
-  });
+  const add = arr => arr.forEach(p => prims.push(p));
   const mancs = [];
-  const manc = (mu, ang, color) => {
-    if (ej.mancuernas) _mancPrims(mu, ang, ej.mancuerna || "redonda", color).forEach(p => mancs.push(p));
+  const manc = (mu, ang, op) => {
+    if (!ej.mancuernas) return;
+    _manc(mu, ang, ej.mancuerna || "redonda").forEach(p => {
+      if (op) p.o = op;
+      mancs.push(p);
+    });
   };
+  const ovItems = [];
+  const ov = (P, Q, r1, r2) => _capsula(P, Q, r1, r2, COL.resalta, 1).forEach(p => ovItems.push(p));
+  const gx = (arr, f) => arr.map(f);
+
+  // sombra en el suelo
+  const todos = [J.hip, J.neck];
+  [J.A, J.B].forEach(s => {
+    if (s) ["el", "mu", "kn", "an", "to"].forEach(kk => s[kk] && todos.push(s[kk]));
+  });
+  const xs = todos.map(p => p[0]);
+  const x0 = Math.min.apply(null, xs),
+    x1 = Math.max.apply(null, xs);
+  prims.push({
+    k: "e",
+    x: (x0 + x1) / 2,
+    y: SUELO_Y + 3,
+    rx: Math.min(80, (x1 - x0) / 2 + 12),
+    ry: 3.6,
+    c: "#000000",
+    o: 0.08
+  });
+  if (ej.soporte && J.B) {
+    const top = Math.max(J.B.an[1], J.B.to[1]) + 3.5;
+    prims.push({
+      k: "r",
+      x: J.B.an[0] - 17,
+      y: top + 3,
+      w: 34,
+      h: Math.max(2, SUELO_Y - top - 3),
+      c: COL.caja
+    });
+    prims.push({
+      k: "r",
+      x: J.B.an[0] - 17,
+      y: top,
+      w: 34,
+      h: 3.2,
+      c: COL.cajaTop
+    });
+  }
   if (ej.vista === "frente") {
-    [J.B, J.A].forEach((s, idx) => {
-      L(s.hp, s.kn, COL_CUERPO, 5);
-      L(s.kn, s.an, COL_CUERPO, 5);
-      L([s.an[0] - 3, s.an[1]], [s.an[0] + 3, s.an[1]], COL_CUERPO, 5);
-    });
-    L(J.A.hp, J.B.hp, COL_CUERPO, 6);
-    L(J.A.sh0, J.B.sh0, COL_TORSO, 6);
-    L(J.hip, J.neck, col("t", COL_TORSO), 11);
-    [J.A, J.B].forEach(s => {
-      L(s.sh0, s.el, col("ua", COL_CUERPO), 5);
-      L(s.el, s.mu, col("fa", COL_CUERPO), 5);
-      manc(s.mu, 0, COL_MANC);
-    });
+    const A = J.A,
+      B = J.B;
+    [B, A].forEach(s => add(_pierna(s.hp, s.kn, s.an, null, false, true)));
+    add(_capsula(J.hip, J.neck, 7.6, 10.4, COL.camiseta));
+    add(_capsula(J.hip, _lerp2(J.hip, J.neck, 0.2), 8, 7.6, COL.short));
+    add(_capsula(A.sh0, B.sh0, 4.4, 4.4, COL.camiseta));
+    [B, A].forEach(s => add(_brazo(s.sh0, s.el, s.mu, false)));
+    add(_capsula(J.neck, J.head, 3.1, 3.1, COL.piel));
     prims.push({
       k: "c",
       x: J.head[0],
       y: J.head[1],
-      r: 7.5,
-      c: "#F3D9C4",
-      s: COL_CUERPO
+      r: 7.8,
+      c: COL.piel
     });
+    prims.push(_sector(J.head, 8, 15, 165, COL.pelo));
+    prims.push({
+      k: "c",
+      x: J.head[0] - 2.8,
+      y: J.head[1] + 0.8,
+      r: 1,
+      c: "#2B2B2B"
+    });
+    prims.push({
+      k: "c",
+      x: J.head[0] + 2.8,
+      y: J.head[1] + 0.8,
+      r: 1,
+      c: "#2B2B2B"
+    });
+    [A, B].forEach(s => {
+      if (res.has("ua")) ov(s.sh0, s.el, 4.6, 3.8, 0.55);
+      if (res.has("fa")) ov(s.el, s.mu, 3.6, 3, 0.55);
+      manc(s.mu, 0);
+    });
+    if (res.has("t")) ov(_lerp2(J.hip, J.neck, 0.15), _lerp2(J.hip, J.neck, 0.85), 6.4, 8.6);
     return {
-      prims: prims.concat(mancs),
+      prims: prims.concat(ovItems.length ? [{
+        k: "g",
+        o: 0.8,
+        items: ovItems
+      }] : [], mancs),
       vista: "frente"
     };
   }
-  const B = J.B;
+  const A = J.A,
+    B = J.B;
   if (B) {
-    L(B.hp, B.kn, COL_LEJANO, 5);
-    L(B.kn, B.an, COL_LEJANO, 5);
-    L(B.an, B.to, COL_LEJANO, 4);
-    L(B.sh0, B.el, COL_LEJANO, 5);
-    L(B.el, B.mu, COL_LEJANO, 5);
-    manc(B.mu, pose.fa2 !== undefined ? pose.fa2 : pose.fa, "#F0A98A");
+    add(_pierna(B.hp, B.kn, B.an, B.to, true, false));
+    add(_brazo(B.sh0, B.el, B.mu, true));
+    if (!ej.mancSolo) manc(B.mu, pose.fa2 !== undefined ? pose.fa2 : pose.fa, 0.7);
   }
-  const A = J.A;
-  L(J.hip, J.neck, col("t", COL_TORSO), 9);
-  L(A.hp, A.kn, col("th", COL_CUERPO), 5);
-  L(A.kn, A.an, col("sh", COL_CUERPO), 5);
-  L(A.an, A.to, COL_CUERPO, 4);
-  L(A.sh0, A.el, col("ua", COL_CUERPO), 5);
-  L(A.el, A.mu, col("fa", COL_CUERPO), 5);
+  // torso
+  add(_capsula(J.hip, J.neck, 7.2, 8.8, COL.camiseta));
+  add(_capsula(J.hip, _lerp2(J.hip, J.neck, 0.2), 7.6, 7.4, COL.short));
+  add(_pierna(A.hp, A.kn, A.an, A.to, false, false));
+  // cuello y cabeza (cara hacia donde mira el cuerpo)
+  add(_capsula(J.neck, J.head, 3.2, 3.2, COL.piel));
+  const cara = (pose.t !== undefined ? pose.t : 90) - 90;
   prims.push({
     k: "c",
     x: J.head[0],
     y: J.head[1],
-    r: 7.5,
-    c: "#F3D9C4",
-    s: COL_CUERPO
+    r: 7.8,
+    c: COL.piel
   });
-  manc(A.mu, pose.fa, COL_MANC);
+  prims.push(_sector(J.head, 8, cara + 85, cara + 275, COL.pelo));
+  const dir = (a, r) => [J.head[0] + r * Math.cos(a * Math.PI / 180), J.head[1] - r * Math.sin(a * Math.PI / 180)];
+  const nariz = dir(cara, 7.6),
+    ojo = dir(cara + 22, 4.6);
+  prims.push({
+    k: "c",
+    x: nariz[0],
+    y: nariz[1],
+    r: 1.7,
+    c: COL.piel
+  });
+  prims.push({
+    k: "c",
+    x: ojo[0],
+    y: ojo[1],
+    r: 1.1,
+    c: "#2B2B2B"
+  });
+  add(_brazo(A.sh0, A.el, A.mu, false));
+  if (res.has("t")) ov(_lerp2(J.hip, J.neck, 0.15), _lerp2(J.hip, J.neck, 0.85), 6, 7.4);
+  if (res.has("th")) {
+    ov(A.hp, A.kn, 6, 4.7, 0.55);
+    if (B) ov(B.hp, B.kn, 6, 4.7, 0.3);
+  }
+  if (res.has("sh")) {
+    ov(A.kn, A.an, 4.5, 3.3, 0.55);
+    if (B) ov(B.kn, B.an, 4.5, 3.3, 0.3);
+  }
+  if (res.has("ua")) {
+    ov(A.sh0, A.el, 4.6, 3.8, 0.55);
+    if (B) ov(B.sh0, B.el, 4.6, 3.8, 0.3);
+  }
+  if (res.has("fa")) {
+    ov(A.el, A.mu, 3.6, 3, 0.55);
+    if (B) ov(B.el, B.mu, 3.6, 3, 0.3);
+  }
+  if (ej.mancEn === "cadera") {
+    if (ej.mancuernas) _manc([J.hip[0], J.hip[1] - 8], 0, "redonda").forEach(p => mancs.push(p));
+  } else manc(A.mu, pose.fa);
   return {
-    prims: prims.concat(mancs),
+    prims: prims.concat(ovItems.length ? [{
+      k: "g",
+      o: 0.8,
+      items: ovItems
+    }] : [], mancs),
     vista: "lado"
   };
 }
@@ -8358,27 +8853,35 @@ function progresoAnim(ms, periodo) {
   const v = 0.5 - 0.5 * Math.cos(2 * Math.PI * x);
   return Math.min(1, Math.max(0, (v - 0.5) * 1.3 + 0.5)); // pequeña pausa en los extremos
 }
-
+function _puntosPrim(p) {
+  if (p.k === "l") return [[p.x1, p.y1], [p.x2, p.y2]];
+  if (p.k === "c") return [[p.x - p.r, p.y - p.r], [p.x + p.r, p.y + p.r]];
+  if (p.k === "p") return p.pts;
+  if (p.k === "r") return [[p.x, p.y], [p.x + p.w, p.y + p.h]];
+  if (p.k === "g") return [].concat.apply([], p.items.map(_puntosPrim));
+  return []; // elipse (sombra): no cuenta para el encuadre
+}
 // Encuadre automático: recuadro (viewBox) que contiene todo el recorrido del ejercicio.
 const _cajas = {};
 function cajaEjercicio(ej) {
   if (_cajas[ej.id]) return _cajas[ej.id];
   let x0 = 1e9,
     x1 = -1e9,
-    y0 = 1e9;
+    y0 = 1e9,
+    y1 = -1e9;
   [0, 0.25, 0.5, 0.75, 1].forEach(k => {
     dibujoEjercicio(ej, k).prims.forEach(p => {
-      const pts = p.k === "l" ? [[p.x1, p.y1], [p.x2, p.y2]] : [[p.x - p.r, p.y - p.r], [p.x + p.r, p.y + p.r]];
-      pts.forEach(([x, y]) => {
+      _puntosPrim(p).forEach(([x, y]) => {
         x0 = Math.min(x0, x);
         x1 = Math.max(x1, x);
         y0 = Math.min(y0, y);
+        y1 = Math.max(y1, y);
       });
     });
   });
   const asp = 220 / 150,
-    m = 14,
-    bottom = SUELO_Y + 8;
+    m = 12,
+    bottom = Math.max(SUELO_Y + 14, y1 + 6);
   const top = y0 - m;
   let w = Math.max(x1 - x0 + 2 * m, (bottom - top) * asp, 130);
   let h = w / asp;
@@ -8456,9 +8959,16 @@ function pitido() {
     }, 800);
   } catch (e) {}
 }
+function textoReps(it, ej) {
+  const max = Number(it.reps) || 0,
+    min = Number(it.repsMin) || 0;
+  return (min > 0 && min < max ? `${min}-${max}` : `${max}`) + (ej && ej.unidad === "s" ? " s" : "");
+}
+function textoLado(it, ej) {
+  return it.porLado ? ` por ${ej && ej.lado || "lado"}` : "";
+}
 function resumenItem(it, ej) {
-  const reps = ej && ej.unidad === "s" ? `${it.reps} s` : `${it.reps}`;
-  return `${it.series} × ${reps}${Number(it.peso) > 0 ? ` · ${String(it.peso).replace(".", ",")} kg` : ""} · desc. ${it.descanso}s`;
+  return `${it.series} × ${textoReps(it, ej)}${textoLado(it, ej)}${Number(it.peso) > 0 ? ` · ${String(it.peso).replace(".", ",")} kg` : ""} · desc. ${it.descanso}s`;
 }
 function ultimaVez(registros, eid) {
   const orden = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
@@ -8476,6 +8986,56 @@ function ultimaVez(registros, eid) {
   }
   return null;
 }
+function PrimSVG({
+  p
+}) {
+  const o = p.o !== undefined ? p.o : undefined;
+  if (p.k === "l") return /*#__PURE__*/React.createElement("line", {
+    x1: p.x1,
+    y1: p.y1,
+    x2: p.x2,
+    y2: p.y2,
+    stroke: p.c,
+    strokeWidth: p.w,
+    strokeLinecap: "round",
+    opacity: o
+  });
+  if (p.k === "c") return /*#__PURE__*/React.createElement("circle", {
+    cx: p.x,
+    cy: p.y,
+    r: p.r,
+    fill: p.c,
+    opacity: o
+  });
+  if (p.k === "p") return /*#__PURE__*/React.createElement("path", {
+    d: p.d,
+    fill: p.c,
+    opacity: o
+  });
+  if (p.k === "r") return /*#__PURE__*/React.createElement("rect", {
+    x: p.x,
+    y: p.y,
+    width: p.w,
+    height: p.h,
+    fill: p.c,
+    opacity: o
+  });
+  if (p.k === "e") return /*#__PURE__*/React.createElement("ellipse", {
+    cx: p.x,
+    cy: p.y,
+    rx: p.rx,
+    ry: p.ry,
+    fill: p.c,
+    opacity: o
+  });
+  if (p.k === "g") return /*#__PURE__*/React.createElement("g", {
+    opacity: o
+  }, p.items.map((q, i) => /*#__PURE__*/React.createElement(PrimSVG, {
+    key: i,
+    p: q
+  })));
+  return null;
+}
 function FiguraEjercicio({
   ej,
   k
@@ -8490,30 +9050,22 @@ function FiguraEjercicio({
     },
     role: "img",
     "aria-label": ej.nombre
-  }, /*#__PURE__*/React.createElement("line", {
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: c.x,
+    y: SUELO_Y,
+    width: c.w,
+    height: Math.max(1, c.y + c.h - SUELO_Y),
+    fill: COL.suelo
+  }), /*#__PURE__*/React.createElement("line", {
     x1: c.x,
     x2: c.x + c.w,
     y1: SUELO_Y,
     y2: SUELO_Y,
-    stroke: "#CFD8CD",
-    strokeWidth: "2"
-  }), d.prims.map((p, i) => p.k === "l" ? /*#__PURE__*/React.createElement("line", {
+    stroke: COL.lineaSuelo,
+    strokeWidth: "1.5"
+  }), d.prims.map((p, i) => /*#__PURE__*/React.createElement(PrimSVG, {
     key: i,
-    x1: p.x1,
-    y1: p.y1,
-    x2: p.x2,
-    y2: p.y2,
-    stroke: p.c,
-    strokeWidth: p.w,
-    strokeLinecap: "round"
-  }) : /*#__PURE__*/React.createElement("circle", {
-    key: i,
-    cx: p.x,
-    cy: p.y,
-    r: p.r,
-    fill: p.c,
-    stroke: p.s || "none",
-    strokeWidth: "2"
+    p: p
   })));
 }
 function AnimacionEjercicio({
@@ -8679,6 +9231,12 @@ function EntrenoTab({
       });
     }, 600);
   }
+  const [confirmarPlan, setConfirmarPlan] = useState(false);
+  function cargarSemana() {
+    const docs = docsDePlanSemanal();
+    docs.forEach((d, i) => cambiarDia(i, d));
+    setConfirmarPlan(false);
+  }
   if (cargando) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
   if (vista.t === "dia") {
     return /*#__PURE__*/React.createElement(EditorDiaEntreno, {
@@ -8728,9 +9286,12 @@ function EntrenoTab({
         const nuevo = {
           eid: ej.id,
           series: 3,
+          repsMin: 0,
           reps: ej.unidad === "s" ? 40 : 12,
           peso: /mancuerna/i.test(ej.material) ? 8 : 0,
-          descanso: ej.unidad === "s" ? 45 : 60
+          descanso: ej.unidad === "s" ? 45 : 60,
+          porLado: false,
+          nota: ""
         };
         cambiarDia(vista.dia, {
           ejercicios: [...(docDia(vista.dia).ejercicios || []), nuevo]
@@ -8807,7 +9368,34 @@ function EntrenoTab({
     }
   }, nHechos, " de ", diasConPlan.length, " entrenos hechos"))), /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
-  }, [0, 1, 2, 3, 4, 5, 6].map(d => {
+  }, Object.keys(plan).length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.greenSoft,
+      borderRadius: 16,
+      padding: "12px 14px",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: palette.greenDark
+    }
+  }, "✨ Plan sugerido"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: palette.ink,
+      margin: "4px 0 10px"
+    }
+  }, "3 días de tren superior (A, B y C), 1 de piernas, 2 de running (7 y 10 km) y 1 de descanso, con abdominales repartidos. Luego puedes cambiar lo que quieras."), /*#__PURE__*/React.createElement("button", {
+    onClick: cargarSemana,
+    className: "w-full py-2.5 text-[13px] font-semibold",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 12
+    }
+  }, "Cargar esta semana")), [0, 1, 2, 3, 4, 5, 6].map(d => {
     const doc = plan[d];
     const fecha = fechaDeDia(lunes, d);
     const esHoy = toKey(fecha) === toKey(hoyD);
@@ -8958,7 +9546,48 @@ function EntrenoTab({
       color: palette.inkSoft,
       whiteSpace: "nowrap"
     }
-  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null)))), /*#__PURE__*/React.createElement("div", {
+  }, r.tipo === "carrera" ? /*#__PURE__*/React.createElement("div", null, String(r.km || "").replace(".", ","), " km · ", mmss(r.duracion_s || 0)) : r.series_hechas ? /*#__PURE__*/React.createElement("div", null, r.series_hechas, " series · ", r.volumen_kg || 0, " kg") : null, r.tipo !== "carrera" && r.duracion_s ? /*#__PURE__*/React.createElement("div", null, Math.round(r.duracion_s / 60), " min") : null)))), Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: 12,
+      marginTop: 14,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] mb-2"
+  }, "Esto reemplaza los 7 días del plan actual. ¿Seguro?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmarPlan(false),
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: "#FFFFFF",
+      fontSize: 13
+    }
+  }, "Cancelar"), /*#__PURE__*/React.createElement("button", {
+    onClick: cargarSemana,
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: palette.green,
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, "Sí, reemplazar"))) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmarPlan(true),
+    className: "w-full mt-4 py-2 text-[11.5px] uppercase tracking-wide",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Cargar el plan semanal sugerido…")), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] mt-4 text-center",
     style: {
       color: palette.inkSoft
@@ -9248,21 +9877,31 @@ function EditorDiaEntreno({
         series: v
       })
     }), /*#__PURE__*/React.createElement(Stepper, {
-      etiqueta: ej.unidad === "s" ? "Segundos" : "Repeticiones",
+      etiqueta: ej.unidad === "s" ? "Segundos (máx.)" : "Reps (máx.)",
       valor: it.reps,
       min: 1,
       max: 200,
       paso: ej.unidad === "s" ? 5 : 1,
       onChange: v => cambiarItem(i, {
-        reps: v
+        reps: v,
+        repsMin: Math.min(Number(it.repsMin) || 0, v)
       })
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
-        marginBottom: 10
+        marginBottom: 8
       }
     }, /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: ej.unidad === "s" ? "Segundos (mín.)" : "Reps (mín.)",
+      valor: it.repsMin || 0,
+      min: 0,
+      max: it.reps,
+      paso: ej.unidad === "s" ? 5 : 1,
+      onChange: v => cambiarItem(i, {
+        repsMin: v
+      })
+    }), /*#__PURE__*/React.createElement(Stepper, {
       etiqueta: "Peso (kg)",
       valor: it.peso,
       min: 0,
@@ -9271,7 +9910,18 @@ function EditorDiaEntreno({
       onChange: v => cambiarItem(i, {
         peso: v
       })
-    }), /*#__PURE__*/React.createElement(Stepper, {
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10.5px] mb-2 text-center",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Mín. a 0 = número fijo de repeticiones. Con rango (ej. 10-15) la app te lo muestra como objetivo."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement(Stepper, {
       etiqueta: "Descanso (s)",
       valor: it.descanso,
       min: 0,
@@ -9280,7 +9930,38 @@ function EditorDiaEntreno({
       onChange: v => cambiarItem(i, {
         descanso: v
       })
-    })), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] uppercase tracking-wide mb-1 text-center",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "Se hace"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => cambiarItem(i, {
+        porLado: !it.porLado
+      }),
+      style: {
+        width: "100%",
+        height: 39,
+        borderRadius: 14,
+        fontSize: 12.5,
+        fontWeight: 600,
+        background: it.porLado ? palette.green : palette.paperDark,
+        color: it.porLado ? "#FFFFFF" : palette.inkSoft
+      }
+    }, it.porLado ? `Por ${ej.lado || "lado"}` : "Todo junto"))), /*#__PURE__*/React.createElement("input", {
+      value: it.nota || "",
+      onChange: e => cambiarItem(i, {
+        nota: e.target.value
+      }),
+      placeholder: "Nota (ej. cerca del fallo técnico)",
+      className: "w-full px-3 py-2 text-[12.5px] mb-3",
+      style: inputStyle
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
@@ -10058,6 +10739,17 @@ function SesionEntreno({
       peso: v
     })
   })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-1 text-center",
+    style: {
+      color: palette.ink
+    }
+  }, "Objetivo: ", /*#__PURE__*/React.createElement("b", null, textoReps(it, it.ej), it.ej.unidad === "s" ? "" : " reps"), textoLado(it, it.ej)), it.nota ? /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-1 text-center",
+    style: {
+      color: palette.greenDark,
+      fontStyle: "italic"
+    }
+  }, it.nota) : null, /*#__PURE__*/React.createElement("div", {
     className: "text-[11.5px] mb-3 text-center",
     style: {
       color: palette.inkSoft,
