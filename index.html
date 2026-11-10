@@ -2843,28 +2843,36 @@ function dayLabel(date) {
   if (diff === 1) return `Mañana · ${fecha}`;
   return fecha;
 }
-const ZONA_RELLENO = {
-  bajo: "rgba(90,164,224,0.38)",
-  ok: "rgba(47,143,62,0.30)",
-  alto: "rgba(240,138,75,0.38)"
+
+// Colores propios de cada macro y color especial para el total del día
+const COLOR_MACRO = {
+  Proteína: "#3E7EA6",
+  Hidratos: "#D9A02B",
+  Grasas: "#D9704F"
 };
-// Barra con banda de rango, relleno suave y una bola que marca dónde estás
+const ZONA_CLARO = {
+  bajo: "#9CCBF2",
+  ok: "#9BE8AA",
+  alto: "#FFC49A"
+};
+// Barra con banda de rango, relleno suave del color del macro y una bola que marca dónde estás
 function BarraZona({
   consumido,
   min,
   max,
   escala,
-  grosor
+  color,
+  oscuro
 }) {
   const z = consumido < min ? "bajo" : consumido > max ? "alto" : "ok";
   const pos = Math.max(1.5, Math.min(98.5, consumido / escala * 100));
-  const h = grosor || 10;
+  const c = color || ZONA_COLOR[z];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
-      height: h,
+      height: 10,
       borderRadius: 999,
-      background: "#EBE5D6",
+      background: oscuro ? "rgba(255,255,255,0.22)" : "#EBE5D6",
       margin: "9px 0 4px"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -2875,9 +2883,9 @@ function BarraZona({
       top: -4,
       bottom: -4,
       borderRadius: 999,
-      border: "1.5px solid #2F8F3E",
-      background: z === "ok" ? "rgba(95,200,110,0.35)" : "rgba(95,200,110,0.16)",
-      boxShadow: z === "ok" ? "0 0 12px 3px rgba(60,190,90,0.55)" : "none",
+      border: `1.5px solid ${oscuro ? "rgba(255,255,255,0.75)" : "#2F8F3E"}`,
+      background: z === "ok" ? oscuro ? "rgba(155,232,170,0.45)" : "rgba(95,200,110,0.35)" : oscuro ? "rgba(255,255,255,0.12)" : "rgba(95,200,110,0.14)",
+      boxShadow: z === "ok" ? "0 0 12px 3px rgba(60,190,90,0.6)" : "none",
       transition: "box-shadow .3s"
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -2888,7 +2896,7 @@ function BarraZona({
       bottom: 0,
       width: `${pos}%`,
       borderRadius: 999,
-      background: ZONA_RELLENO[z],
+      background: oscuro ? "rgba(255,255,255,0.45)" : c + "66",
       transition: "width .2s ease"
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -2900,9 +2908,9 @@ function BarraZona({
       height: 20,
       borderRadius: "50%",
       background: "#FFFFFF",
-      border: `3px solid ${ZONA_COLOR[z]}`,
+      border: `3px solid ${oscuro ? ZONA_CLARO[z] : c}`,
       transform: "translate(-50%,-50%)",
-      boxShadow: z === "ok" ? "0 0 10px 2px rgba(60,190,90,0.6), 0 2px 5px rgba(0,0,0,0.25)" : "0 2px 5px rgba(0,0,0,0.25)",
+      boxShadow: z === "ok" ? "0 0 10px 2px rgba(60,190,90,0.65), 0 2px 5px rgba(0,0,0,0.25)" : "0 2px 5px rgba(0,0,0,0.25)",
       transition: "left .2s ease"
     }
   }));
@@ -2915,7 +2923,7 @@ function Chip({
     style: {
       fontSize: 10,
       fontWeight: 700,
-      padding: "2px 9px",
+      padding: "2px 8px",
       borderRadius: 999,
       background: ZONA_FONDO[zona],
       color: ZONA_TEXTO[zona],
@@ -2935,101 +2943,123 @@ function ResumenDia({
   const dif = objetivoKcal ? Math.round(total - objetivoKcal) : 0;
   const lista = macros.filter(m => m.rango);
   const zm = m => m.consumido < m.rango.min ? "bajo" : m.consumido > m.rango.max ? "alto" : "ok";
-  const txtMacro = m => zm(m) === "ok" ? "✓" : zm(m) === "bajo" ? `faltan ${Math.ceil(m.rango.min - m.consumido)} g` : `+${Math.round(m.consumido - m.rango.max)} g`;
+  const txtMacro = m => zm(m) === "ok" ? "en rango ✓" : zm(m) === "bajo" ? `faltan ${Math.ceil(m.rango.min - m.consumido)} g` : `+${Math.round(m.consumido - m.rango.max)} g`;
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "#FBF9F4",
       borderRadius: 24,
-      padding: "16px 16px 14px",
       marginTop: 12,
-      boxShadow: "0 2px 10px rgba(30,60,35,0.08)"
+      overflow: "hidden",
+      boxShadow: "0 2px 10px rgba(30,60,35,0.12)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "linear-gradient(135deg, #1D5C28, #2F8F3E)",
+      padding: "14px 16px 12px",
+      color: "#FFFFFF"
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-end justify-between"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10,
-      letterSpacing: "0.18em",
-      color: "#8A8470"
+      fontSize: 10.5,
+      letterSpacing: "0.16em",
+      opacity: 0.8,
+      fontWeight: 600
     }
   }, "TOTAL DEL DÍA"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: 36,
+      fontSize: 34,
+      fontWeight: 800,
       lineHeight: 1.05,
-      fontVariantNumeric: "tabular-nums",
-      color: zk ? ZONA_TEXTO[zk] : palette.ink
+      fontVariantNumeric: "tabular-nums"
     }
   }, total.toLocaleString("es-ES"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
-      color: "#8A8470"
+      fontWeight: 500,
+      opacity: 0.8
     }
   }, " kcal"))), objetivoKcal ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "right",
       fontSize: 11,
-      color: "#8A8470"
+      opacity: 0.95
     }
-  }, "objetivo ", objetivoKcal.toLocaleString("es-ES"), " kcal", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: 0.8
+    }
+  }, "objetivo ", objetivoKcal.toLocaleString("es-ES"), " kcal"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
       display: "inline-block",
-      marginTop: 3
+      marginTop: 4
     }
   }, /*#__PURE__*/React.createElement(Chip, {
     zona: zk
   }, zk === "ok" ? "en zona ✓" : zk === "bajo" ? `faltan ${-dif}` : `+${dif}`))) : null), objetivoKcal ? /*#__PURE__*/React.createElement("div", {
     style: {
-      margin: "6px 0 14px"
+      margin: "8px 0 4px"
     }
   }, /*#__PURE__*/React.createElement(BarraZona, {
+    oscuro: true,
     consumido: total,
     min: rk.min,
     max: rk.max,
     escala: escalaK
-  })) : null, lista.map(m => {
-    const z = zm(m);
+  })) : null), lista.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FBF9F4",
+      padding: "6px 16px 10px"
+    }
+  }, lista.map(m => {
     const escala = Math.max(m.rango.max * 1.3, m.consumido * 1.06, 1);
+    const col = COLOR_MACRO[m.label];
     return /*#__PURE__*/React.createElement("div", {
       key: m.label,
       style: {
-        marginTop: 6
+        marginTop: 8
       }
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-baseline justify-between",
+      className: "flex items-center justify-between",
       style: {
-        fontSize: 10.5,
-        letterSpacing: "0.1em",
-        color: "#8A8470"
+        fontSize: 11
       }
-    }, /*#__PURE__*/React.createElement("span", null, m.label.toUpperCase()), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "flex items-center gap-1.5",
+      style: {
+        fontWeight: 700,
+        color: palette.ink
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 9,
+        height: 9,
+        borderRadius: "50%",
+        background: col,
+        display: "inline-block"
+      }
+    }), m.label), /*#__PURE__*/React.createElement("span", {
+      className: "flex items-center gap-1.5",
       style: {
         fontVariantNumeric: "tabular-nums",
-        letterSpacing: 0
+        color: "#8A8470"
       }
     }, /*#__PURE__*/React.createElement("b", {
       style: {
-        fontFamily: "Georgia, serif",
-        fontSize: 16,
+        fontSize: 14,
         color: palette.ink,
-        fontWeight: 600
+        fontWeight: 800
       }
-    }, Math.round(m.consumido)), " g · ", m.rango.min, "–", m.rango.max)), /*#__PURE__*/React.createElement(BarraZona, {
+    }, Math.round(m.consumido), " g"), " · ", m.rango.min, "–", m.rango.max, /*#__PURE__*/React.createElement(Chip, {
+      zona: zm(m)
+    }, txtMacro(m)))), /*#__PURE__*/React.createElement(BarraZona, {
       consumido: m.consumido,
       min: m.rango.min,
       max: m.rango.max,
-      escala: escala
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        height: 6
-      }
+      escala: escala,
+      color: col
     }));
-  }), lista.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-1.5 flex-wrap"
-  }, lista.map(m => /*#__PURE__*/React.createElement(Chip, {
-    key: m.label,
-    zona: zm(m)
-  }, m.label[0], " ", txtMacro(m)))));
+  })));
 }
 function MealHeader({
   meal,
