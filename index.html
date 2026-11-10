@@ -2196,6 +2196,49 @@ function rangoKcal(kcal, manual) {
     max: Math.round(kcal * 1.05)
   };
 }
+
+// Zonas de objetivo: por debajo (azul), dentro de rango (verde, con brillo) y por encima (naranja)
+const ZONA_COLOR = {
+  bajo: "#5AA4E0",
+  ok: "#2F8F3E",
+  alto: "#F08A4B"
+};
+const ZONA_FONDO = {
+  bajo: "#DCEBFA",
+  ok: "#DDF1DF",
+  alto: "#FFE3D0"
+};
+const ZONA_TEXTO = {
+  bajo: "#2B5E94",
+  ok: "#1D5C28",
+  alto: "#B4501A"
+};
+function rangoZonaKcal(kcal) {
+  return {
+    min: Math.round(kcal * 0.98),
+    max: Math.round(kcal * 1.02)
+  };
+}
+function zonaKcal(consumido, objetivo) {
+  if (!objetivo) return null;
+  const r = consumido / objetivo;
+  return Math.abs(r - 1) <= 0.02 ? "ok" : r < 1 ? "bajo" : "alto";
+}
+// Rango de un macro: el que hayas puesto o, si no, ±5 % sobre el objetivo
+function rangoMacro(objetivo, rangos, clave) {
+  const t = Number(objetivo) || 0;
+  const r = rangos && rangos[clave] || {};
+  let min = Number(r.min) > 0 ? Number(r.min) : null;
+  let max = Number(r.max) > 0 ? Number(r.max) : null;
+  if (min === null && max === null && !t) return null;
+  if (min === null) min = t ? Math.round(t * 0.95) : Math.round(max * 0.9);
+  if (max === null) max = t ? Math.round(t * 1.05) : Math.round(min * 1.1);
+  if (max < min) max = min;
+  return {
+    min,
+    max
+  };
+}
 const NIVELES_ACTIVIDAD = [{
   id: "sedentario",
   label: "Sedentario (0 días/semana)",
@@ -2802,13 +2845,13 @@ function dayLabel(date) {
 }
 function CalorieBar({
   consumido,
-  objetivo,
-  tipo
+  objetivo
 }) {
   if (!objetivo) return null;
-  const pct = Math.min(consumido / objetivo * 100, 100);
-  const enBuenCamino = tipo === "ganar_musculo" ? consumido >= objetivo : consumido <= objetivo;
-  const color = enBuenCamino ? palette.green : palette.red;
+  const z = zonaKcal(consumido, objetivo);
+  const color = ZONA_COLOR[z];
+  const escala = Math.max(objetivo * 1.15, consumido * 1.03);
+  const dif = Math.round(consumido - objetivo);
   return /*#__PURE__*/React.createElement("div", {
     className: "mb-3"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2825,38 +2868,62 @@ function CalorieBar({
       color,
       fontWeight: 700
     }
-  }, Math.round(consumido), " / ", objetivo, " kcal")), /*#__PURE__*/React.createElement("div", {
+  }, Math.round(consumido), " / ", objetivo, " kcal", z === "ok" ? " ✓" : "")), /*#__PURE__*/React.createElement("div", {
     className: "h-3 w-full",
     style: {
+      position: "relative",
       background: palette.paperDark,
-      borderRadius: 999,
-      overflow: "hidden"
+      borderRadius: 999
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: `${pct}%`,
+      width: `${Math.min(100, consumido / escala * 100)}%`,
       height: "100%",
       background: color,
       borderRadius: 999,
       transition: "width 0.2s ease"
     }
-  })));
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: `${objetivo / escala * 100}%`,
+      top: -3,
+      bottom: -3,
+      width: 2,
+      background: palette.ink,
+      opacity: 0.55,
+      borderRadius: 2
+    }
+  })), z !== "ok" && /*#__PURE__*/React.createElement("div", {
+    className: "text-[10.5px] mt-1",
+    style: {
+      color: ZONA_TEXTO[z]
+    }
+  }, z === "bajo" ? `Faltan ${-dif} kcal` : `${dif} kcal de más`, " (zona verde: ±2 %)"));
 }
 function MacroBar({
   label,
   consumido,
-  objetivo,
-  color
+  rango
 }) {
-  const pct = objetivo ? Math.min(consumido / objetivo * 100, 100) : 0;
+  if (!rango) return null;
+  const {
+    min,
+    max
+  } = rango;
+  const c = Math.round(consumido);
+  const z = consumido < min ? "bajo" : consumido > max ? "alto" : "ok";
+  const color = ZONA_COLOR[z];
+  const escala = Math.max(max * 1.3, consumido * 1.06, 1);
+  const chip = z === "ok" ? "en rango ✓" : z === "bajo" ? `faltan ${Math.ceil(min - consumido)} g` : `+${Math.round(consumido - max)} g`;
   return /*#__PURE__*/React.createElement("div", {
-    className: "mb-2"
+    className: "mb-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-baseline justify-between mb-1"
+    className: "flex items-baseline justify-between mb-1.5"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-[10.5px] font-medium",
+    className: "text-[11px] font-medium",
     style: {
-      color: palette.inkSoft
+      color: palette.ink
     }
   }, label), /*#__PURE__*/React.createElement("span", {
     className: "text-[10.5px]",
@@ -2864,19 +2931,49 @@ function MacroBar({
       fontVariantNumeric: "tabular-nums",
       color: palette.inkSoft
     }
-  }, Math.round(consumido), "g", objetivo ? ` / ${objetivo}g` : "")), /*#__PURE__*/React.createElement("div", {
-    className: "h-2 w-full",
+  }, /*#__PURE__*/React.createElement("b", {
     style: {
-      background: palette.paperDark,
+      color: palette.ink
+    }
+  }, c, " g"), " · rango ", min, "–", max, " g", " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      padding: "1px 7px",
       borderRadius: 999,
-      overflow: "hidden"
+      background: ZONA_FONDO[z],
+      color: ZONA_TEXTO[z]
+    }
+  }, chip))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      height: 10,
+      borderRadius: 999,
+      background: palette.paperDark
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: `${pct}%`,
-      height: "100%",
+      position: "absolute",
+      left: `${min / escala * 100}%`,
+      width: `${(max - min) / escala * 100}%`,
+      top: -3,
+      bottom: -3,
+      background: z === "ok" ? "#BDEBC4" : "#D5ECD7",
+      borderRadius: 6,
+      boxShadow: z === "ok" ? "0 0 10px 3px rgba(60,190,90,0.55)" : "none",
+      transition: "box-shadow .3s"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: `${Math.min(100, consumido / escala * 100)}%`,
       background: color,
-      borderRadius: 999
+      borderRadius: 999,
+      boxShadow: z === "ok" ? "0 0 12px 3px rgba(47,143,62,0.6)" : "none",
+      transition: "width .2s ease"
     }
   })));
 }
@@ -3016,7 +3113,13 @@ function DayBreakdown({
         style: {
           color: palette.inkSoft
         }
-      }, it.planificado ? `${it.qty} · planificado` : it.qty)), /*#__PURE__*/React.createElement("div", {
+      }, it.planificado ? `${it.qty} · planificado` : it.qty), it.proteinas || it.carbohidratos || it.grasas ? /*#__PURE__*/React.createElement("div", {
+        className: "text-[10px] mt-0.5",
+        style: {
+          color: palette.inkSoft,
+          fontVariantNumeric: "tabular-nums"
+        }
+      }, "P ", Math.round(it.proteinas || 0), " g · C ", Math.round(it.carbohidratos || 0), " g · G ", Math.round(it.grasas || 0), " g") : null), /*#__PURE__*/React.createElement("div", {
         className: "text-right whitespace-nowrap",
         style: {
           minWidth: 58
@@ -3072,29 +3175,25 @@ function DayBreakdown({
     className: "text-[22px] font-bold",
     style: {
       fontVariantNumeric: "tabular-nums",
-      color: palette.red
+      color: objetivoKcal ? ZONA_COLOR[zonaKcal(total, objetivoKcal)] : palette.red
     }
   }, total, " kcal")), /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement(CalorieBar, {
     consumido: total,
-    objetivo: objetivoKcal ? rangoKcal(objetivoKcal, objetivoManual).min : null,
-    tipo: objetivoTipo
+    objetivo: objetivoKcal || null
   }), objetivoMacros && (objetivoMacros.proteinas || objetivoMacros.carbohidratos || objetivoMacros.grasas) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(MacroBar, {
     label: "Proteínas",
     consumido: totalProteinas,
-    objetivo: objetivoMacros.proteinas ? Math.round(objetivoMacros.proteinas * (objetivoManual ? 1 : 0.95)) : null,
-    color: palette.green
+    rango: rangoMacro(objetivoMacros.proteinas, objetivoMacros.rangos, "proteinas")
   }), /*#__PURE__*/React.createElement(MacroBar, {
     label: "Carbohidratos",
     consumido: totalCarbohidratos,
-    objetivo: objetivoMacros.carbohidratos ? Math.round(objetivoMacros.carbohidratos * (objetivoManual ? 1 : 0.95)) : null,
-    color: "#C7A24A"
+    rango: rangoMacro(objetivoMacros.carbohidratos, objetivoMacros.rangos, "carbohidratos")
   }), /*#__PURE__*/React.createElement(MacroBar, {
     label: "Grasas",
     consumido: totalGrasas,
-    objetivo: objetivoMacros.grasas ? Math.round(objetivoMacros.grasas * (objetivoManual ? 1 : 0.95)) : null,
-    color: palette.red
+    rango: rangoMacro(objetivoMacros.grasas, objetivoMacros.rangos, "grasas")
   }))));
 }
 async function fetchDiaEntradas(userId, dateKey, perfilId) {
@@ -3131,6 +3230,28 @@ function ObjetivoForm({
   const [mCarb, setMCarb] = useState(perfil.objetivo_manual && perfil.objetivo_carbohidratos ? String(perfil.objetivo_carbohidratos) : "");
   const [mGras, setMGras] = useState(perfil.objetivo_manual && perfil.objetivo_grasas ? String(perfil.objetivo_grasas) : "");
   const manual = modo === "manual";
+  const rg0 = perfil.macro_rangos || {};
+  const [rangos, setRangos] = useState({
+    proteinas: {
+      min: rg0.proteinas && rg0.proteinas.min ? String(rg0.proteinas.min) : "",
+      max: rg0.proteinas && rg0.proteinas.max ? String(rg0.proteinas.max) : ""
+    },
+    carbohidratos: {
+      min: rg0.carbohidratos && rg0.carbohidratos.min ? String(rg0.carbohidratos.min) : "",
+      max: rg0.carbohidratos && rg0.carbohidratos.max ? String(rg0.carbohidratos.max) : ""
+    },
+    grasas: {
+      min: rg0.grasas && rg0.grasas.min ? String(rg0.grasas.min) : "",
+      max: rg0.grasas && rg0.grasas.max ? String(rg0.grasas.max) : ""
+    }
+  });
+  const setRg = (k, lado, v) => setRangos(r => ({
+    ...r,
+    [k]: {
+      ...r[k],
+      [lado]: v
+    }
+  }));
 
   // En manual: si faltan macros se reparten por porcentajes (25% prot, 45% hidratos, 30% grasa).
   function objetivoManual() {
@@ -3170,7 +3291,19 @@ function ObjetivoForm({
       objetivo_kcal: objetivo.kcal,
       objetivo_proteinas: objetivo.proteinas,
       objetivo_carbohidratos: objetivo.carbohidratos,
-      objetivo_grasas: objetivo.grasas
+      objetivo_grasas: objetivo.grasas,
+      macro_rangos: (() => {
+        const o = {};
+        ["proteinas", "carbohidratos", "grasas"].forEach(k => {
+          const mn = Number(rangos[k].min),
+            mx = Number(rangos[k].max);
+          if (mn > 0 || mx > 0) o[k] = {
+            min: mn > 0 ? mn : null,
+            max: mx > 0 ? mx : null
+          };
+        });
+        return Object.keys(o).length ? o : null;
+      })()
     };
     await sb.from("perfil_objetivos").upsert({
       user_id: userId,
@@ -3374,7 +3507,57 @@ function ObjetivoForm({
   }, TIPOS_ACTIVIDAD.map(t => /*#__PURE__*/React.createElement("option", {
     key: t.id,
     value: t.id
-  }, t.label)))), previa && /*#__PURE__*/React.createElement("div", {
+  }, t.label)))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 p-3",
+    style: {
+      background: palette.paperDark,
+      borderRadius: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] uppercase tracking-wide mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Rango de macros (opcional)"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10.5px] mb-2",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Se ilumina en verde cuando estás dentro. Si lo dejas vacío se usa ±5 % del objetivo."), [["proteinas", "Proteínas"], ["carbohidratos", "Hidratos"], ["grasas", "Grasas"]].map(([k, nom]) => {
+    const t = manual ? objetivoManual()[k] : previa ? previa[k] : Number(perfil["objetivo_" + k]) || 0;
+    return /*#__PURE__*/React.createElement("div", {
+      key: k,
+      className: "flex items-center gap-2 mb-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[12px]",
+      style: {
+        width: 74
+      }
+    }, nom), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: rangos[k].min,
+      onChange: e => setRg(k, "min", e.target.value),
+      placeholder: t ? `mín ${Math.round(t * 0.95)}` : "mín",
+      className: "w-full px-2.5 py-1.5 text-[12.5px]",
+      style: inputStyle
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: palette.inkSoft
+      }
+    }, "–"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: rangos[k].max,
+      onChange: e => setRg(k, "max", e.target.value),
+      placeholder: t ? `máx ${Math.round(t * 1.05)}` : "máx",
+      className: "w-full px-2.5 py-1.5 text-[12.5px]",
+      style: inputStyle
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "g"));
+  })), previa && /*#__PURE__*/React.createElement("div", {
     className: "mb-4 p-3",
     style: {
       background: palette.greenSoft,
@@ -3390,7 +3573,7 @@ function ObjetivoForm({
     style: {
       fontVariantNumeric: "tabular-nums"
     }
-  }, rangoKcal(previa.kcal).min, "–", rangoKcal(previa.kcal).max, " kcal"), /*#__PURE__*/React.createElement("div", {
+  }, rangoZonaKcal(previa.kcal).min, "–", rangoZonaKcal(previa.kcal).max, " kcal"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11.5px] mt-0.5",
     style: {
       color: palette.inkSoft
@@ -4137,7 +4320,8 @@ function DiarioTab({
     objetivoMacros: {
       proteinas: objetivoData.objetivo_proteinas,
       carbohidratos: objetivoData.objetivo_carbohidratos,
-      grasas: objetivoData.objetivo_grasas
+      grasas: objetivoData.objetivo_grasas,
+      rangos: objetivoData.macro_rangos
     },
     onEliminarEntrada: eliminarEntrada,
     onEditarEntrada: editarEntrada
@@ -4167,12 +4351,15 @@ function DiarioTab({
     style: {
       fontVariantNumeric: "tabular-nums"
     }
-  }, objetivoData.objetivo_manual ? `${objetivoData.objetivo_kcal} kcal` : `${rangoKcal(objetivoData.objetivo_kcal).min}–${rangoKcal(objetivoData.objetivo_kcal).max} kcal`), /*#__PURE__*/React.createElement("div", {
+  }, `${objetivoData.objetivo_kcal} kcal · verde ${rangoZonaKcal(objetivoData.objetivo_kcal).min}–${rangoZonaKcal(objetivoData.objetivo_kcal).max}`), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] mt-0.5",
     style: {
       color: palette.inkSoft
     }
-  }, "P ", objetivoData.objetivo_proteinas, "g · C ", objetivoData.objetivo_carbohidratos, "g · G ", objetivoData.objetivo_grasas, "g")) : /*#__PURE__*/React.createElement("button", {
+  }, ["proteinas", "carbohidratos", "grasas"].map((k, i) => {
+    const r = rangoMacro(objetivoData["objetivo_" + k], objetivoData.macro_rangos, k);
+    return (i ? " · " : "") + ["P", "C", "G"][i] + " " + (r ? `${r.min}–${r.max}` : "–") + "g";
+  }).join(""))) : /*#__PURE__*/React.createElement("button", {
     onClick: () => setView("objetivo"),
     className: "w-full py-2 text-[12px] uppercase tracking-wide",
     style: {
@@ -4876,7 +5063,7 @@ function CalendarioTab({
   const [productos, setProductos] = useState([]);
   const [version, setVersion] = useState(0);
   useEffect(() => {
-    sb.from("perfil_objetivos").select("objetivo_kcal,objetivo_manual,objetivo_tipo,objetivo_proteinas,objetivo_carbohidratos,objetivo_grasas").eq("user_id", userId).eq("perfil", perfilId).maybeSingle().then(({
+    sb.from("perfil_objetivos").select("objetivo_kcal,objetivo_manual,objetivo_tipo,objetivo_proteinas,objetivo_carbohidratos,objetivo_grasas,macro_rangos").eq("user_id", userId).eq("perfil", perfilId).maybeSingle().then(({
       data
     }) => {
       setObjetivoKcal(data && data.objetivo_kcal ? data.objetivo_kcal : null);
@@ -4885,7 +5072,8 @@ function CalendarioTab({
       setObjetivoMacros({
         proteinas: data && data.objetivo_proteinas,
         carbohidratos: data && data.objetivo_carbohidratos,
-        grasas: data && data.objetivo_grasas
+        grasas: data && data.objetivo_grasas,
+        rangos: data && data.macro_rangos
       });
     });
   }, [userId, perfilId]);
@@ -11777,12 +11965,12 @@ function Stepper({
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, etiqueta ? /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-wide mb-1 text-center",
     style: {
       color: palette.inkSoft
     }
-  }, etiqueta), /*#__PURE__*/React.createElement("div", {
+  }, etiqueta) : null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -12030,6 +12218,39 @@ function EntrenoTab({
     await sb.from("entreno_packs").upsert(reg, {
       onConflict: "clave"
     });
+    if (!nuevo) {
+      // Actualizar también los días que usan este entrenamiento (plan fijo y ajustes semanales)
+      const previo = packs.find(x => x.clave === clave);
+      const usa = d => d && (d.packId === clave || !d.packId && previo && d.titulo === previo.titulo);
+      const datos = datosDePack(reg);
+      const b = {
+        ...baseRef.current
+      };
+      const o = {
+        ...overRef.current
+      };
+      Object.keys(b).forEach(dia => {
+        if (usa(b[dia])) {
+          b[dia] = {
+            ...b[dia],
+            ...datos
+          };
+          guardarDoc(b[dia], null);
+        }
+      });
+      Object.keys(o).forEach(kk => {
+        if (usa(o[kk])) {
+          o[kk] = {
+            ...o[kk],
+            ...datos
+          };
+          guardarDoc(o[kk], o[kk].semana);
+        }
+      });
+      baseRef.current = b;
+      overRef.current = o;
+      refrescarPlan();
+    }
     setPacks(ps => ps.some(x => x.clave === clave) ? ps.map(x => x.clave === clave ? reg : x) : [...ps, reg]);
     return reg;
   }
@@ -13989,7 +14210,7 @@ function EditorDiaEntreno({
     }
   }, okGuardado) : null, !guardarOpc ? /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
-      const existe = doc.packId && (packs || []).some(p => p.clave === doc.packId);
+      const existe = (packs || []).some(p => p.clave === doc.packId || !doc.packId && p.titulo === doc.titulo);
       if (existe) setGuardarOpc(true);else {
         const r = await onGuardarPack({
           ...doc
@@ -14014,21 +14235,24 @@ function EditorDiaEntreno({
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[12.5px] text-center mb-2"
-  }, "Este día viene de un entrenamiento guardado."), /*#__PURE__*/React.createElement("div", {
+  }, "Ya existe un entrenamiento guardado con este nombre."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
-      const base = (packs || []).find(p => p.clave === doc.packId);
+      const base = (packs || []).find(p => p.clave === doc.packId) || (packs || []).find(p => p.titulo === doc.titulo);
       const r = await onGuardarPack({
         ...doc,
         clave: base.clave,
         orden: base.orden
       }, false);
       setGuardarOpc(false);
-      setOkGuardado(`✓ «${r.titulo}» actualizado`);
+      setOkGuardado(`✓ «${r.titulo}» actualizado en todos los días`);
+      cambiar({
+        packId: r.clave
+      });
     },
     style: {
       flex: 1,
@@ -15087,51 +15311,10 @@ function SesionEntreno({
     }
   }, it.ej.musculos), /*#__PURE__*/React.createElement("div", {
     style: {
-      borderRadius: 16,
-      background: "#F7FAF5",
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
-    ej: it.ej
-  })), /*#__PURE__*/React.createElement(PanelMusculos, {
-    ej: it.ej,
-    ancho: 84
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setVerInfo(v => !v),
-    className: "text-[12px] mb-2",
-    style: {
-      color: palette.greenDark,
-      textDecoration: "underline"
-    }
-  }, verInfo ? "Ocultar" : "ℹ Cómo se hace"), verInfo && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: palette.paperDark,
-      borderRadius: 14,
-      padding: "10px 12px",
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[12px] mb-1",
-    style: {
-      color: palette.inkSoft
-    }
-  }, it.ej.desc || "Imita el movimiento de las fotos: la posición inicial y la final se alternan en la animación."), (it.ej.pasos || []).map((t, k) => /*#__PURE__*/React.createElement("div", {
-    key: k,
-    className: "text-[12.5px] mb-1",
-    style: {
-      display: "flex",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: palette.green
-    }
-  }, k + 1, "."), /*#__PURE__*/React.createElement("span", null, t)))), /*#__PURE__*/React.createElement("div", {
-    style: {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 8
+      marginBottom: 6
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -15140,45 +15323,95 @@ function SesionEntreno({
     }
   }, "Serie ", p.s + 1, " de ", it.series), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      gap: 5
+      fontSize: 11.5,
+      fontWeight: 600,
+      padding: "3px 10px",
+      borderRadius: 999,
+      background: palette.paperDark,
+      color: palette.inkSoft
+    }
+  }, "⏱ Descanso ", it.descanso, " s")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "28px 62px 1fr 1fr 30px",
+      gap: 6,
+      alignItems: "center",
+      fontSize: 10,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      color: palette.inkSoft,
+      textAlign: "center",
+      padding: "0 4px 4px"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Serie"), /*#__PURE__*/React.createElement("span", null, "Anterior"), /*#__PURE__*/React.createElement("span", null, porTiempo ? "Seg" : "Reps"), /*#__PURE__*/React.createElement("span", null, "Kg"), /*#__PURE__*/React.createElement("span", null, "✓")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8
     }
   }, Array.from({
     length: Number(it.series) || 1
-  }, (_, s) => /*#__PURE__*/React.createElement("div", {
-    key: s,
-    style: {
-      width: 11,
-      height: 11,
-      borderRadius: 999,
-      background: hechas[p.ei + "-" + s] ? palette.green : s === p.s ? "#9FD0A6" : palette.line
-    }
-  })))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement(Stepper, {
-    grande: true,
-    etiqueta: porTiempo ? "Segundos" : "Reps",
-    valor: val.reps,
-    min: 1,
-    max: 300,
-    paso: porTiempo ? 5 : 1,
-    onChange: v => cambiar(p, {
-      reps: v
-    })
-  }), /*#__PURE__*/React.createElement(Stepper, {
-    grande: true,
-    etiqueta: "Peso (kg)",
-    valor: val.peso,
-    min: 0,
-    max: 100,
-    paso: 0.5,
-    onChange: v => cambiar(p, {
-      peso: v
-    })
+  }, (_, s) => {
+    const key = p.ei + "-" + s;
+    const h = hechas[key];
+    const act = s === p.s;
+    const v = h || valorDe({
+      ei: p.ei,
+      s
+    });
+    const ant = ult ? `${ult.reps}${ult.peso > 0 ? "×" + String(ult.peso).replace(".", ",") : ""}` : "–";
+    return /*#__PURE__*/React.createElement("div", {
+      key: s,
+      style: {
+        display: "grid",
+        gridTemplateColumns: "28px 62px 1fr 1fr 30px",
+        gap: 6,
+        alignItems: "center",
+        textAlign: "center",
+        padding: "5px 4px",
+        borderRadius: 12,
+        marginBottom: 3,
+        background: h ? palette.greenSoft : act ? "#FFF8DC" : "transparent",
+        fontSize: 14,
+        fontWeight: act ? 700 : 500
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: palette.inkSoft
+      }
+    }, s + 1), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        color: palette.inkSoft,
+        fontWeight: 500
+      }
+    }, ant), act ? /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "",
+      valor: val.reps,
+      min: 1,
+      max: 300,
+      paso: porTiempo ? 5 : 1,
+      onChange: x => cambiar(p, {
+        reps: x
+      })
+    }) : /*#__PURE__*/React.createElement("span", null, v.reps), act ? /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "",
+      valor: val.peso,
+      min: 0,
+      max: 100,
+      paso: 0.5,
+      onChange: x => cambiar(p, {
+        peso: x
+      })
+    }) : /*#__PURE__*/React.createElement("span", null, Number(v.peso) > 0 ? String(v.peso).replace(".", ",") : "–"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 26,
+        height: 26,
+        borderRadius: 8,
+        background: h ? palette.green : palette.paperDark,
+        color: "#FFFFFF",
+        fontSize: 14,
+        lineHeight: "26px"
+      }
+    }, h ? "✓" : ""));
   })), /*#__PURE__*/React.createElement("div", {
     className: "text-[12px] mb-1 text-center",
     style: {
@@ -15223,18 +15456,20 @@ function SesionEntreno({
     }
   }, restTrab) : null, /*#__PURE__*/React.createElement("button", {
     onClick: hecha,
-    className: "w-full py-4 text-[16px] font-bold",
+    className: "w-full text-[20px] font-bold",
     style: {
+      padding: "22px 0",
       background: palette.green,
       color: "#FFFFFF",
-      borderRadius: 18,
-      boxShadow: "0 6px 16px rgba(47,143,62,0.35)"
+      borderRadius: 22,
+      boxShadow: "0 8px 20px rgba(47,143,62,0.4)"
     }
   }, "✓ Serie hecha"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
-      marginTop: 10
+      marginTop: 10,
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-[11.5px]",
@@ -15248,7 +15483,48 @@ function SesionEntreno({
       color: palette.inkSoft,
       textDecoration: "underline"
     }
-  }, "Saltar ejercicio"))), salida);
+  }, "Saltar ejercicio")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 16,
+      background: "#F7FAF5",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
+    ej: it.ej
+  })), /*#__PURE__*/React.createElement(PanelMusculos, {
+    ej: it.ej,
+    ancho: 84
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setVerInfo(v => !v),
+    className: "text-[12px] mb-2",
+    style: {
+      color: palette.greenDark,
+      textDecoration: "underline"
+    }
+  }, verInfo ? "Ocultar" : "ℹ Cómo se hace"), verInfo && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: palette.paperDark,
+      borderRadius: 14,
+      padding: "10px 12px",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-1",
+    style: {
+      color: palette.inkSoft
+    }
+  }, it.ej.desc || "Imita el movimiento de las fotos: la posición inicial y la final se alternan en la animación."), (it.ej.pasos || []).map((t, k) => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    className: "text-[12.5px] mb-1",
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: palette.green
+    }
+  }, k + 1, "."), /*#__PURE__*/React.createElement("span", null, t))))), salida);
 }
 
 // ---------- Sesión de carrera (cronómetro) ----------
