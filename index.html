@@ -4061,7 +4061,9 @@ function EntradaManual({
 function DiarioTab({
   userId,
   perfilId,
-  perfilLabel
+  perfilLabel,
+  fecha,
+  onVolver
 }) {
   const [view, setView] = useState("diario"); // diario -> meal -> receta -> ajustar -> objetivo
   const [mealElegido, setMealElegido] = useState(null);
@@ -4076,7 +4078,11 @@ function DiarioTab({
   const [objetivoData, setObjetivoData] = useState({});
   const [productos, setProductos] = useState([]);
   const [gruposRecetaAbiertos, setGruposRecetaAbiertos] = useState({});
-  const todayKey = toKey(hoy());
+  const fechaDia = fecha || hoy();
+  const todayKey = toKey(fechaDia);
+  const esHoy = todayKey === toKey(hoy());
+  const [repetir, setRepetir] = useState(null); // { payload, meal, nombre } tras añadir una receta nueva
+  const [repSel, setRepSel] = useState([]);
   useEffect(() => {
     sb.from("products").select("id,name,unidad,kcal,proteinas,carbohidratos,grasas").order("name").then(({
       data
@@ -4098,7 +4104,7 @@ function DiarioTab({
   useEffect(() => {
     recargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perfilId]);
+  }, [perfilId, todayKey]);
   async function abrirRecetasDe(meal) {
     setMealElegido(meal);
     setView("receta");
@@ -4156,6 +4162,7 @@ function DiarioTab({
       meal: mealElegido,
       ...payloadAjuste(recetaSeleccionada, r, ingredientes)
     };
+    const nueva = !entradaEditando;
     if (entradaEditando) {
       await sb.from("diary_entries").update(payload).eq("id", entradaEditando);
     } else {
@@ -4166,6 +4173,19 @@ function DiarioTab({
         ...payload
       });
     }
+    if (nueva) {
+      setRepetir({
+        payload,
+        meal: mealElegido,
+        nombre: recetaSeleccionada.name
+      });
+      setRepSel([]);
+      setView("repetir");
+      setMealElegido(null);
+      setRecetaSeleccionada(null);
+      recargar();
+      return;
+    }
     setView("diario");
     setMealElegido(null);
     setRecetaSeleccionada(null);
@@ -4175,6 +4195,123 @@ function DiarioTab({
   async function eliminarEntrada(id) {
     await sb.from("diary_entries").delete().eq("id", id);
     recargar();
+  }
+
+  // Días de la semana (lunes a domingo) de la fecha que estamos editando
+  const semanaDias = (() => {
+    const d0 = new Date(fechaDia.getFullYear(), fechaDia.getMonth(), fechaDia.getDate());
+    const lun = new Date(d0);
+    lun.setDate(d0.getDate() - (d0.getDay() + 6) % 7);
+    return Array.from({
+      length: 7
+    }, (_, i) => {
+      const d = new Date(lun);
+      d.setDate(lun.getDate() + i);
+      return d;
+    });
+  })();
+  async function aplicarRepeticion(keys) {
+    if (keys.length && repetir) {
+      await sb.from("diary_entries").insert(keys.map(k => ({
+        user_id: userId,
+        perfil: perfilId,
+        entry_date: k,
+        meal: repetir.meal,
+        ...repetir.payload
+      })));
+    }
+    setRepetir(null);
+    setRepSel([]);
+    setView("diario");
+    recargar();
+  }
+  if (view === "repetir" && repetir) {
+    const otros = semanaDias.filter(d => toKey(d) !== todayKey);
+    const nombresDia = ["L", "M", "X", "J", "V", "S", "D"];
+    return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
+      className: "px-5 pt-5 pb-3 text-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] tracking-[0.2em] uppercase",
+      style: {
+        color: palette.inkSoft
+      }
+    }, repetir.meal, " · añadido ✓"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[19px] font-semibold mt-1",
+      style: {
+        overflowWrap: "anywhere"
+      }
+    }, repetir.nombre), /*#__PURE__*/React.createElement("div", {
+      className: "text-[12.5px] mt-1",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "¿Quieres repetirlo otros días de esta semana?")), /*#__PURE__*/React.createElement("div", {
+      className: "px-5 pb-5"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => aplicarRepeticion(otros.map(toKey)),
+      className: "w-full py-3 text-[14px] font-bold mb-2",
+      style: {
+        background: palette.green,
+        color: "#FFFFFF",
+        borderRadius: 16
+      }
+    }, "📅 Repetir toda la semana"), /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] uppercase tracking-wide mt-4 mb-2",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "O elige los días"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginBottom: 12
+      }
+    }, semanaDias.map((d, i) => {
+      const k = toKey(d);
+      const origen = k === todayKey;
+      const on = repSel.includes(k);
+      return /*#__PURE__*/React.createElement("button", {
+        key: k,
+        disabled: origen,
+        onClick: () => setRepSel(s => s.includes(k) ? s.filter(x => x !== k) : [...s, k]),
+        style: {
+          flex: 1,
+          padding: "8px 0",
+          borderRadius: 12,
+          textAlign: "center",
+          background: origen ? palette.greenSoft : on ? palette.green : palette.paperDark,
+          color: on ? "#FFFFFF" : origen ? palette.greenDark : palette.ink,
+          opacity: origen ? 0.9 : 1
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 700
+        }
+      }, nombresDia[i]), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 14,
+          fontWeight: 700,
+          fontVariantNumeric: "tabular-nums"
+        }
+      }, origen ? "✓" : d.getDate()));
+    })), /*#__PURE__*/React.createElement("button", {
+      disabled: repSel.length === 0,
+      onClick: () => aplicarRepeticion(repSel),
+      className: "w-full py-3 text-[14px] font-bold",
+      style: {
+        background: palette.greenDark,
+        color: "#FFFFFF",
+        borderRadius: 16,
+        opacity: repSel.length ? 1 : 0.4
+      }
+    }, repSel.length ? `Repetir en ${repSel.length} día${repSel.length > 1 ? "s" : ""}` : "Repetir en los días elegidos"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => aplicarRepeticion([]),
+      className: "w-full py-2.5 mt-2 text-[13px]",
+      style: {
+        color: palette.inkSoft
+      }
+    }, "No, solo este día")));
   }
   if (view === "meal") {
     return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
@@ -4362,17 +4499,23 @@ function DiarioTab({
   }
   return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement("div", {
     className: "px-5 pt-4 pb-2 text-center"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, onVolver && /*#__PURE__*/React.createElement(BotonAtras, {
+    onClick: onVolver
+  }, "Calendario"), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] tracking-[0.2em] uppercase",
     style: {
       color: palette.inkSoft
     }
   }, "Diario de ", perfilLabel), /*#__PURE__*/React.createElement("div", {
     className: "text-[18px] font-semibold mt-0.5"
-  }, "Hoy · ", hoy().toLocaleDateString("es-ES", {
+  }, esHoy ? "Hoy · " + fechaDia.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short"
-  })), /*#__PURE__*/React.createElement("button", {
+  }) : fechaDia.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "short"
+  }).replace(/^./, c => c.toUpperCase())), /*#__PURE__*/React.createElement("button", {
     onClick: () => setView("meal"),
     className: "mt-2 px-4 py-1 text-[11.5px] uppercase tracking-wide",
     style: {
@@ -4381,7 +4524,7 @@ function DiarioTab({
       borderRadius: 14
     }
   }, "+ Añadir")), /*#__PURE__*/React.createElement(DayBreakdown, {
-    date: hoy(),
+    date: fechaDia,
     dayData: dayData,
     loading: loading,
     compact: true,
@@ -5119,7 +5262,8 @@ function PlanSemana({
 // ---------- Calendario ----------
 function CalendarioTab({
   userId,
-  perfilId
+  perfilId,
+  perfilLabel
 }) {
   const [selected, setSelected] = useState(hoy());
   const [dayData, setDayData] = useState(Object.fromEntries(MEALS.map(m => [m, []])));
@@ -5130,6 +5274,7 @@ function CalendarioTab({
   const [objetivoManual, setObjetivoManual] = useState(false);
   const [objetivoMacros, setObjetivoMacros] = useState({});
   const [planificando, setPlanificando] = useState(false);
+  const [editandoDia, setEditandoDia] = useState(false);
   const [edicion, setEdicion] = useState(null); // { entrada, recipe, raciones, ingredientes }
   const [productos, setProductos] = useState([]);
   const [version, setVersion] = useState(0);
@@ -5207,6 +5352,19 @@ function CalendarioTab({
       onConfirm: confirmarEdicion
     });
   }
+  if (editandoDia) {
+    return /*#__PURE__*/React.createElement(DiarioTab, {
+      key: toKey(selected),
+      userId: userId,
+      perfilId: perfilId,
+      perfilLabel: perfilLabel,
+      fecha: selected,
+      onVolver: () => {
+        setEditandoDia(false);
+        setVersion(v => v + 1);
+      }
+    });
+  }
   if (planificando) {
     return /*#__PURE__*/React.createElement(PlanSemana, {
       userId: userId,
@@ -5240,7 +5398,16 @@ function CalendarioTab({
       borderRadius: 999,
       fontWeight: 600
     }
-  }, "✨ Planificar semana")), /*#__PURE__*/React.createElement(MiniCalendar, {
+  }, "✨ Planificar semana"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditandoDia(true),
+    className: "mt-2 mb-1 ml-2 px-4 py-1.5 text-[11.5px] uppercase tracking-wide",
+    style: {
+      background: palette.green,
+      color: "#FFFFFF",
+      borderRadius: 999,
+      fontWeight: 600
+    }
+  }, "✎ Editar este día")), /*#__PURE__*/React.createElement(MiniCalendar, {
     key: version,
     selected: selected,
     onSelect: setSelected,
@@ -16108,7 +16275,8 @@ function App() {
     perfilLabel: perfilLabel
   }), tab === "calendario" && /*#__PURE__*/React.createElement(CalendarioTab, {
     userId: userId,
-    perfilId: perfilId
+    perfilId: perfilId,
+    perfilLabel: perfilLabel
   }), tab === "recetas" && /*#__PURE__*/React.createElement(RecetasTab, {
     userId: userId
   }), tab === "productos" && /*#__PURE__*/React.createElement(ProductosTab, null), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null), tab === "entreno" && /*#__PURE__*/React.createElement(EntrenoTab, {
