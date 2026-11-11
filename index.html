@@ -12007,6 +12007,15 @@ function IconoEntreno({
     strokeLinejoin: "round"
   }, d[2]));
 }
+function avisoGuardar(msg) {
+  try {
+    const e = document.createElement("div");
+    e.textContent = msg;
+    e.style.cssText = "position:fixed;left:16px;right:16px;top:14px;z-index:9999;background:#B4501A;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;text-align:center";
+    document.body.appendChild(e);
+    setTimeout(() => e.remove(), 5000);
+  } catch (x) {}
+}
 function indiceDia(date) {
   return (date.getDay() + 6) % 7;
 }
@@ -12595,6 +12604,7 @@ function EntrenoTab({
   const kSemRef = useRef(kSem);
   kSemRef.current = kSem;
   const timers = useRef({});
+  const colaGuardado = useRef({});
   function efectivo(k) {
     // Las semanas futuras empiezan en blanco (todo descanso); el plan fijo solo aplica a la semana actual y las pasadas
     const futura = k > toKey(lunesDe(hoy()));
@@ -12647,7 +12657,16 @@ function EntrenoTab({
           repsMin: 0
         } : it)
       });
-      filas.forEach(d0 => {
+      // Si por un guardado doble hubiera filas repetidas de la misma clave, nos quedamos con la más reciente y borramos el resto
+      const porClave = {};
+      filas.slice().sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || ""))).forEach(d => {
+        if (d.clave) {
+          if (porClave[d.clave] && porClave[d.clave].id !== d.id) sb.from("entreno_plan").delete().eq("id", porClave[d.clave].id);
+          porClave[d.clave] = d;
+        }
+      });
+      const unicas = filas.filter(d => !d.clave || porClave[d.clave] === d);
+      unicas.forEach(d0 => {
         const d = norm(d0);
         if (d.tipo === "marca") return;
         if (d.semana) o[d.semana + "|" + d.dia] = d;else m[d.dia] = d;
@@ -12833,9 +12852,17 @@ function EntrenoTab({
       packId: d.packId || ""
     };
     if (semana) reg.semana = semana;
-    return sb.from("entreno_plan").upsert(reg, {
+    reg.id = clave; // documento con id fijo: dos guardados seguidos no pueden crear duplicados
+    // Los guardados de una misma clave van en fila, uno detrás de otro
+    const prev = colaGuardado.current[clave] || Promise.resolve();
+    const sig = prev.catch(() => {}).then(() => sb.from("entreno_plan").upsert(reg, {
       onConflict: "clave"
+    })).then(r => {
+      if (r && r.error) avisoGuardar("⚠️ No se pudo guardar: " + r.error.message);
+      return r;
     });
+    colaGuardado.current[clave] = sig;
+    return sig;
   }
   // Los cambios se guardan solo en la semana que estás viendo (ajuste semanal)
   function cambiarDia(dia, parche, aBase) {
