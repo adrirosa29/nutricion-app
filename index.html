@@ -6308,6 +6308,15 @@ function RecetasTab({
     const meal = grupo.id;
     const delMeal = grupo.items;
     const isOpen = !!expanded[meal];
+    const est = FRANJA_ESTILO[meal] || (meal === "Postre" ? {
+      ico: "🍰",
+      fondo: "#F6E6F3",
+      texto: "#8A3A7A"
+    } : {
+      ico: "🥨",
+      fondo: "#EEF0EE",
+      texto: "#4F5B52"
+    });
     return /*#__PURE__*/React.createElement("div", {
       key: meal,
       className: "mb-1.5"
@@ -6316,20 +6325,26 @@ function RecetasTab({
         ...e,
         [meal]: !e[meal]
       })),
-      className: "w-full flex items-center justify-between px-2.5 py-1.5",
+      className: "w-full flex items-center justify-between",
       style: {
-        background: palette.greenDark,
-        borderRadius: 14
+        background: est.fondo,
+        borderRadius: 14,
+        padding: "9px 12px"
       }
     }, /*#__PURE__*/React.createElement("span", {
-      className: "text-[11.5px] uppercase tracking-wide font-semibold",
+      className: "text-[12px] uppercase tracking-wide font-bold",
       style: {
-        color: "#FFFFFF"
+        color: est.texto
       }
-    }, grupo.label), /*#__PURE__*/React.createElement("span", {
-      className: "text-[11px]",
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: "#FFFFFF",
+        fontSize: 15,
+        marginRight: 7
+      }
+    }, est.ico), grupo.label), /*#__PURE__*/React.createElement("span", {
+      className: "text-[11.5px] font-bold",
+      style: {
+        color: est.texto,
         fontVariantNumeric: "tabular-nums"
       }
     }, delMeal.length, " ", isOpen ? "▴" : "▾")), isOpen && /*#__PURE__*/React.createElement("div", {
@@ -6343,23 +6358,30 @@ function RecetasTab({
       const key = meal + "|" + sg.t;
       const subOpen = !!expanded[key];
       return /*#__PURE__*/React.createElement("div", {
-        key: key
+        key: key,
+        style: {
+          background: est.fondo + "88",
+          border: `1.5px solid ${est.fondo}`,
+          borderRadius: 20,
+          padding: subOpen ? "2px 8px 9px" : "0 8px",
+          marginTop: 8
+        }
       }, /*#__PURE__*/React.createElement("button", {
         onClick: () => setExpanded(e => ({
           ...e,
           [key]: !e[key]
         })),
-        className: "w-full flex items-center justify-between py-1.5 px-1",
+        className: "w-full flex items-center justify-between",
         style: {
-          borderBottom: `1px solid ${palette.line}`
+          padding: "9px 4px"
         }
       }, /*#__PURE__*/React.createElement("span", {
-        className: "text-[12.5px] font-semibold",
+        className: "text-[12.5px] font-bold",
         style: {
-          color: palette.greenDark
+          color: est.texto
         }
       }, sg.t ? iconoTipo(sg.t) + " " + sg.t : "Sin clasificar"), /*#__PURE__*/React.createElement("span", {
-        className: "text-[11px]",
+        className: "text-[11px] font-semibold",
         style: {
           color: palette.inkSoft,
           fontVariantNumeric: "tabular-nums"
