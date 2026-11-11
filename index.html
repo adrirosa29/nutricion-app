@@ -3316,14 +3316,14 @@ function DayBreakdown({
       return /*#__PURE__*/React.createElement("div", {
         key: idx
       }, /*#__PURE__*/React.createElement("div", {
-        className: "flex items-start",
+        className: "flex items-center",
         style: {
           borderBottom: `1px solid ${palette.line}`
         }
       }, onToggleComido && /*#__PURE__*/React.createElement("button", {
         onClick: () => onToggleComido(it),
         "aria-label": "Marcar como comido",
-        className: "flex-shrink-0 mr-2 mt-2.5",
+        className: "flex-shrink-0 mr-2",
         style: {
           width: 24,
           height: 24,
@@ -4723,49 +4723,12 @@ function DiarioTab({
     onEditarEntrada: editarEntrada,
     onToggleComido: alternarComido,
     onAnadir: abrirRecetasDe
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "px-5 pb-4"
-  }, objetivoData.objetivo_kcal ? /*#__PURE__*/React.createElement("div", {
-    className: "p-3",
-    style: {
-      background: palette.greenSoft,
-      borderRadius: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-baseline justify-between mb-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] uppercase tracking-wide",
+  }), !objetivoData.objetivo_kcal && /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-4 text-center text-[11.5px]",
     style: {
       color: palette.inkSoft
     }
-  }, "🎯 ", (OBJETIVOS_PESO.find(o => o.id === objetivoData.objetivo_tipo) || {}).label || "Tu objetivo diario"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setView("objetivo"),
-    className: "text-[10.5px]",
-    style: {
-      color: palette.inkSoft
-    }
-  }, "Editar ✎")), /*#__PURE__*/React.createElement("div", {
-    className: "text-[13px]",
-    style: {
-      fontVariantNumeric: "tabular-nums"
-    }
-  }, `${objetivoData.objetivo_kcal} kcal · verde ${rangoZonaKcal(objetivoData.objetivo_kcal).min}–${rangoZonaKcal(objetivoData.objetivo_kcal).max}`), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] mt-0.5",
-    style: {
-      color: palette.inkSoft
-    }
-  }, ["proteinas", "carbohidratos", "grasas"].map((k, i) => {
-    const r = rangoMacro(objetivoData["objetivo_" + k], objetivoData.macro_rangos, k);
-    return (i ? " · " : "") + ["P", "C", "G"][i] + " " + (r ? `${r.min}–${r.max}` : "–") + "g";
-  }).join(""))) : /*#__PURE__*/React.createElement("button", {
-    onClick: () => setView("objetivo"),
-    className: "w-full py-2 text-[12px] uppercase tracking-wide",
-    style: {
-      border: `1.5px solid ${palette.line}`,
-      color: palette.inkSoft,
-      borderRadius: 14
-    }
-  }, "🎯 Calcula tu objetivo diario")));
+  }, "🎯 Pon tu objetivo diario en ⚙️ (arriba a la derecha)."));
 }
 
 // ---------- Planificador semanal ----------
@@ -16384,6 +16347,71 @@ function SesionCardio({
 
 // <<FIN_ENTRENO>>
 
+// ---------- Ajustes (engranaje): objetivo y datos personales, productos ----------
+function AjustesObjetivo({
+  userId,
+  perfilId,
+  onClose,
+  onGuardado
+}) {
+  const [perfil, setPerfil] = useState(null);
+  useEffect(() => {
+    sb.from("perfil_objetivos").select("*").eq("user_id", userId).eq("perfil", perfilId).maybeSingle().then(({
+      data
+    }) => setPerfil(data || {}));
+  }, [userId, perfilId]);
+  if (!perfil) return /*#__PURE__*/React.createElement(Loading, null);
+  return /*#__PURE__*/React.createElement(ObjetivoForm, {
+    userId: userId,
+    perfilId: perfilId,
+    perfil: perfil,
+    onCancel: onClose,
+    onDone: () => {
+      onGuardado();
+      onClose();
+    }
+  });
+}
+function VentanaAjustes({
+  titulo,
+  onClose,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 50,
+      background: palette.bg,
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-[380px] mx-auto px-1",
+    style: {
+      paddingTop: 16,
+      paddingBottom: 60
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between px-3 mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] uppercase tracking-[0.15em] font-semibold",
+    style: {
+      color: palette.inkSoft
+    }
+  }, titulo), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    "aria-label": "Cerrar",
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: "50%",
+      background: palette.paper,
+      boxShadow: "0 4px 12px rgba(28,43,31,0.12)",
+      fontSize: 16,
+      color: palette.ink
+    }
+  }, "✕")), children));
+}
 const TABS = [{
   id: "diario",
   label: "Diario",
@@ -16396,10 +16424,6 @@ const TABS = [{
   id: "recetas",
   label: "Recetas",
   icono: "📖"
-}, {
-  id: "productos",
-  label: "Productos",
-  icono: "🏷️"
 }, {
   id: "lista",
   label: "Compra",
@@ -16415,6 +16439,8 @@ function App() {
   const [tab, setTab] = useState("diario");
   const [perfiles, setPerfiles] = useState(cargarPerfiles());
   const [perfilId, setPerfilId] = useState(cargarPerfilActivo());
+  const [ajustes, setAjustes] = useState(null); // null | "menu" | "objetivo" | "productos"
+  const [versionAjustes, setVersionAjustes] = useState(0);
   useEffect(() => {
     sb.auth.getSession().then(({
       data
@@ -16469,14 +16495,64 @@ function App() {
     style: {
       paddingBottom: 90
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative",
+    style: {
+      zIndex: 30
+    }
   }, /*#__PURE__*/React.createElement(ProfileSwitcher, {
     perfiles: perfiles,
     setPerfiles: setPerfiles,
     perfilId: perfilId,
     setPerfilId: setPerfilId,
     onLogout: () => sb.auth.signOut()
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "px-1"
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAjustes(ajustes ? null : "menu"),
+    "aria-label": "Ajustes",
+    className: "absolute",
+    style: {
+      right: 12,
+      top: 0,
+      width: 42,
+      height: 42,
+      borderRadius: 16,
+      background: palette.paper,
+      boxShadow: "0 4px 16px rgba(28,43,31,0.08)",
+      fontSize: 19,
+      color: palette.inkSoft
+    }
+  }, "⚙️"), ajustes === "menu" && /*#__PURE__*/React.createElement("div", {
+    className: "absolute z-20",
+    style: {
+      right: 12,
+      top: 48,
+      width: 250,
+      background: palette.paper,
+      borderRadius: 18,
+      overflow: "hidden",
+      boxShadow: "0 10px 30px rgba(28,43,31,0.2)"
+    }
+  }, [["objetivo", "🎯", "Objetivo y datos personales", "Peso, altura, edad, kcal y macros"], ["productos", "🏷️", "Productos", "Ver, editar y añadir productos"]].map(([id, ico, t, s]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setAjustes(id),
+    className: "w-full text-left flex items-center gap-3 px-3.5 py-3",
+    style: {
+      borderBottom: `1px solid ${palette.line}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 20
+    }
+  }, ico), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[13.5px] font-semibold"
+  }, t), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px]",
+    style: {
+      color: palette.inkSoft
+    }
+  }, s)))))), /*#__PURE__*/React.createElement("div", {
+    className: "px-1",
+    key: versionAjustes
   }, tab === "diario" && /*#__PURE__*/React.createElement(DiarioTab, {
     userId: userId,
     perfilId: perfilId,
@@ -16487,10 +16563,24 @@ function App() {
     perfilLabel: perfilLabel
   }), tab === "recetas" && /*#__PURE__*/React.createElement(RecetasTab, {
     userId: userId
-  }), tab === "productos" && /*#__PURE__*/React.createElement(ProductosTab, null), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null), tab === "entreno" && /*#__PURE__*/React.createElement(EntrenoTab, {
+  }), tab === "lista" && /*#__PURE__*/React.createElement(ListaCompraTab, null), tab === "entreno" && /*#__PURE__*/React.createElement(EntrenoTab, {
     perfilId: perfilId,
     userId: userId
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), ajustes === "objetivo" && /*#__PURE__*/React.createElement(VentanaAjustes, {
+    titulo: "Objetivo y datos",
+    onClose: () => setAjustes(null)
+  }, /*#__PURE__*/React.createElement(AjustesObjetivo, {
+    userId: userId,
+    perfilId: perfilId,
+    onClose: () => setAjustes(null),
+    onGuardado: () => setVersionAjustes(v => v + 1)
+  })), ajustes === "productos" && /*#__PURE__*/React.createElement(VentanaAjustes, {
+    titulo: "Productos",
+    onClose: () => {
+      setAjustes(null);
+      setVersionAjustes(v => v + 1);
+    }
+  }, /*#__PURE__*/React.createElement(ProductosTab, null)), /*#__PURE__*/React.createElement("div", {
     className: "fixed bottom-3 left-0 right-0 flex mx-auto",
     style: {
       maxWidth: 356,
