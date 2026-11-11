@@ -12046,7 +12046,7 @@ function minutosEstimados(ejs) {
   let t = 0;
   (ejs || []).forEach(it => {
     const ej = EJ_POR_ID[it.eid];
-    const trabajo = ej && ej.unidad === "s" ? Number(it.reps) || 30 : 40;
+    const trabajo = ej && ej.unidad === "s" ? Number(it.reps) || 30 : Math.max(20, Math.round((Number(it.reps) || 12) * 3.5));
     t += (Number(it.series) || 1) * (trabajo + (Number(it.descanso) || 0));
   });
   return Math.max(1, Math.round(t / 60));
@@ -14455,7 +14455,10 @@ function EditorDiaEntreno({
   const [guardarOpc, setGuardarOpc] = useState(false);
   const [okGuardado, setOkGuardado] = useState("");
   const [estadoDia, setEstadoDia] = useState("");
+  const [cambiandoTipo, setCambiandoTipo] = useState(false);
   const ejercicios = doc.ejercicios || [];
+  const sinContenido = doc.tipo === "descanso" || !ejercicios.length && !doc.titulo && !doc.notas && (doc.tipo === "fuerza" || doc.tipo === "otro");
+  const mostrarTipos = sinContenido || cambiandoTipo;
   useEffect(() => {
     setEstadoDia(e => e === "ok" || e === "error" ? "" : e);
   }, [doc]);
@@ -14571,7 +14574,19 @@ function EditorDiaEntreno({
       fontSize: 11.5,
       color: palette.inkSoft
     }
-  }, p.tipo === "fuerza" ? `${(p.ejercicios || []).length} ejercicios` : p.tipo === "carrera" ? "Correr" : "Cardio", " · reemplaza este día"))))), /*#__PURE__*/React.createElement("div", {
+  }, p.tipo === "fuerza" ? `${(p.ejercicios || []).length} ejercicios` : p.tipo === "carrera" ? "Correr" : "Cardio", " · reemplaza este día"))))), !mostrarTipos && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setCambiandoTipo(true),
+    style: {
+      fontSize: 11.5,
+      color: palette.inkSoft,
+      textDecoration: "underline"
+    }
+  }, "Cambiar tipo")), mostrarTipos && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -15118,8 +15133,9 @@ function EditorDiaEntreno({
       const ok = await onGuardarDia();
       setEstadoDia(ok ? "ok" : "error");
     },
-    className: "w-full py-3.5 mb-3 text-[14.5px] font-bold",
+    className: "w-full mb-3 text-[14.5px] font-bold",
     style: {
+      padding: "14px 0",
       background: estadoDia === "ok" ? palette.greenSoft : palette.green,
       color: estadoDia === "ok" ? palette.greenDark : "#FFFFFF",
       borderRadius: 16,
