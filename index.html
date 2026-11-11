@@ -12608,12 +12608,13 @@ function EntrenoTab({
   function efectivo(k) {
     // Las semanas futuras empiezan en blanco (todo descanso); el plan fijo solo aplica a la semana actual y las pasadas
     const futura = k > toKey(lunesDe(hoy()));
-    const m = futura ? {} : {
-      ...baseRef.current
-    };
+    const m = {};
+    Object.keys(baseRef.current).forEach(dd => {
+      if (!futura || baseRef.current[dd] && baseRef.current[dd].fijo) m[dd] = baseRef.current[dd];
+    });
     for (let d = 0; d < 7; d++) {
       const o = overRef.current[k + "|" + d];
-      if (o) m[d] = o;else if (futura) m[d] = {
+      if (o) m[d] = o;else if (futura && !m[d]) m[d] = {
         tipo: "descanso",
         dia: d,
         perfil: perfilId,
@@ -12657,15 +12658,26 @@ function EntrenoTab({
           repsMin: 0
         } : it)
       });
-      // Si por un guardado doble hubiera filas repetidas de la misma clave, nos quedamos con la más reciente y borramos el resto
+      // Si hubiera filas repetidas de la misma clave, se usa la más reciente (no se borra nada)
       const porClave = {};
       filas.slice().sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || ""))).forEach(d => {
-        if (d.clave) {
-          if (porClave[d.clave] && porClave[d.clave].id !== d.id) sb.from("entreno_plan").delete().eq("id", porClave[d.clave].id);
-          porClave[d.clave] = d;
-        }
+        if (d.clave) porClave[d.clave] = d;
       });
       const unicas = filas.filter(d => !d.clave || porClave[d.clave] === d);
+      // Cambios pendientes que no llegaron a la nube (p. ej. cerraste o refrescaste antes de que terminara): se recuperan y se reenvían
+      try {
+        const pend = JSON.parse(localStorage.getItem("entreno_pend_" + perfilId) || "{}");
+        Object.keys(pend).forEach(cl => {
+          const r = pend[cl] && pend[cl].reg;
+          if (!r) return;
+          const k = unicas.findIndex(d => d.clave === cl);
+          if (k >= 0) unicas[k] = {
+            ...unicas[k],
+            ...r
+          };else unicas.push(r);
+          guardarDoc(r, r.semana || null);
+        });
+      } catch (e) {}
       unicas.forEach(d0 => {
         const d = norm(d0);
         if (d.tipo === "marca") return;
@@ -12863,21 +12875,39 @@ function EntrenoTab({
       cardio: d.cardio || {},
       packId: d.packId || ""
     };
+    if (!semana && d.fijo) reg.fijo = true;
     if (semana) reg.semana = semana;
     reg.id = clave; // documento con id fijo: dos guardados seguidos no pueden crear duplicados
     // Los guardados de una misma clave van en fila, uno detrás de otro
+    const kp = "entreno_pend_" + perfilId;
+    try {
+      const pd = JSON.parse(localStorage.getItem(kp) || "{}");
+      pd[clave] = {
+        reg,
+        ts: Date.now()
+      };
+      localStorage.setItem(kp, JSON.stringify(pd));
+    } catch (e) {}
     const prev = colaGuardado.current[clave] || Promise.resolve();
     const sig = prev.catch(() => {}).then(() => sb.from("entreno_plan").upsert(reg, {
       onConflict: "clave"
     })).then(r => {
-      if (r && r.error) avisoGuardar("⚠️ No se pudo guardar: " + r.error.message);
+      if (r && r.error) avisoGuardar("⚠️ No se pudo guardar: " + r.error.message);else {
+        try {
+          const pd = JSON.parse(localStorage.getItem(kp) || "{}");
+          if (pd[clave] && JSON.stringify(pd[clave].reg) === JSON.stringify(reg)) {
+            delete pd[clave];
+            localStorage.setItem(kp, JSON.stringify(pd));
+          }
+        } catch (e) {}
+      }
       return r;
     });
     colaGuardado.current[clave] = sig;
     return sig;
   }
   // Los cambios se guardan solo en la semana que estás viendo (ajuste semanal)
-  function cambiarDia(dia, parche, aBase) {
+  function cambiarDia(dia, parche, aBase, fijo = true) {
     const k = kSemRef.current;
     const nuevo = {
       ...docDia(dia),
@@ -12889,7 +12919,8 @@ function EntrenoTab({
         ...baseRef.current,
         [dia]: {
           ...nuevo,
-          semana: undefined
+          semana: undefined,
+          fijo: fijo ? true : nuevo.fijo || false
         }
       };
     } else {
@@ -12963,7 +12994,7 @@ function EntrenoTab({
   const [confirmarPlan, setConfirmarPlan] = useState(false);
   function cargarSemana() {
     const docs = docsDePlanSemanal();
-    docs.forEach((d, i) => cambiarDia(i, d, true));
+    docs.forEach((d, i) => cambiarDia(i, d, true, false));
     setConfirmarPlan(false);
   }
   if (cargando || !catOk) return /*#__PURE__*/React.createElement(Ticket, null, /*#__PURE__*/React.createElement(Loading, null));
@@ -15109,8 +15140,9 @@ function EditorDiaEntreno({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onGuardar,
     disabled: !dirty,
-    className: "w-full py-3.5 text-[14.5px] font-bold",
+    className: "w-full text-[14.5px] font-bold",
     style: {
+      padding: "14px 0",
       background: dirty ? palette.green : palette.greenSoft,
       color: dirty ? "#FFFFFF" : palette.greenDark,
       borderRadius: 16
@@ -15566,8 +15598,9 @@ function AsignarPack({
   }, l))), /*#__PURE__*/React.createElement("button", {
     disabled: dias.length === 0,
     onClick: () => onAsignar(dias, aBase),
-    className: "w-full py-3.5 text-[14.5px] font-bold",
+    className: "w-full text-[14.5px] font-bold",
     style: {
+      padding: "14px 0",
       background: palette.green,
       color: "#FFFFFF",
       borderRadius: 16,
