@@ -3282,12 +3282,14 @@ function DayBreakdown({
         boxShadow: abiertaM ? "0 2px 10px rgba(47,143,62,0.25)" : "0 1px 4px rgba(0,0,0,0.08)",
         outline: abiertaM ? `2px solid ${palette.green}` : "none"
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setAbierta0(abiertaM ? null : meal),
-      className: "w-full flex items-center gap-2 px-3 py-2",
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-full flex items-center",
       style: {
         background: est.fondo
       }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setAbierta0(abiertaM ? null : meal),
+      className: "flex-1 min-w-0 flex items-center gap-2 px-3 py-2"
     }, /*#__PURE__*/React.createElement("span", null, est.ico), /*#__PURE__*/React.createElement("span", {
       className: "text-[13px] font-bold flex-1 text-left",
       style: {
@@ -3310,7 +3312,23 @@ function DayBreakdown({
         color: est.texto,
         opacity: 0.8
       }
-    }, abiertaM ? "▴" : "▾")), /*#__PURE__*/React.createElement("div", {
+    }, abiertaM ? "▴" : "▾")), onAnadir && /*#__PURE__*/React.createElement("button", {
+      onClick: () => onAnadir(meal),
+      "aria-label": "Añadir a " + meal.toLowerCase(),
+      style: {
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        background: est.texto,
+        color: "#FFFFFF",
+        fontSize: 19,
+        lineHeight: "26px",
+        fontWeight: 600,
+        flexShrink: 0,
+        margin: "0 10px 0 2px",
+        textAlign: "center"
+      }
+    }, "+")), /*#__PURE__*/React.createElement("div", {
       className: "px-3"
     }, !abiertaM ? null : items.length === 0 ? /*#__PURE__*/React.createElement("div", {
       className: "text-[11.5px] py-2",
@@ -3346,7 +3364,9 @@ function DayBreakdown({
         }
       }, esComido(it) ? "✓" : ""), /*#__PURE__*/React.createElement("button", {
         className: "flex-1 min-w-0 text-left flex items-start justify-between gap-3 py-2",
-        onClick: () => accionable && setFilaAbierta(abierta ? null : clave),
+        onClick: () => {
+          if (onEditarEntrada && (it.recipe_id || it.qty === "manual")) onEditarEntrada(it);else if (accionable) setFilaAbierta(abierta ? null : clave);
+        },
         disabled: !accionable
       }, /*#__PURE__*/React.createElement("div", {
         className: "min-w-0 flex-1"
@@ -3412,15 +3432,11 @@ function DayBreakdown({
           color: palette.red
         }
       }, "🗑 Quitar del día")));
-    }), abiertaM && onAnadir && /*#__PURE__*/React.createElement("button", {
-      onClick: () => onAnadir(meal),
-      className: "w-full py-2 my-2 text-[12px] font-bold",
+    }), abiertaM && /*#__PURE__*/React.createElement("div", {
       style: {
-        borderRadius: 12,
-        background: palette.greenSoft,
-        color: palette.greenDark
+        height: 6
       }
-    }, "＋ Añadir a ", meal.toLowerCase())));
+    })));
   }), /*#__PURE__*/React.createElement(ResumenDia, {
     total: onToggleComido ? totalComido : total,
     previsto: total,
@@ -3913,7 +3929,8 @@ function AjusteReceta({
   textoCancelar,
   textoConfirmar,
   onCancel,
-  onConfirm
+  onConfirm,
+  onEliminar
 }) {
   const [raciones, setRaciones] = useState(raciones0);
   const [ings, setIngs] = useState(ingredientes0);
@@ -4079,7 +4096,20 @@ function AjusteReceta({
       borderRadius: 14,
       opacity: ings.length === 0 ? 0.6 : 1
     }
-  }, textoConfirmar)));
+  }, textoConfirmar), esEdicion && onEliminar && /*#__PURE__*/React.createElement("button", {
+    onClick: onEliminar,
+    className: "w-full",
+    style: {
+      marginTop: 12,
+      padding: "12px 0",
+      borderRadius: 14,
+      background: "#FDECEA",
+      color: "#C0392B",
+      fontSize: 13,
+      fontWeight: 700,
+      border: "1.5px solid #F5C6C0"
+    }
+  }, "🗑 Eliminar del día")));
 }
 
 // ---------- Diario (hoy) ----------
@@ -4088,7 +4118,8 @@ function EntradaManual({
   meal,
   entrada,
   onCancel,
-  onGuardar
+  onGuardar,
+  onEliminar
 }) {
   const [nombre, setNombre] = useState(entrada ? entrada.name : "");
   const [kcal, setKcal] = useState(entrada ? String(entrada.kcal || "") : "");
@@ -4232,14 +4263,28 @@ function EntradaManual({
       borderRadius: 14,
       opacity: valido && !guardando ? 1 : 0.5
     }
-  }, guardando ? "Guardando…" : entrada ? "Guardar cambios" : "Añadir al diario")));
+  }, guardando ? "Guardando…" : entrada ? "Guardar cambios" : "Añadir al diario"), entrada && onEliminar && /*#__PURE__*/React.createElement("button", {
+    onClick: onEliminar,
+    className: "w-full",
+    style: {
+      marginTop: 12,
+      padding: "12px 0",
+      borderRadius: 14,
+      background: "#FDECEA",
+      color: "#C0392B",
+      fontSize: 13,
+      fontWeight: 700,
+      border: "1.5px solid #F5C6C0"
+    }
+  }, "🗑 Eliminar del día")));
 }
 function DiarioTab({
   userId,
   perfilId,
   perfilLabel,
   fecha,
-  onVolver
+  onVolver,
+  mealInicial
 }) {
   const [view, setView] = useState("diario"); // diario -> meal -> receta -> ajustar -> objetivo
   const [mealElegido, setMealElegido] = useState(null);
@@ -4281,6 +4326,9 @@ function DiarioTab({
     recargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfilId, todayKey]);
+  useEffect(() => {
+    if (mealInicial) abrirRecetasDe(mealInicial); /* eslint-disable-next-line */
+  }, []);
   async function abrirRecetasDe(meal) {
     setMealElegido(meal);
     setView("receta");
@@ -4532,7 +4580,13 @@ function DiarioTab({
         setManualEntrada(null);
         setView(manualEntrada ? "diario" : "receta");
       },
-      onGuardar: guardarManual
+      onGuardar: guardarManual,
+      onEliminar: async () => {
+        await eliminarEntrada(manualEntrada.id);
+        setManualEntrada(null);
+        setMealElegido(null);
+        setView("diario");
+      }
     });
   }
   if (view === "receta") {
@@ -4672,7 +4726,14 @@ function DiarioTab({
       textoCancelar: entradaEditando ? "‹ Cancelar" : "‹ Cambiar receta",
       textoConfirmar: entradaEditando ? "Guardar cambios" : "Añadir al diario",
       onCancel: () => entradaEditando ? setView("diario") : setView("receta"),
-      onConfirm: confirmarAñadir
+      onConfirm: confirmarAñadir,
+      onEliminar: entradaEditando ? async () => {
+        await eliminarEntrada(entradaEditando);
+        setEntradaEditando(null);
+        setRecetaSeleccionada(null);
+        setMealElegido(null);
+        setView("diario");
+      } : null
     });
   }
   if (view === "objetivo") {
@@ -4707,13 +4768,20 @@ function DiarioTab({
     month: "short"
   }).replace(/^./, c => c.toUpperCase())), /*#__PURE__*/React.createElement("button", {
     onClick: () => setView("meal"),
-    className: "mt-2 px-4 py-1 text-[11.5px] uppercase tracking-wide",
+    "aria-label": "Añadir",
+    className: "mt-2",
     style: {
+      width: 34,
+      height: 34,
+      borderRadius: "50%",
       background: palette.green,
       color: "#FFFFFF",
-      borderRadius: 14
+      fontSize: 22,
+      lineHeight: "32px",
+      fontWeight: 600,
+      boxShadow: "0 3px 8px rgba(47,143,62,0.35)"
     }
-  }, "+ Añadir")), /*#__PURE__*/React.createElement(DayBreakdown, {
+  }, "+")), /*#__PURE__*/React.createElement(DayBreakdown, {
     date: fechaDia,
     dayData: dayData,
     loading: loading,
@@ -5430,6 +5498,8 @@ function CalendarioTab({
   const [objetivoMacros, setObjetivoMacros] = useState({});
   const [planificando, setPlanificando] = useState(false);
   const [editandoDia, setEditandoDia] = useState(false);
+  const [mealInicial, setMealInicial] = useState(null);
+  const [manualEd, setManualEd] = useState(null);
   const [edicion, setEdicion] = useState(null); // { entrada, recipe, raciones, ingredientes }
   const [productos, setProductos] = useState([]);
   const [version, setVersion] = useState(0);
@@ -5484,6 +5554,10 @@ function CalendarioTab({
     }) => setProductos(data || []));
   }, []);
   async function editarEntrada(entrada) {
+    if (!entrada.recipe_id && entrada.qty === "manual") {
+      setManualEd(entrada);
+      return;
+    }
     const r = await cargarEntradaParaEditar(entrada);
     if (r) setEdicion({
       entrada,
@@ -5502,6 +5576,24 @@ function CalendarioTab({
     setEdicion(null);
     setVersion(v => v + 1);
   }
+  if (manualEd) {
+    return /*#__PURE__*/React.createElement(EntradaManual, {
+      key: manualEd.id,
+      meal: manualEd.meal,
+      entrada: manualEd,
+      onCancel: () => setManualEd(null),
+      onGuardar: async campos => {
+        await sb.from("diary_entries").update(campos).eq("id", manualEd.id);
+        setManualEd(null);
+        setVersion(v => v + 1);
+      },
+      onEliminar: async () => {
+        await eliminarEntrada(manualEd.id);
+        setManualEd(null);
+        setVersion(v => v + 1);
+      }
+    });
+  }
   if (edicion) {
     return /*#__PURE__*/React.createElement(AjusteReceta, {
       key: edicion.entrada.id,
@@ -5514,7 +5606,12 @@ function CalendarioTab({
       textoCancelar: "‹ Cancelar",
       textoConfirmar: "Guardar cambios",
       onCancel: () => setEdicion(null),
-      onConfirm: confirmarEdicion
+      onConfirm: confirmarEdicion,
+      onEliminar: async () => {
+        await eliminarEntrada(edicion.entrada.id);
+        setEdicion(null);
+        setVersion(v => v + 1);
+      }
     });
   }
   if (editandoDia) {
@@ -5524,8 +5621,10 @@ function CalendarioTab({
       perfilId: perfilId,
       perfilLabel: perfilLabel,
       fecha: selected,
+      mealInicial: mealInicial,
       onVolver: () => {
         setEditandoDia(false);
+        setMealInicial(null);
         setVersion(v => v + 1);
       }
     });
@@ -5563,16 +5662,7 @@ function CalendarioTab({
       borderRadius: 999,
       fontWeight: 600
     }
-  }, "✨ Planificar semana"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEditandoDia(true),
-    className: "mt-2 mb-1 ml-2 px-4 py-1.5 text-[11.5px] uppercase tracking-wide",
-    style: {
-      background: palette.green,
-      color: "#FFFFFF",
-      borderRadius: 999,
-      fontWeight: 600
-    }
-  }, "✎ Editar este día")), /*#__PURE__*/React.createElement(MiniCalendar, {
+  }, "✨ Planificar semana")), /*#__PURE__*/React.createElement(MiniCalendar, {
     key: version,
     selected: selected,
     onSelect: setSelected,
@@ -5588,7 +5678,11 @@ function CalendarioTab({
     objetivoMacros: objetivoMacros,
     onEliminarEntrada: eliminarEntrada,
     onEditarEntrada: editarEntrada,
-    onToggleComido: alternarComido
+    onToggleComido: alternarComido,
+    onAnadir: meal => {
+      setMealInicial(meal);
+      setEditandoDia(true);
+    }
   }));
 }
 
@@ -6360,8 +6454,8 @@ function RecetasTab({
       return /*#__PURE__*/React.createElement("div", {
         key: key,
         style: {
-          background: est.fondo + "88",
-          border: `1.5px solid ${est.fondo}`,
+          background: est.fondo + "2E",
+          border: `1.5px solid ${palette.line}`,
           borderRadius: 20,
           padding: subOpen ? "2px 8px 9px" : "0 8px",
           marginTop: 8
@@ -12109,11 +12203,12 @@ const ICONO_DEF = {
   carrera: ["#F08A4B", "#D9622B", /*#__PURE__*/React.createElement("g", {
     key: "g"
   }, /*#__PURE__*/React.createElement("circle", {
-    cx: "14.5",
-    cy: "4.8",
-    r: "1.7"
+    cx: "15",
+    cy: "4.6",
+    r: "1.8",
+    fill: "#FFFFFF"
   }), /*#__PURE__*/React.createElement("path", {
-    d: "M13 8.5l-3 2.5-2.5 4M13 8.5l2.5 3 3 .5M10 11l1.5 3.5-2 5M11.5 14.5l3 2 1 3.5"
+    d: "M12.6 8.6c-1 1.6-1.6 3.4-2 5.2l3 2.3.6 4.4M10.6 13.8l-2.6 3.2-3.2.6M12.6 8.6l3.8 1.6 2.4 2.4M12.6 8.6l-3.4 1.6-1.4 2.6"
   }))],
   bici: ["#3E9AD9", "#2B6CB0", /*#__PURE__*/React.createElement("g", {
     key: "g"
@@ -15467,6 +15562,7 @@ function EditorDiaEntreno({
 }
 
 // ---------- Mis entrenamientos (packs reutilizables) ----------
+const CATEGORIAS_PACK = [["fuerza", "Fuerza", ["fuerza"]], ["correr", "Correr", ["carrera"]], ["cardio", "Cardio", ["bici", "cinta", "eliptica", "paseo"]], ["otro", "Libre", ["otro"]]];
 function ListaPacks({
   packs,
   pesoKg,
@@ -15474,6 +15570,24 @@ function ListaPacks({
   onEditar,
   onAsignar
 }) {
+  const [cerradas, setCerradas] = useState({});
+  const conInfo = packs.map(p => ({
+    p,
+    inf: infoDia({
+      tipo: p.tipo,
+      titulo: p.titulo,
+      notas: p.notas,
+      ejercicios: p.ejercicios,
+      carrera: p.carrera,
+      cardio: p.cardio
+    }, pesoKg)
+  }));
+  const grupos = CATEGORIAS_PACK.map(([id, label, kinds]) => ({
+    id,
+    label,
+    kinds,
+    items: conInfo.filter(x => kinds.includes(x.inf.ico || "otro"))
+  })).filter(g => g.items.length > 0);
   return /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-5"
   }, /*#__PURE__*/React.createElement("div", {
@@ -15494,108 +15608,146 @@ function ListaPacks({
     style: {
       color: palette.inkSoft
     }
-  }, "Todavía no tienes entrenamientos guardados."), packs.map(p => {
-    const inf = infoDia({
-      tipo: p.tipo,
-      titulo: p.titulo,
-      notas: p.notas,
-      ejercicios: p.ejercicios,
-      carrera: p.carrera,
-      cardio: p.cardio
-    }, pesoKg);
+  }, "Todavía no tienes entrenamientos guardados."), grupos.map(g => {
+    const abierta = !cerradas[g.id];
+    const col = colorKind(g.kinds[0]);
     return /*#__PURE__*/React.createElement("div", {
-      key: p.clave,
+      key: g.id,
       style: {
-        background: "#FFFFFF",
-        border: `1.5px solid ${palette.line}`,
-        borderRadius: 20,
-        padding: 14,
-        marginBottom: 10
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 15,
-        fontWeight: 700,
-        lineHeight: 1.2,
-        overflowWrap: "anywhere",
-        display: "flex",
-        alignItems: "center",
-        gap: 8
-      }
-    }, inf.ico ? /*#__PURE__*/React.createElement(IconoEntreno, {
-      kind: inf.ico,
-      size: 28
-    }) : null, /*#__PURE__*/React.createElement("span", null, p.titulo)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: palette.inkSoft,
-        marginTop: 3
-      }
-    }, inf.sub, inf.chips.length ? " · " + inf.chips.map(([v, l]) => `${v} ${l}`).join(" · ") : ""), inf.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6,
-        margin: "10px 0 0"
-      }
-    }, inf.fotos.slice(0, 4).map(ej => /*#__PURE__*/React.createElement("div", {
-      key: ej.id,
-      style: {
-        width: 52,
-        height: 52,
-        borderRadius: 12,
-        overflow: "hidden",
-        background: "#E9EDE6",
-        flexShrink: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 78,
-        marginLeft: -13
-      }
-    }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
-      ej: ej,
-      k: 0
-    })))), inf.nEj > 4 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 52,
-        height: 52,
-        borderRadius: 12,
-        background: palette.paperDark,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 700,
-        fontSize: 13,
-        color: palette.inkSoft
-      }
-    }, "+", inf.nEj - 4)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8,
-        marginTop: 12
+        marginBottom: 6
       }
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => onAsignar(p.clave),
+      onClick: () => setCerradas(c => ({
+        ...c,
+        [g.id]: !c[g.id]
+      })),
+      className: "w-full",
       style: {
-        flex: 1.3,
-        padding: "9px 0",
-        borderRadius: 12,
-        background: palette.green,
-        color: "#FFFFFF",
-        fontSize: 13,
-        fontWeight: 700
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 12px",
+        borderRadius: 14,
+        background: col + "1F",
+        marginBottom: 8
       }
-    }, "Asignar a días"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => onEditar(p.clave),
+    }, /*#__PURE__*/React.createElement(IconoEntreno, {
+      kind: g.kinds[0],
+      size: 26
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         flex: 1,
-        padding: "9px 0",
-        borderRadius: 12,
-        background: palette.paperDark,
+        textAlign: "left",
         fontSize: 13,
-        fontWeight: 600
+        fontWeight: 700,
+        color: col,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase"
       }
-    }, "✎ Editar")));
+    }, g.label), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11.5,
+        fontWeight: 700,
+        color: col
+      }
+    }, g.items.length, " ", abierta ? "▴" : "▾")), abierta && g.items.map(({
+      p,
+      inf
+    }) => {
+      return /*#__PURE__*/React.createElement("div", {
+        key: p.clave,
+        style: {
+          background: "#FFFFFF",
+          border: `1.5px solid ${palette.line}`,
+          borderRadius: 20,
+          padding: 14,
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 15,
+          fontWeight: 700,
+          lineHeight: 1.2,
+          overflowWrap: "anywhere",
+          display: "flex",
+          alignItems: "center",
+          gap: 8
+        }
+      }, inf.ico ? /*#__PURE__*/React.createElement(IconoEntreno, {
+        kind: inf.ico,
+        size: 28
+      }) : null, /*#__PURE__*/React.createElement("span", null, p.titulo)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: palette.inkSoft,
+          marginTop: 3
+        }
+      }, inf.sub, inf.chips.length ? " · " + inf.chips.map(([v, l]) => `${v} ${l}`).join(" · ") : ""), inf.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          margin: "10px 0 0"
+        }
+      }, inf.fotos.slice(0, 4).map(ej => /*#__PURE__*/React.createElement("div", {
+        key: ej.id,
+        style: {
+          width: 52,
+          height: 52,
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#E9EDE6",
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 78,
+          marginLeft: -13
+        }
+      }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
+        ej: ej,
+        k: 0
+      })))), inf.nEj > 4 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 52,
+          height: 52,
+          borderRadius: 12,
+          background: palette.paperDark,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 700,
+          fontSize: 13,
+          color: palette.inkSoft
+        }
+      }, "+", inf.nEj - 4)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8,
+          marginTop: 12
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => onAsignar(p.clave),
+        style: {
+          flex: 1.3,
+          padding: "9px 0",
+          borderRadius: 12,
+          background: palette.green,
+          color: "#FFFFFF",
+          fontSize: 13,
+          fontWeight: 700
+        }
+      }, "Asignar a días"), /*#__PURE__*/React.createElement("button", {
+        onClick: () => onEditar(p.clave),
+        style: {
+          flex: 1,
+          padding: "9px 0",
+          borderRadius: 12,
+          background: palette.paperDark,
+          fontSize: 13,
+          fontWeight: 600
+        }
+      }, "✎ Editar")));
+    }));
   }));
 }
 function EditorPack({
