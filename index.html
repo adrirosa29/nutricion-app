@@ -12674,7 +12674,19 @@ function EntrenoTab({
       baseRef.current = m;
       overRef.current = o;
       // Plan predefinido nuevo (una sola vez, solo en tu perfil): sustituye al plan anterior
-      if (perfilId === "ti" && !(marca && Number(marca.version) >= PLAN_VERSION)) {
+      if (perfilId === "ti" && !marca && unicas.some(d => d.tipo !== "marca")) {
+        // Ya hay un plan guardado: no se toca, solo se anota la versión
+        sb.from("entreno_plan").upsert({
+          clave: `${perfilId}_marca`,
+          id: `${perfilId}_marca`,
+          perfil: perfilId,
+          dia: 99,
+          tipo: "marca",
+          version: PLAN_VERSION
+        }, {
+          onConflict: "clave"
+        });
+      } else if (perfilId === "ti" && !(marca && Number(marca.version) >= PLAN_VERSION) && !unicas.some(d => d.tipo !== "marca")) {
         sb.from("entreno_plan").delete().eq("perfil", perfilId).then(() => {
           const docs = docsDePlanSemanal();
           baseRef.current = {};
@@ -12894,7 +12906,36 @@ function EntrenoTab({
     clearTimeout(timers.current[tk]);
     timers.current[tk] = setTimeout(() => {
       if (aBase) guardarDoc(baseRef.current[dia], null);else guardarDoc(overRef.current[k + "|" + dia], k);
-    }, 600);
+    }, 250);
+  }
+  // Guardado inmediato y comprobado: escribe el día y lo vuelve a leer de la base de datos
+  async function guardarDiaYa(dia, aBase) {
+    const k = kSemRef.current;
+    ["b|" + dia, k + "|" + dia].forEach(tk => clearTimeout(timers.current[tk]));
+    let d,
+      semana = null;
+    if (aBase) d = baseRef.current[dia];else if (overRef.current[k + "|" + dia]) {
+      d = overRef.current[k + "|" + dia];
+      semana = k;
+    } else if (baseRef.current[dia] && k <= toKey(lunesDe(hoy()))) d = baseRef.current[dia];else {
+      d = {
+        ...docDia(dia),
+        dia,
+        semana: k
+      };
+      overRef.current = {
+        ...overRef.current,
+        [k + "|" + dia]: d
+      };
+      semana = k;
+    }
+    if (!d) return false;
+    const r = await guardarDoc(d, semana);
+    if (r && r.error) return false;
+    const clave = semana ? `${perfilId}_${semana}_${d.dia}` : `${perfilId}_${d.dia}`;
+    const lec = await sb.from("entreno_plan").select("*").eq("clave", clave);
+    const f = lec && lec.data || [];
+    return f.length > 0 && f.some(x => (x.ejercicios || []).length === (d.ejercicios || []).length && (x.titulo || "") === (d.titulo || "") && x.tipo === d.tipo);
   }
   function aplicarATodas(dia) {
     const k = kSemRef.current;
@@ -12933,6 +12974,7 @@ function EntrenoTab({
       datosDePack: datosDePack,
       semOff: semOff,
       onTodas: () => aplicarATodas(vista.dia),
+      onGuardarDia: () => guardarDiaYa(vista.dia),
       pesoKg: pesoKg,
       dia: vista.dia,
       doc: docDia(vista.dia),
@@ -13015,6 +13057,9 @@ function EntrenoTab({
       },
       onAsignar: (dias, aBase) => {
         dias.forEach(d => cambiarDia(d, datosDePack(pk), aBase));
+        Promise.all(dias.map(d => guardarDiaYa(d, aBase))).then(rs => {
+          if (rs.some(x => !x)) avisoGuardar("⚠️ No se pudo confirmar el guardado. Revisa tu conexión y repite.");
+        });
         setAvisoPack(`✓ «${pk.titulo}» asignado a ${dias.map(d => DIAS_SEMANA[d].toLowerCase()).join(", ")}${aBase ? " (todas las semanas)" : ""}`);
         setPestana("semana");
         setVista({
@@ -14393,6 +14438,7 @@ function EditorDiaEntreno({
   dirty,
   semOff,
   onTodas,
+  onGuardarDia,
   pesoKg,
   dia,
   doc,
@@ -14408,7 +14454,11 @@ function EditorDiaEntreno({
   const [verPacks, setVerPacks] = useState(false);
   const [guardarOpc, setGuardarOpc] = useState(false);
   const [okGuardado, setOkGuardado] = useState("");
+  const [estadoDia, setEstadoDia] = useState("");
   const ejercicios = doc.ejercicios || [];
+  useEffect(() => {
+    setEstadoDia(e => e === "ok" || e === "error" ? "" : e);
+  }, [doc]);
   const inputStyle = {
     border: `1.5px solid ${palette.line}`,
     background: palette.paperDark,
@@ -15062,7 +15112,26 @@ function EditorDiaEntreno({
     style: {
       marginTop: 16
     }
-  }, okGuardado ? /*#__PURE__*/React.createElement("div", {
+  }, onGuardarDia && /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      setEstadoDia("guardando");
+      const ok = await onGuardarDia();
+      setEstadoDia(ok ? "ok" : "error");
+    },
+    className: "w-full py-3.5 mb-3 text-[14.5px] font-bold",
+    style: {
+      background: estadoDia === "ok" ? palette.greenSoft : palette.green,
+      color: estadoDia === "ok" ? palette.greenDark : "#FFFFFF",
+      borderRadius: 16,
+      opacity: estadoDia === "guardando" ? 0.6 : 1
+    }
+  }, estadoDia === "guardando" ? "Guardando…" : estadoDia === "ok" ? "✓ Día guardado" : "💾 Guardar día"), estadoDia === "error" && /*#__PURE__*/React.createElement("div", {
+    className: "text-[12.5px] text-center mb-2",
+    style: {
+      color: "#B4501A",
+      fontWeight: 600
+    }
+  }, "⚠️ No se pudo confirmar el guardado. Revisa la conexión y vuelve a pulsar."), okGuardado ? /*#__PURE__*/React.createElement("div", {
     className: "text-[12.5px] text-center mb-2",
     style: {
       color: palette.greenDark,
@@ -16149,9 +16218,13 @@ function SesionEntreno({
       color: palette.inkSoft
     }
   }, "Ejercicio ", p.ei + 1, " de ", nEj), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px]",
     style: {
-      color: palette.inkSoft,
+      fontSize: 20,
+      fontWeight: 800,
+      color: palette.greenDark,
+      background: palette.greenSoft,
+      padding: "3px 12px",
+      borderRadius: 999,
       fontVariantNumeric: "tabular-nums"
     }
   }, "⏱ ", mmss(duracion))), /*#__PURE__*/React.createElement("div", {
@@ -16406,9 +16479,13 @@ function SesionCarrera({
   const [acum, setAcum] = useState(0);
   const [t0, setT0] = useState(0);
   const [, setTick] = useState(0);
-  const [terminada, setTerminada] = useState(false);
+  const ritmoPlan = (() => {
+    const m = String(doc.carrera && doc.carrera.ritmo || "").match(/(\d+)[:.,](\d+)/);
+    return m ? Number(m[1]) + Number(m[2]) / 60 : 0;
+  })();
+  const [terminada, setTerminada] = useState(true); // sin cronómetro: se marca como realizada
   const [km, setKm] = useState(km0);
-  const [minutos, setMinutos] = useState(0);
+  const [minutos, setMinutos] = useState(ritmoPlan && km0 ? Math.round(ritmoPlan * km0) : 0);
   const [guardando, setGuardando] = useState(false);
   useEffect(() => {
     let lock = null;
@@ -16516,8 +16593,13 @@ function SesionCarrera({
       fontSize: 40
     }
   }, "🏁"), /*#__PURE__*/React.createElement("div", {
-    className: "text-[20px] font-semibold mb-3"
-  }, "¡Carrera terminada!"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mb-1"
+  }, "Marcar carrera como realizada"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-3",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ajusta la distancia y el tiempo si quieres (opcional)."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
@@ -16563,7 +16645,7 @@ function SesionCarrera({
       borderRadius: 14,
       opacity: guardando ? 0.6 : 1
     }
-  }, guardando ? "Guardando…" : "Guardar carrera"))));
+  }, guardando ? "Guardando…" : "✓ Marcar como realizada"))));
 }
 
 // ---------- Sesión de cardio en máquina (bici / elíptica) ----------
@@ -16585,8 +16667,8 @@ function SesionCardio({
   const [acum, setAcum] = useState(0);
   const [t0, setT0] = useState(0);
   const [, setTick] = useState(0);
-  const [terminada, setTerminada] = useState(false);
-  const [minutos, setMinutos] = useState(0);
+  const [terminada, setTerminada] = useState(true); // sin cronómetro: se marca como realizada
+  const [minutos, setMinutos] = useState(Math.max(1, Number(c.min) || 30));
   const [inten, setInten] = useState(c.intensidad || "moderada");
   const [vel, setVel] = useState(Number(c.vel) || maq.vel || 0);
   const [incl, setIncl] = useState(Number(c.incl) || 0);
@@ -16731,8 +16813,13 @@ function SesionCardio({
       fontSize: 40
     }
   }, "🏁"), /*#__PURE__*/React.createElement("div", {
-    className: "text-[20px] font-semibold mb-3"
-  }, "¡Cardio terminado!"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[20px] font-semibold mb-1"
+  }, "Marcar cardio como realizado"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-3",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Ajusta el tiempo y la intensidad si hace falta (opcional)."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
@@ -16808,7 +16895,7 @@ function SesionCardio({
       borderRadius: 14,
       opacity: guardando ? 0.6 : 1
     }
-  }, guardando ? "Guardando…" : "Guardar entreno"))));
+  }, guardando ? "Guardando…" : "✓ Marcar como realizada"))));
 }
 
 // <<FIN_ENTRENO>>
