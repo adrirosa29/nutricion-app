@@ -4766,22 +4766,7 @@ function DiarioTab({
     weekday: "long",
     day: "numeric",
     month: "short"
-  }).replace(/^./, c => c.toUpperCase())), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setView("meal"),
-    "aria-label": "Añadir",
-    className: "mt-2",
-    style: {
-      width: 34,
-      height: 34,
-      borderRadius: "50%",
-      background: palette.green,
-      color: "#FFFFFF",
-      fontSize: 22,
-      lineHeight: "32px",
-      fontWeight: 600,
-      boxShadow: "0 3px 8px rgba(47,143,62,0.35)"
-    }
-  }, "+")), /*#__PURE__*/React.createElement(DayBreakdown, {
+  }).replace(/^./, c => c.toUpperCase()))), /*#__PURE__*/React.createElement(DayBreakdown, {
     date: fechaDia,
     dayData: dayData,
     loading: loading,
@@ -6454,28 +6439,38 @@ function RecetasTab({
       return /*#__PURE__*/React.createElement("div", {
         key: key,
         style: {
-          background: est.fondo + "2E",
-          border: `1.5px solid ${palette.line}`,
-          borderRadius: 20,
-          padding: subOpen ? "2px 8px 9px" : "0 8px",
-          marginTop: 8
+          borderBottom: `1px solid ${palette.line}`,
+          paddingBottom: subOpen ? 8 : 0
         }
       }, /*#__PURE__*/React.createElement("button", {
         onClick: () => setExpanded(e => ({
           ...e,
           [key]: !e[key]
         })),
-        className: "w-full flex items-center justify-between",
+        className: "w-full flex items-center",
         style: {
-          padding: "9px 4px"
+          gap: 10,
+          padding: "8px 4px"
         }
       }, /*#__PURE__*/React.createElement("span", {
-        className: "text-[12.5px] font-bold",
         style: {
-          color: est.texto
+          width: 26,
+          height: 26,
+          borderRadius: "50%",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 13,
+          background: `linear-gradient(145deg, ${degradadoTipo(sg.t)[0]}, ${degradadoTipo(sg.t)[1]})`
         }
-      }, sg.t ? iconoTipo(sg.t) + " " + sg.t : "Sin clasificar"), /*#__PURE__*/React.createElement("span", {
-        className: "text-[11px] font-semibold",
+      }, iconoTipo(sg.t)), /*#__PURE__*/React.createElement("span", {
+        className: "text-[13px] font-semibold flex-1 text-left",
+        style: {
+          color: palette.ink
+        }
+      }, sg.t || "Sin clasificar"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[11.5px] font-bold",
         style: {
           color: palette.inkSoft,
           fontVariantNumeric: "tabular-nums"
