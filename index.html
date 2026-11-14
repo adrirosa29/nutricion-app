@@ -13251,14 +13251,142 @@ function EntrenoTab({
     refrescarPlan();
   }
   function copiarDeSemana(origen) {
-    const k = kSemRef.current,
-      ef = efectivo(origen);
+    const ef = efectivo(origen);
     for (let d = 0; d < 7; d++) {
-      if (ef[d]) cambiarDia(d, {
-        ...ef[d],
-        semana: undefined
-      });
+      cambiarDia(d, datosSolo(ef[d]));
     }
+    Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => guardarDiaYa(d))).then(r => setAvisoPack(r.every(Boolean) ? "⧉ Semana copiada" : "⚠️ No se pudo confirmar el guardado"));
+  }
+
+  // ---------- Arrastrar entrenos sobre los días ----------
+  const [arr, setArr] = useState(null); // { x, y, label, kind, over }
+  const arrRef = useRef(null);
+  const planVisRef = useRef({});
+  const [confirmCopia, setConfirmCopia] = useState(false);
+  useEffect(() => {
+    const bloquear = e => {
+      if (arrRef.current && arrRef.current.activo && e.cancelable) e.preventDefault();
+    };
+    window.addEventListener("touchmove", bloquear, {
+      passive: false
+    });
+    return () => window.removeEventListener("touchmove", bloquear);
+  }, []);
+  const datosSolo = d => d ? {
+    tipo: d.tipo,
+    titulo: d.titulo || "",
+    notas: d.notas || "",
+    ejercicios: (d.ejercicios || []).map(it => ({
+      ...it
+    })),
+    carrera: d.carrera || {},
+    cardio: d.cardio || {},
+    packId: d.packId || ""
+  } : {
+    tipo: "descanso",
+    titulo: "Descanso",
+    notas: "",
+    ejercicios: [],
+    carrera: {},
+    cardio: {},
+    packId: ""
+  };
+  function soltar(payload, destino) {
+    if (destino === null || destino === undefined) return;
+    if (payload.tipo === "pack") {
+      const pk = packs.find(x => x.clave === payload.id);
+      if (!pk) return;
+      cambiarDia(destino, datosDePack(pk));
+      guardarDiaYa(destino).then(ok => setAvisoPack(ok ? `✓ «${pk.titulo}» puesto el ${DIAS_SEMANA[destino].toLowerCase()}` : "⚠️ No se pudo confirmar el guardado"));
+    } else if (payload.tipo === "dia" && payload.id !== destino) {
+      const a = planVisRef.current[payload.id],
+        b = planVisRef.current[destino];
+      cambiarDia(destino, datosSolo(a));
+      cambiarDia(payload.id, datosSolo(b));
+      Promise.all([guardarDiaYa(destino), guardarDiaYa(payload.id)]).then(r => setAvisoPack(r.every(Boolean) ? `⇄ ${DIAS_SEMANA[payload.id]} y ${DIAS_SEMANA[destino].toLowerCase()} intercambiados` : "⚠️ No se pudo confirmar el guardado"));
+    }
+  }
+  function empezarArrastre(e, payload, label, kind) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const t = e.pointerType;
+    const x0 = e.clientX,
+      y0 = e.clientY;
+    const st = {
+      activo: false,
+      payload,
+      over: null
+    };
+    arrRef.current = st;
+    const encima = (x, y) => {
+      const el = document.elementFromPoint(x, y);
+      const n = el && el.closest ? el.closest("[data-dia]") : null;
+      return n ? Number(n.getAttribute("data-dia")) : null;
+    };
+    const activar = () => {
+      st.activo = true;
+      try {
+        navigator.vibrate && navigator.vibrate(15);
+      } catch (er) {}
+      setArr({
+        x: x0,
+        y: y0,
+        label,
+        kind,
+        over: null,
+        origen: payload.tipo === "dia" ? payload.id : null
+      });
+    };
+    let timer = t === "mouse" ? null : setTimeout(activar, 320);
+    const mover = ev => {
+      if (!st.activo) {
+        if (Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) > 8) {
+          if (t === "mouse") activar();else {
+            clearTimeout(timer);
+            limpiar();
+          }
+        }
+        return;
+      }
+      st.over = encima(ev.clientX, ev.clientY);
+      st.cy = ev.clientY;
+      if (!st.raf) {
+        const paso = () => {
+          if (!arrRef.current || !st.activo) {
+            st.raf = 0;
+            return;
+          }
+          const h = window.innerHeight;
+          if (st.cy < 130) window.scrollBy(0, -10);else if (st.cy > h - 200) window.scrollBy(0, 10);
+          st.over = encima(st.cx || 0, st.cy);
+          st.raf = requestAnimationFrame(paso);
+        };
+        st.raf = requestAnimationFrame(paso);
+      }
+      st.cx = ev.clientX;
+      setArr(a => a && {
+        ...a,
+        x: ev.clientX,
+        y: ev.clientY,
+        over: st.over
+      });
+    };
+    const fin = ev => {
+      clearTimeout(timer);
+      const act = st.activo,
+        ov = st.over;
+      limpiar();
+      if (act && ev.type === "pointerup") soltar(payload, ov);
+    };
+    function limpiar() {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", fin);
+      window.removeEventListener("pointercancel", fin);
+      arrRef.current = null;
+      setArr(null);
+    }
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", fin);
+    window.addEventListener("pointercancel", fin);
   }
   const [confirmarPlan, setConfirmarPlan] = useState(false);
   function cargarSemana() {
@@ -13447,6 +13575,7 @@ function EntrenoTab({
   const recientes = [...registros].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || String(b.created_at || "").localeCompare(String(a.created_at || ""))).slice(0, 6);
   const idxHoy = indiceDia(hoyD);
   const dSel = diaSel !== null ? diaSel : semOff === 0 ? idxHoy : diasConPlan[0] !== undefined ? diasConPlan[0] : 0;
+  planVisRef.current = plan;
   const infoSel = infoDia(plan[dSel], pesoKg);
   const hechoSel = hechosSemana[dSel];
   const numSemana = (() => {
@@ -13541,17 +13670,7 @@ function EntrenoTab({
       background: palette.greenSoft,
       color: palette.greenDark
     }
-  }, "Ir a hoy"), semOff > 0 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => copiarDeSemana(toKey(fechaDeDia(lunesVista, -7))),
-    style: {
-      padding: "5px 12px",
-      borderRadius: 999,
-      fontSize: 12,
-      fontWeight: 600,
-      background: palette.paperDark,
-      color: palette.ink
-    }
-  }, "Copiar semana anterior")))), pestana === "entrenos" ? /*#__PURE__*/React.createElement(ListaPacks, {
+  }, "Ir a hoy")))), pestana === "entrenos" ? /*#__PURE__*/React.createElement(ListaPacks, {
     packs: packs,
     pesoKg: pesoKg,
     onNuevo: () => setVista({
@@ -13670,8 +13789,13 @@ function EntrenoTab({
   }, semOff === 0 ? "ESTA SEMANA" : "SEMANA"), [0, 1, 2, 3, 4, 5, 6].map(d => {
     if (d === dSel) return /*#__PURE__*/React.createElement("div", {
       key: d,
+      "data-dia": d,
       style: {
-        marginBottom: 10
+        marginBottom: 10,
+        outline: arr && arr.over === d ? `3px dashed ${palette.green}` : "none",
+        outlineOffset: 3,
+        borderRadius: 28,
+        opacity: arr && arr.origen === d ? 0.5 : 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -13846,7 +13970,12 @@ function EntrenoTab({
     const pasado = toKey(fecha) < toKey(hoyD);
     return /*#__PURE__*/React.createElement("div", {
       key: d,
+      "data-dia": d,
       onClick: () => setDiaSel(d),
+      onPointerDown: e => empezarArrastre(e, {
+        tipo: "dia",
+        id: d
+      }, `${DIAS_CORTO[d]} · ${inf.titulo}`, inf.ico),
       style: {
         display: "flex",
         alignItems: "center",
@@ -13854,10 +13983,13 @@ function EntrenoTab({
         padding: "10px 12px",
         marginBottom: 8,
         borderRadius: 16,
-        cursor: "pointer",
-        background: "#FFFFFF",
-        border: `1.5px solid ${palette.line}`,
-        opacity: pasado && !hecho ? 0.6 : 1
+        cursor: "grab",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        background: arr && arr.over === d ? "#EAF6EA" : "#FFFFFF",
+        border: arr && arr.over === d ? `2px dashed ${palette.green}` : `1.5px solid ${palette.line}`,
+        opacity: arr && arr.origen === d ? 0.35 : pasado && !hecho ? 0.6 : 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -13926,7 +14058,130 @@ function EntrenoTab({
         flexShrink: 0
       }
     }, "›"));
-  }), semOff === 0 && Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 110
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "min(calc(100% - 20px), 440px)",
+      bottom: 86,
+      zIndex: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#F2F6F0",
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 20,
+      padding: "8px 8px 10px",
+      boxShadow: "0 -4px 14px rgba(0,0,0,.06)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      margin: "0 4px 7px"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      color: palette.inkSoft
+    }
+  }, "MIS ENTRENOS · mantén y arrastra al día"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (confirmCopia) {
+        copiarDeSemana(toKey(fechaDeDia(lunesVista, -7)));
+        setConfirmCopia(false);
+      } else {
+        setConfirmCopia(true);
+        setTimeout(() => setConfirmCopia(false), 4000);
+      }
+    },
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      color: confirmCopia ? "#FFFFFF" : palette.greenDark,
+      background: confirmCopia ? palette.greenDark : palette.greenSoft,
+      borderRadius: 999,
+      padding: "4px 10px",
+      whiteSpace: "nowrap"
+    }
+  }, confirmCopia ? "¿Seguro? Pulsa otra vez" : "⧉ Copiar semana pasada")), packs.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: palette.inkSoft,
+      padding: "6px 6px 2px"
+    }
+  }, "Aún no tienes entrenos guardados. Crea uno en la pestaña Entrenos.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      overflowX: "auto",
+      paddingBottom: 2
+    }
+  }, packs.map(pk => {
+    const ik = infoDia({
+      tipo: pk.tipo,
+      titulo: pk.titulo,
+      notas: pk.notas,
+      ejercicios: pk.ejercicios,
+      carrera: pk.carrera,
+      cardio: pk.cardio
+    }, pesoKg).ico || "otro";
+    return /*#__PURE__*/React.createElement("div", {
+      key: pk.clave,
+      onPointerDown: e => empezarArrastre(e, {
+        tipo: "pack",
+        id: pk.clave
+      }, pk.titulo, ik),
+      style: {
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        background: "#FFFFFF",
+        borderRadius: 999,
+        padding: "5px 12px 5px 5px",
+        fontSize: 11.5,
+        fontWeight: 700,
+        boxShadow: "0 2px 6px rgba(0,0,0,.12)",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        cursor: "grab"
+      }
+    }, /*#__PURE__*/React.createElement(IconoEntreno, {
+      kind: ik,
+      size: 24
+    }), pk.titulo.length > 22 ? pk.titulo.slice(0, 21) + "…" : pk.titulo);
+  })))), arr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      left: arr.x,
+      top: arr.y,
+      transform: "translate(-50%, -130%) rotate(-3deg)",
+      zIndex: 9999,
+      pointerEvents: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      background: "#FFFFFF",
+      borderRadius: 999,
+      padding: "6px 14px 6px 6px",
+      fontSize: 12.5,
+      fontWeight: 700,
+      boxShadow: "0 12px 28px rgba(0,0,0,.35)"
+    }
+  }, /*#__PURE__*/React.createElement(IconoEntreno, {
+    kind: arr.kind || "otro",
+    size: 26
+  }), arr.label), semOff === 0 && Object.keys(plan).length > 0 && (confirmarPlan ? /*#__PURE__*/React.createElement("div", {
     style: {
       background: palette.paperDark,
       borderRadius: 14,
@@ -17547,8 +17802,7 @@ function App() {
       lineHeight: 1.1
     }
   }, t.icono), t.label))));
-}
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+}ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
 </body>
 </html>
