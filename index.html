@@ -5448,6 +5448,257 @@ function PlanSemana({
   }, "Si ya habías guardado un plan para esas fechas, se sustituye. Lo que hayas anotado tú a mano no se toca."))));
 }
 
+// ---------- Media semanal de kcal y macros (Calendario) ----------
+function MediaSemana({
+  userId,
+  perfilId,
+  fecha,
+  version,
+  objetivoKcal,
+  objetivoMacros
+}) {
+  const [lunes, setLunes] = useState(lunesDe(fecha));
+  const [filas, setFilas] = useState([]);
+  const [excl, setExcl] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cal_excl_" + perfilId) || "[]");
+    } catch (e) {
+      return [];
+    }
+  });
+  const clave = `${userId}_${perfilId}`;
+  useEffect(() => {
+    setLunes(lunesDe(fecha));
+  }, [toKey(fecha)]);
+  useEffect(() => {
+    let vivo = true;
+    sb.from("calendario_media").select("fechas").eq("clave", clave).maybeSingle().then(({
+      data
+    }) => {
+      if (!vivo || !data || !Array.isArray(data.fechas)) return;
+      setExcl(cur => {
+        const u = [...new Set([...cur, ...data.fechas])];
+        try {
+          localStorage.setItem("cal_excl_" + perfilId, JSON.stringify(u));
+        } catch (e) {}
+        return u;
+      });
+    }).catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [clave]);
+  useEffect(() => {
+    let vivo = true;
+    sb.from("diary_entries").select("entry_date,kcal,proteinas,carbohidratos,grasas,comido,planificado").eq("user_id", userId).eq("perfil", perfilId).gte("entry_date", toKey(lunes)).lte("entry_date", toKey(fechaDeDia(lunes, 6))).then(({
+      data
+    }) => {
+      if (vivo) setFilas(data || []);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [toKey(lunes), userId, perfilId, version]);
+  const dias = [0, 1, 2, 3, 4, 5, 6].map(i => {
+    const f = fechaDeDia(lunes, i),
+      k = toKey(f);
+    const es = filas.filter(r => r.entry_date === k && esComido(r));
+    const t = es.reduce((a, r) => ({
+      kcal: a.kcal + (Number(r.kcal) || 0),
+      p: a.p + (Number(r.proteinas) || 0),
+      c: a.c + (Number(r.carbohidratos) || 0),
+      g: a.g + (Number(r.grasas) || 0)
+    }), {
+      kcal: 0,
+      p: 0,
+      c: 0,
+      g: 0
+    });
+    return {
+      i,
+      f,
+      k,
+      t,
+      hay: t.kcal > 0,
+      off: excl.includes(k)
+    };
+  });
+  const cuenta = dias.filter(d => d.hay && !d.off);
+  const n = cuenta.length;
+  const media = campo => n ? cuenta.reduce((a, d) => a + d.t[campo], 0) / n : 0;
+  function alternar(k) {
+    const nuevo = excl.includes(k) ? excl.filter(x => x !== k) : [...excl, k];
+    setExcl(nuevo);
+    try {
+      localStorage.setItem("cal_excl_" + perfilId, JSON.stringify(nuevo));
+    } catch (e) {}
+    sb.from("calendario_media").upsert({
+      clave,
+      id: clave,
+      user_id: userId,
+      perfil: perfilId,
+      fechas: nuevo
+    }, {
+      onConflict: "clave"
+    }).then(() => {}, () => {});
+  }
+  const hoyK = toKey(new Date());
+  const etiqueta = `${lunes.getDate()} ${lunes.toLocaleDateString("es-ES", {
+    month: "short"
+  }).replace(".", "")} – ${fechaDeDia(lunes, 6).getDate()} ${fechaDeDia(lunes, 6).toLocaleDateString("es-ES", {
+    month: "short"
+  }).replace(".", "")}`;
+  const objM = objetivoMacros || {};
+  const macros = [["Proteína", "p", objM.proteinas], ["Hidratos", "c", objM.carbohidratos], ["Grasas", "g", objM.grasas]];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "4px 16px 14px",
+      background: "#FFFFFF",
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 20,
+      padding: "12px 12px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: "0.12em",
+      color: palette.inkSoft
+    }
+  }, "MEDIA DIARIA"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setLunes(fechaDeDia(lunes, -7)),
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: 999,
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      fontWeight: 700
+    }
+  }, "‹"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      minWidth: 92,
+      textAlign: "center"
+    }
+  }, etiqueta), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setLunes(fechaDeDia(lunes, 7)),
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: 999,
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      fontWeight: 700
+    }
+  }, "›"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "baseline",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 28,
+      fontWeight: 800,
+      color: palette.greenDark,
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, n ? Math.round(media("kcal")).toLocaleString("es-ES") : "—"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: palette.inkSoft
+    }
+  }, "kcal/día · ", n, " ", n === 1 ? "día" : "días", objetivoKcal ? ` · objetivo ${Number(objetivoKcal).toLocaleString("es-ES")}` : "")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      margin: "8px 0 10px"
+    }
+  }, macros.map(([nom, c, obj]) => /*#__PURE__*/React.createElement("div", {
+    key: nom,
+    style: {
+      flex: 1,
+      borderRadius: 12,
+      padding: "6px 8px",
+      background: COLOR_MACRO[nom] + "1A"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: COLOR_MACRO[nom]
+    }
+  }, nom), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, n ? Math.round(media(c)) : "—", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600,
+      color: palette.inkSoft
+    }
+  }, " g", obj ? ` / ${Math.round(obj)}` : ""))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: 4
+    }
+  }, dias.map(d => /*#__PURE__*/React.createElement("button", {
+    key: d.k,
+    disabled: !d.hay,
+    onClick: () => alternar(d.k),
+    style: {
+      height: 44,
+      borderRadius: 11,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      lineHeight: 1.15,
+      border: d.hay && !d.off ? `1.5px solid ${palette.green}` : `1.5px dashed ${palette.line}`,
+      background: d.hay && !d.off ? palette.greenSoft : "#F4F5F3",
+      color: d.hay && !d.off ? palette.ink : "#A9AFA9",
+      outline: d.k === hoyK ? `2px solid ${palette.greenDark}` : "none",
+      outlineOffset: 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700
+    }
+  }, ["L", "M", "X", "J", "V", "S", "D"][d.i]), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9.5,
+      fontWeight: 600,
+      textDecoration: d.off ? "line-through" : "none"
+    }
+  }, d.hay ? (d.t.kcal / 1000).toFixed(1).replace(".", ",") + "k" : "—")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: palette.inkSoft,
+      marginTop: 8
+    }
+  }, "Toca un día para incluirlo o excluirlo de la media (p. ej. si comiste fuera). Solo cuenta lo marcado como comido."));
+}
+
 // ---------- Calendario ----------
 function CalendarioTab({
   userId,
@@ -5634,6 +5885,13 @@ function CalendarioTab({
     onSelect: setSelected,
     monthTotals: monthTotals,
     onMonthChange: onMonthChange
+  }), /*#__PURE__*/React.createElement(MediaSemana, {
+    userId: userId,
+    perfilId: perfilId,
+    fecha: selected,
+    version: version,
+    objetivoKcal: objetivoKcal,
+    objetivoMacros: objetivoMacros
   }), /*#__PURE__*/React.createElement(DayBreakdown, {
     date: selected,
     dayData: dayData,
@@ -13308,6 +13566,7 @@ function EntrenoTab({
   const planVisRef = useRef({});
   const [confirmCopia, setConfirmCopia] = useState(false);
   const [pickerDia, setPickerDia] = useState(null);
+  const [confirmQuitar, setConfirmQuitar] = useState(null);
   function ponerPack(d, pk) {
     setPickerDia(null);
     cambiarDia(d, datosDePack(pk));
@@ -13881,8 +14140,8 @@ function EntrenoTab({
         overflow: "hidden",
         background: infoSel.descanso ? "linear-gradient(160deg,#5B6B60,#76867B)" : "linear-gradient(160deg,#1F6B3A,#2F8F4E)",
         color: "#FFFFFF",
-        padding: 18,
-        boxShadow: "0 12px 26px rgba(47,143,78,.28)",
+        padding: 13,
+        boxShadow: "0 10px 22px rgba(47,143,78,.26)",
         marginBottom: 6
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -13930,21 +14189,21 @@ function EntrenoTab({
       style: {
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        margin: "8px 0 2px"
+        gap: 10,
+        margin: "4px 0 1px"
       }
     }, infoSel.ico ? /*#__PURE__*/React.createElement("span", {
       style: {
         borderRadius: "50%",
-        boxShadow: "0 0 0 3px rgba(255,255,255,.35)",
+        boxShadow: "0 0 0 2px rgba(255,255,255,.35)",
         display: "inline-flex"
       }
     }, /*#__PURE__*/React.createElement(IconoEntreno, {
       kind: infoSel.ico,
-      size: 46
+      size: 34
     })) : null, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 23,
+        fontSize: 18,
         fontWeight: 700,
         lineHeight: 1.15,
         overflowWrap: "anywhere",
@@ -13952,78 +14211,79 @@ function EntrenoTab({
       }
     }, infoSel.titulo)), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 12.5,
+        fontSize: 12,
         opacity: 0.9
       }
     }, infoSel.sub), infoSel.chips.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 8,
-        margin: "14px 0 4px"
+        gap: 6,
+        margin: "8px 0 2px"
       }
     }, infoSel.chips.map(([v, l]) => /*#__PURE__*/React.createElement("div", {
       key: l,
       style: {
         background: "rgba(255,255,255,.16)",
-        borderRadius: 12,
-        padding: "8px 12px",
-        fontSize: 12
+        borderRadius: 10,
+        padding: "4px 10px",
+        fontSize: 11.5
       }
     }, /*#__PURE__*/React.createElement("b", {
       style: {
-        fontSize: 16
+        fontSize: 14
       }
-    }, v), /*#__PURE__*/React.createElement("br", null), l))), infoSel.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, v), " ", l))), infoSel.fotos.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 6,
-        margin: "12px 0 4px"
+        gap: 5,
+        margin: "8px 0 2px"
       }
     }, infoSel.fotos.slice(0, 3).map(ej => /*#__PURE__*/React.createElement("div", {
       key: ej.id,
       style: {
-        width: 64,
-        height: 64,
-        borderRadius: 14,
+        width: 46,
+        height: 46,
+        borderRadius: 11,
         overflow: "hidden",
         background: "#E9EDE6",
         flexShrink: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 96,
-        marginLeft: -16
+        width: 69,
+        marginLeft: -11
       }
     }, /*#__PURE__*/React.createElement(FiguraEjercicio, {
       ej: ej,
       k: 0
     })))), infoSel.nEj > 3 && /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 64,
-        height: 64,
-        borderRadius: 14,
+        width: 46,
+        height: 46,
+        borderRadius: 11,
         background: "rgba(255,255,255,.18)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 700,
+        fontSize: 13,
         flexShrink: 0
       }
     }, "+", infoSel.nEj - 3)), infoSel.notas ? /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 12,
+        fontSize: 11.5,
         opacity: 0.9,
-        margin: "10px 0 0"
+        margin: "6px 0 0"
       }
     }, infoSel.notas) : null, hechoSel ? /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 14,
+        marginTop: 8,
         background: "rgba(255,255,255,.2)",
-        borderRadius: 16,
+        borderRadius: 14,
         textAlign: "center",
-        padding: 12,
+        padding: 8,
         fontWeight: 700,
-        fontSize: 14
+        fontSize: 13
       }
     }, "✓ Hecho", hechoSel.kcal ? ` · ≈ ${hechoSel.kcal} kcal` : "") : infoSel.empezable && semOff === 0 ? /*#__PURE__*/React.createElement("button", {
       onClick: () => setVista({
@@ -14031,14 +14291,14 @@ function EntrenoTab({
         dia: dSel
       }),
       style: {
-        marginTop: 14,
+        marginTop: 8,
         width: "100%",
         background: "#FFFFFF",
         color: "#1F6B3A",
-        borderRadius: 16,
-        padding: 13,
+        borderRadius: 14,
+        padding: 9,
         fontWeight: 700,
-        fontSize: 15
+        fontSize: 14
       }
     }, "▶ Empezar sesión") : !infoSel.tienePlan || infoSel.descanso ? /*#__PURE__*/React.createElement("button", {
       onClick: () => setVista({
@@ -14046,16 +14306,37 @@ function EntrenoTab({
         dia: dSel
       }),
       style: {
-        marginTop: 14,
+        marginTop: 8,
         width: "100%",
         background: "#FFFFFF",
         color: "#1F6B3A",
-        borderRadius: 16,
-        padding: 13,
+        borderRadius: 14,
+        padding: 9,
         fontWeight: 700,
-        fontSize: 14
+        fontSize: 13.5
       }
-    }, infoSel.descanso ? "+ Añadir entrenamiento" : "+ Añadir plan") : null));
+    }, infoSel.descanso ? "+ Añadir entrenamiento" : "+ Añadir plan") : null, infoSel.tienePlan && !infoSel.descanso && /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (confirmQuitar === dSel) {
+          setConfirmQuitar(null);
+          cambiarDia(dSel, datosSolo(null));
+          guardarDiaYa(dSel).then(ok => setAvisoPack(ok ? `🗑 ${DIAS_SEMANA[dSel]} quitado (ahora descanso)` : "⚠️ No se pudo confirmar el guardado"));
+        } else {
+          setConfirmQuitar(dSel);
+          setTimeout(() => setConfirmQuitar(null), 4000);
+        }
+      },
+      style: {
+        marginTop: 6,
+        width: "100%",
+        background: confirmQuitar === dSel ? "#C0392B" : "rgba(255,255,255,.14)",
+        color: "#FFFFFF",
+        borderRadius: 12,
+        padding: 6,
+        fontWeight: 600,
+        fontSize: 12
+      }
+    }, confirmQuitar === dSel ? "¿Seguro? Pulsa otra vez para quitarlo" : "🗑 Quitar del día")));
     const doc = plan[d];
     const inf = infoDia(doc, pesoKg);
     const hecho = hechosSemana[d];
