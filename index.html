@@ -4765,12 +4765,159 @@ function DiarioTab({
     onEditarEntrada: editarEntrada,
     onToggleComido: alternarComido,
     onAnadir: abrirRecetasDe
+  }), /*#__PURE__*/React.createElement(CopiarDiaPerfil, {
+    userId: userId,
+    perfilId: perfilId,
+    fecha: fechaDia,
+    dayData: dayData
   }), !objetivoData.objetivo_kcal && /*#__PURE__*/React.createElement("div", {
     className: "px-5 pb-4 text-center text-[11.5px]",
     style: {
       color: palette.inkSoft
     }
   }, "🎯 Pon tu objetivo diario en ⚙️ (arriba a la derecha)."));
+}
+
+// ---------- Copiar el día a otro perfil ----------
+function CopiarDiaPerfil({
+  userId,
+  perfilId,
+  fecha,
+  dayData,
+  onHecho
+}) {
+  const otros = cargarPerfiles().filter(p => p.id !== perfilId);
+  const [dest, setDest] = useState(null); // perfil elegido con día ya ocupado -> pregunta
+  const [msg, setMsg] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+  const n = Object.values(dayData || {}).reduce((a, arr) => a + arr.length, 0);
+  if (otros.length === 0 || n === 0) return null;
+  async function copiar(p, modo) {
+    setOcupado(true);
+    setMsg("");
+    try {
+      const k = toKey(fecha);
+      const {
+        data: origen
+      } = await sb.from("diary_entries").select("*").eq("user_id", userId).eq("perfil", perfilId).eq("entry_date", k);
+      const filas = (origen || []).map(r => {
+        const c = {
+          ...r
+        };
+        delete c.id;
+        delete c.created_at;
+        return {
+          ...c,
+          perfil: p.id,
+          user_id: userId,
+          entry_date: k
+        };
+      });
+      if (modo === "reemplazar") {
+        const {
+          data: ex
+        } = await sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", p.id).eq("entry_date", k);
+        for (const e of ex || []) await sb.from("diary_entries").delete().eq("id", e.id);
+      }
+      for (const f of filas) {
+        const {
+          error
+        } = await sb.from("diary_entries").insert(f);
+        if (error) throw error;
+      }
+      setMsg(`✓ Copiado a ${p.label}. Cambia de perfil para ajustar las cantidades.`);
+      setDest(null);
+      onHecho && onHecho();
+    } catch (e) {
+      console.error(e);
+      setMsg("⚠️ No se pudo copiar el día. Inténtalo de nuevo.");
+    }
+    setOcupado(false);
+  }
+  async function pedir(p) {
+    setMsg("");
+    const {
+      data
+    } = await sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", p.id).eq("entry_date", toKey(fecha));
+    if (data && data.length > 0) setDest({
+      p,
+      n: data.length
+    });else copiar(p, "anadir");
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "4px 20px 16px",
+      textAlign: "center"
+    }
+  }, !dest && otros.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    disabled: ocupado,
+    onClick: () => pedir(p),
+    style: {
+      margin: "0 4px",
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      borderRadius: 999,
+      padding: "8px 16px",
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, "⧉ Copiar día a ", p.label)), dest && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFF6E5",
+      border: "1.5px solid #F0D9A8",
+      borderRadius: 16,
+      padding: 12,
+      fontSize: 12.5
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("b", null, dest.p.label), " ya tiene ", dest.n, " ", dest.n === 1 ? "alimento" : "alimentos", " ese día."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      justifyContent: "center",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    disabled: ocupado,
+    onClick: () => copiar(dest.p, "anadir"),
+    style: {
+      background: palette.greenDark,
+      color: "#FFFFFF",
+      borderRadius: 999,
+      padding: "7px 14px",
+      fontWeight: 700
+    }
+  }, "Añadir"), /*#__PURE__*/React.createElement("button", {
+    disabled: ocupado,
+    onClick: () => copiar(dest.p, "reemplazar"),
+    style: {
+      background: "#C0392B",
+      color: "#FFFFFF",
+      borderRadius: 999,
+      padding: "7px 14px",
+      fontWeight: 700
+    }
+  }, "Reemplazar"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDest(null),
+    style: {
+      background: "#FFFFFF",
+      border: `1.5px solid ${palette.line}`,
+      borderRadius: 999,
+      padding: "7px 14px",
+      fontWeight: 600
+    }
+  }, "Cancelar"))), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      marginTop: 8,
+      color: msg.startsWith("✓") ? palette.greenDark : "#C0392B",
+      fontWeight: 600
+    }
+  }, msg));
 }
 
 // ---------- Planificador semanal ----------
@@ -5907,6 +6054,11 @@ function CalendarioTab({
       setMealInicial(meal);
       setEditandoDia(true);
     }
+  }), /*#__PURE__*/React.createElement(CopiarDiaPerfil, {
+    userId: userId,
+    perfilId: perfilId,
+    fecha: selected,
+    dayData: dayData
   }));
 }
 
