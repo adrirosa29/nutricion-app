@@ -4787,20 +4787,49 @@ function CopiarDiaPerfil({
   onHecho
 }) {
   const otros = cargarPerfiles().filter(p => p.id !== perfilId);
-  const [dest, setDest] = useState(null); // perfil elegido con día ya ocupado -> pregunta
-  const [msg, setMsg] = useState("");
+  const [abierto, setAbierto] = useState(false);
+  const [destId, setDestId] = useState(null);
+  const [sel, setSel] = useState({});
+  const [existentes, setExistentes] = useState(0);
+  const [reemplazar, setReemplazar] = useState(false);
   const [ocupado, setOcupado] = useState(false);
-  const n = Object.values(dayData || {}).reduce((a, arr) => a + arr.length, 0);
-  if (otros.length === 0 || n === 0) return null;
-  async function copiar(p, modo) {
+  const [msg, setMsg] = useState("");
+  const todas = MEALS.flatMap(m => (dayData[m] || []).map(e => ({
+    ...e,
+    meal: m
+  })));
+  const k = toKey(fecha);
+  const dest = otros.find(p => p.id === destId) || otros[0];
+  useEffect(() => {
+    if (!abierto || !dest) return;
+    let vivo = true;
+    sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", dest.id).eq("entry_date", k).then(({
+      data
+    }) => {
+      if (vivo) setExistentes((data || []).length);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [abierto, dest && dest.id, k]);
+  if (otros.length === 0 || todas.length === 0) return null;
+  function abrir() {
+    setSel(Object.fromEntries(todas.map(e => [e.id, true])));
+    setReemplazar(false);
+    setMsg("");
+    setDestId(otros[0].id);
+    setAbierto(true);
+  }
+  const nSel = todas.filter(e => sel[e.id]).length;
+  const kcalSel = todas.filter(e => sel[e.id]).reduce((a, e) => a + (Number(e.kcal) || 0), 0);
+  async function copiar() {
     setOcupado(true);
     setMsg("");
     try {
-      const k = toKey(fecha);
       const {
         data: origen
       } = await sb.from("diary_entries").select("*").eq("user_id", userId).eq("perfil", perfilId).eq("entry_date", k);
-      const filas = (origen || []).map(r => {
+      const filas = (origen || []).filter(r => sel[r.id]).map(r => {
         const c = {
           ...r
         };
@@ -4808,15 +4837,15 @@ function CopiarDiaPerfil({
         delete c.created_at;
         return {
           ...c,
-          perfil: p.id,
+          perfil: dest.id,
           user_id: userId,
           entry_date: k
         };
       });
-      if (modo === "reemplazar") {
+      if (reemplazar) {
         const {
           data: ex
-        } = await sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", p.id).eq("entry_date", k);
+        } = await sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", dest.id).eq("entry_date", k);
         for (const e of ex || []) await sb.from("diary_entries").delete().eq("id", e.id);
       }
       for (const f of filas) {
@@ -4825,99 +4854,307 @@ function CopiarDiaPerfil({
         } = await sb.from("diary_entries").insert(f);
         if (error) throw error;
       }
-      setMsg(`✓ Copiado a ${p.label}. Cambia de perfil para ajustar las cantidades.`);
-      setDest(null);
+      setAbierto(false);
+      setMsg(`✓ ${filas.length} ${filas.length === 1 ? "alimento copiado" : "alimentos copiados"} a ${dest.label}. Cambia de perfil para ajustar cantidades.`);
       onHecho && onHecho();
     } catch (e) {
       console.error(e);
-      setMsg("⚠️ No se pudo copiar el día. Inténtalo de nuevo.");
+      setMsg("⚠️ No se pudo copiar. Inténtalo de nuevo.");
     }
     setOcupado(false);
   }
-  async function pedir(p) {
-    setMsg("");
-    const {
-      data
-    } = await sb.from("diary_entries").select("id").eq("user_id", userId).eq("perfil", p.id).eq("entry_date", toKey(fecha));
-    if (data && data.length > 0) setDest({
-      p,
-      n: data.length
-    });else copiar(p, "anadir");
-  }
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "4px 20px 16px",
+      padding: "2px 20px 16px",
       textAlign: "center"
     }
-  }, !dest && otros.map(p => /*#__PURE__*/React.createElement("button", {
-    key: p.id,
-    disabled: ocupado,
-    onClick: () => pedir(p),
-    style: {
-      margin: "0 4px",
-      background: palette.greenSoft,
-      color: palette.greenDark,
-      borderRadius: 999,
-      padding: "8px 16px",
-      fontSize: 12.5,
-      fontWeight: 700
-    }
-  }, "⧉ Copiar día a ", p.label)), dest && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#FFF6E5",
-      border: "1.5px solid #F0D9A8",
-      borderRadius: 16,
-      padding: 12,
-      fontSize: 12.5
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("b", null, dest.p.label), " ya tiene ", dest.n, " ", dest.n === 1 ? "alimento" : "alimentos", " ese día."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      justifyContent: "center",
-      flexWrap: "wrap"
-    }
   }, /*#__PURE__*/React.createElement("button", {
-    disabled: ocupado,
-    onClick: () => copiar(dest.p, "anadir"),
+    onClick: abrir,
     style: {
-      background: palette.greenDark,
-      color: "#FFFFFF",
-      borderRadius: 999,
-      padding: "7px 14px",
-      fontWeight: 700
-    }
-  }, "Añadir"), /*#__PURE__*/React.createElement("button", {
-    disabled: ocupado,
-    onClick: () => copiar(dest.p, "reemplazar"),
-    style: {
-      background: "#C0392B",
-      color: "#FFFFFF",
-      borderRadius: 999,
-      padding: "7px 14px",
-      fontWeight: 700
-    }
-  }, "Reemplazar"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setDest(null),
-    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
       background: "#FFFFFF",
-      border: `1.5px solid ${palette.line}`,
-      borderRadius: 999,
-      padding: "7px 14px",
-      fontWeight: 600
+      border: `1.5px solid ${palette.green}`,
+      color: palette.greenDark,
+      borderRadius: 16,
+      padding: "10px 18px",
+      fontSize: 13.5,
+      fontWeight: 700,
+      boxShadow: "0 3px 10px rgba(47,143,78,.15)"
     }
-  }, "Cancelar"))), msg && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "9",
+    y: "9",
+    width: "11",
+    height: "11",
+    rx: "2.5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"
+  })), "Copiar día a otro perfil"), msg && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       marginTop: 8,
       color: msg.startsWith("✓") ? palette.greenDark : "#C0392B",
       fontWeight: 600
     }
-  }, msg));
+  }, msg), abierto && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setAbierto(false),
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.42)",
+      zIndex: 70,
+      display: "flex",
+      alignItems: "flex-end",
+      justifyContent: "center",
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: "100%",
+      maxWidth: 460,
+      maxHeight: "86vh",
+      display: "flex",
+      flexDirection: "column",
+      background: "#FFFFFF",
+      borderRadius: "24px 24px 0 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px 16px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 17,
+      fontWeight: 800
+    }
+  }, "Copiar día"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAbierto(false),
+    style: {
+      fontSize: 18,
+      color: palette.inkSoft,
+      padding: "0 6px"
+    }
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: palette.inkSoft,
+      margin: "2px 0 10px"
+    }
+  }, fecha.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      color: palette.inkSoft,
+      marginBottom: 6
+    }
+  }, "COPIAR A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, otros.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => setDestId(p.id),
+    style: {
+      padding: "7px 16px",
+      borderRadius: 999,
+      fontSize: 13,
+      fontWeight: 700,
+      background: dest.id === p.id ? palette.greenDark : palette.greenSoft,
+      color: dest.id === p.id ? "#FFFFFF" : palette.greenDark
+    }
+  }, p.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      margin: "14px 0 4px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      color: palette.inkSoft
+    }
+  }, "QUÉ COPIAR"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSel(nSel === todas.length ? {} : Object.fromEntries(todas.map(e => [e.id, true]))),
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: palette.greenDark
+    }
+  }, nSel === todas.length ? "Quitar todo" : "Marcar todo"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowY: "auto",
+      padding: "0 16px 8px",
+      flex: 1
+    }
+  }, MEALS.filter(m => (dayData[m] || []).length > 0).map(m => {
+    const es = todas.filter(e => e.meal === m);
+    const todos = es.every(e => sel[e.id]);
+    return /*#__PURE__*/React.createElement("div", {
+      key: m,
+      style: {
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setSel(c => ({
+        ...c,
+        ...Object.fromEntries(es.map(e => [e.id, !todos]))
+      })),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        width: "100%",
+        padding: "6px 2px",
+        fontSize: 13,
+        fontWeight: 800,
+        color: (FRANJA_ESTILO[m] || {}).texto || palette.ink
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        border: `2px solid ${palette.green}`,
+        background: todos ? palette.green : "#FFFFFF",
+        color: "#FFFFFF",
+        fontSize: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0
+      }
+    }, todos ? "✓" : ""), m), es.map(e => /*#__PURE__*/React.createElement("button", {
+      key: e.id,
+      onClick: () => setSel(c => ({
+        ...c,
+        [e.id]: !c[e.id]
+      })),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+        textAlign: "left",
+        padding: "8px 10px",
+        marginTop: 4,
+        borderRadius: 12,
+        border: `1.5px solid ${sel[e.id] ? palette.green : palette.line}`,
+        background: sel[e.id] ? "#F3FAF4" : "#FFFFFF"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        border: `2px solid ${palette.green}`,
+        background: sel[e.id] ? palette.green : "#FFFFFF",
+        color: "#FFFFFF",
+        fontSize: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0
+      }
+    }, sel[e.id] ? "✓" : ""), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        fontSize: 13,
+        fontWeight: 600,
+        overflowWrap: "anywhere"
+      }
+    }, e.name), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: palette.inkSoft,
+        fontVariantNumeric: "tabular-nums",
+        flexShrink: 0
+      }
+    }, Math.round(Number(e.kcal) || 0), " kcal"))));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "8px 16px 22px",
+      borderTop: `1px solid ${palette.line}`
+    }
+  }, existentes > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFF6E5",
+      border: "1.5px solid #F0D9A8",
+      borderRadius: 12,
+      padding: "8px 10px",
+      fontSize: 12,
+      marginBottom: 8
+    }
+  }, dest.label, " ya tiene ", existentes, " ", existentes === 1 ? "alimento" : "alimentos", " ese día.", /*#__PURE__*/React.createElement("button", {
+    onClick: () => setReemplazar(r => !r),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 6,
+      fontWeight: 700
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 18,
+      height: 18,
+      borderRadius: 5,
+      border: "2px solid #C0392B",
+      background: reemplazar ? "#C0392B" : "#FFFFFF",
+      color: "#FFFFFF",
+      fontSize: 12,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, reemplazar ? "✓" : ""), "Reemplazar lo que ya tiene (se borra)")), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      marginBottom: 6,
+      color: "#C0392B",
+      fontWeight: 600
+    }
+  }, msg), /*#__PURE__*/React.createElement("button", {
+    disabled: ocupado || nSel === 0,
+    onClick: copiar,
+    style: {
+      width: "100%",
+      padding: 13,
+      borderRadius: 16,
+      fontSize: 14.5,
+      fontWeight: 800,
+      color: "#FFFFFF",
+      background: nSel === 0 ? "#B8C2B8" : palette.greenDark
+    }
+  }, ocupado ? "Copiando…" : nSel === 0 ? "Elige qué copiar" : `Copiar ${nSel} ${nSel === 1 ? "alimento" : "alimentos"} · ${Math.round(kcalSel)} kcal`)))));
 }
 
 // ---------- Planificador semanal ----------
