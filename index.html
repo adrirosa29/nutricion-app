@@ -4280,7 +4280,12 @@ function DiarioTab({
   const [objetivoData, setObjetivoData] = useState({});
   const [productos, setProductos] = useState([]);
   const [gruposRecetaAbiertos, setGruposRecetaAbiertos] = useState({});
-  const fechaDia = fecha || hoy();
+  const [fechaNav, setFechaNav] = useState(null);
+  const fechaDia = fecha || fechaNav || hoy();
+  const moverDia = n => {
+    const d = new Date(fechaDia.getFullYear(), fechaDia.getMonth(), fechaDia.getDate() + n);
+    setFechaNav(toKey(d) === toKey(hoy()) ? null : d);
+  };
   const todayKey = toKey(fechaDia);
   const esHoy = todayKey === toKey(hoy());
   const [repetir, setRepetir] = useState(null); // { payload, meal, nombre } tras añadir una receta nueva
@@ -4738,7 +4743,53 @@ function DiarioTab({
     style: {
       color: palette.inkSoft
     }
-  }, "Diario de ", perfilLabel), /*#__PURE__*/React.createElement("div", {
+  }, "Diario de ", perfilLabel), !fecha ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => moverDia(-1),
+    "aria-label": "Día anterior",
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: 999,
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      fontSize: 18,
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, "‹"), /*#__PURE__*/React.createElement("div", {
+    className: "text-[18px] font-semibold",
+    style: {
+      minWidth: 170
+    }
+  }, esHoy ? "Hoy · " + fechaDia.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short"
+  }) : fechaDia.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "short"
+  }).replace(/^./, c => c.toUpperCase())), /*#__PURE__*/React.createElement("button", {
+    onClick: () => moverDia(1),
+    "aria-label": "Día siguiente",
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: 999,
+      background: palette.greenSoft,
+      color: palette.greenDark,
+      fontSize: 18,
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, "›")) : /*#__PURE__*/React.createElement("div", {
     className: "text-[18px] font-semibold mt-0.5"
   }, esHoy ? "Hoy · " + fechaDia.toLocaleDateString("es-ES", {
     day: "numeric",
