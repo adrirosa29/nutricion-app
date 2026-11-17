@@ -14006,6 +14006,51 @@ function EntrenoTab({
   const planVisRef = useRef({});
   const [confirmCopia, setConfirmCopia] = useState(false);
   const [pickerDia, setPickerDia] = useState(null);
+  async function registrarDirecto(d) {
+    const doc = docDia(d);
+    const fk = toKey(fechaDeDia(lunesVista, d));
+    let reg = {
+      perfil: perfilId,
+      fecha: fk,
+      dia: d,
+      dia_plan: d,
+      titulo: doc.titulo || "Entreno",
+      tipo: "otro",
+      duracion_s: 0,
+      notas: doc.notas || ""
+    };
+    if (doc.tipo === "fuerza") {
+      const ejsP = (doc.ejercicios || []).filter(it => EJ_POR_ID[it.eid]);
+      const dur = minutosEstimados(ejsP) * 60;
+      const ejs = ejsP.map(it => ({
+        eid: it.eid,
+        nombre: EJ_POR_ID[it.eid].nombre,
+        unidad: EJ_POR_ID[it.eid].unidad || "reps",
+        series: Array.from({
+          length: Number(it.series) || 1
+        }, () => ({
+          reps: Number(it.reps) || 0,
+          peso: Number(it.peso) || 0
+        }))
+      }));
+      const vol = ejs.reduce((a, e) => a + e.series.reduce((b, x) => b + (x.peso > 0 ? x.reps * x.peso : 0), 0), 0);
+      reg = {
+        ...reg,
+        titulo: doc.titulo || "Entreno de fuerza",
+        tipo: "fuerza",
+        duracion_s: dur,
+        volumen_kg: Math.round(vol),
+        series_hechas: ejs.reduce((a, e) => a + e.series.length, 0),
+        kcal: kcalFuerza(pesoKg, dur),
+        ejercicios: ejs
+      };
+    }
+    const {
+      error
+    } = await sb.from("entreno_registros").insert(reg);
+    await cargarRegistros();
+    setAvisoPack(error ? "⚠️ No se pudo guardar" : `✓ Registrado el ${DIAS_SEMANA[d].toLowerCase()} ${fechaDeDia(lunesVista, d).getDate()}`);
+  }
   const [confirmQuitar, setConfirmQuitar] = useState(null);
   function ponerPack(d, pk) {
     setPickerDia(null);
@@ -14170,7 +14215,7 @@ function EntrenoTab({
         t: "picker",
         dia: vista.dia
       }),
-      onEmpezar: semOff === 0 ? () => setVista({
+      onEmpezar: semOff <= 0 ? () => setVista({
         t: "sesion",
         dia: vista.dia
       }) : null,
@@ -14178,8 +14223,8 @@ function EntrenoTab({
         const d = docDia(vista.dia);
         await sb.from("entreno_registros").insert({
           perfil: perfilId,
-          fecha: toKey(hoy()),
-          dia: indiceDia(hoy()),
+          fecha: toKey(fechaDeDia(lunesVista, vista.dia)),
+          dia: vista.dia,
           dia_plan: vista.dia,
           titulo: d.titulo || "Entreno",
           tipo: "otro",
@@ -14284,11 +14329,13 @@ function EntrenoTab({
         t: "semana"
       });
     };
+    const fReg = toKey(fechaDeDia(lunesVista, vista.dia));
     if (d.tipo === "carrera") return /*#__PURE__*/React.createElement(SesionCarrera, {
       doc: d,
       dia: vista.dia,
       perfilId: perfilId,
       pesoKg: pesoKg,
+      fecha: fReg,
       onSalir: salir
     });
     if (d.tipo === "cardio") return /*#__PURE__*/React.createElement(SesionCardio, {
@@ -14296,6 +14343,7 @@ function EntrenoTab({
       dia: vista.dia,
       perfilId: perfilId,
       pesoKg: pesoKg,
+      fecha: fReg,
       onSalir: salir
     });
     return /*#__PURE__*/React.createElement(SesionEntreno, {
@@ -14304,6 +14352,7 @@ function EntrenoTab({
       perfilId: perfilId,
       pesoKg: pesoKg,
       registros: registros,
+      fecha: fReg,
       onSalir: salir
     });
   }
@@ -14725,7 +14774,38 @@ function EntrenoTab({
         fontWeight: 700,
         fontSize: 13
       }
-    }, "✓ Hecho", hechoSel.kcal ? ` · ≈ ${hechoSel.kcal} kcal` : "") : infoSel.empezable && semOff === 0 ? /*#__PURE__*/React.createElement("button", {
+    }, "✓ Hecho", hechoSel.kcal ? ` · ≈ ${hechoSel.kcal} kcal` : "") : infoSel.empezable && semOff <= 0 && toKey(fechaDeDia(lunes, dSel)) <= toKey(hoyD) ? toKey(fechaDeDia(lunes, dSel)) < toKey(hoyD) ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginTop: 8
+      }
+    }, plan[dSel] && plan[dSel].tipo === "fuerza" && /*#__PURE__*/React.createElement("button", {
+      onClick: () => registrarDirecto(dSel),
+      style: {
+        flex: 1,
+        background: "#FFFFFF",
+        color: "#1F6B3A",
+        borderRadius: 14,
+        padding: 9,
+        fontWeight: 700,
+        fontSize: 13
+      }
+    }, "✓ Lo hice"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setVista({
+        t: "sesion",
+        dia: dSel
+      }),
+      style: {
+        flex: 1,
+        background: "rgba(255,255,255,.2)",
+        color: "#FFFFFF",
+        borderRadius: 14,
+        padding: 9,
+        fontWeight: 700,
+        fontSize: 13
+      }
+    }, plan[dSel] && plan[dSel].tipo === "fuerza" ? "Anotar series" : "✓ Registrar")) : /*#__PURE__*/React.createElement("button", {
       onClick: () => setVista({
         t: "sesion",
         dia: dSel
@@ -15337,12 +15417,14 @@ function CalendarioMesEntreno({
     const fk = toKey(f);
     const rs = delMes.filter(r => r.fecha === fk);
     const esHoy = fk === hoyK;
-    let prev = false;
+    let prev = false,
+      descanso = false;
+    const futuro = fk > hoyK;
     if (!rs.length) {
       const doc = pm(toKey(lunesDe(f)))[indiceDia(f)];
       prev = !!(doc && doc.tipo !== "descanso");
+      descanso = !prev && !futuro;
     }
-    const futuro = fk > hoyK;
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
@@ -15362,6 +15444,31 @@ function CalendarioMesEntreno({
     }, /*#__PURE__*/React.createElement(IconoEntreno, {
       kind: kindDeRegistro(rs[0]),
       size: 30
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        right: -3,
+        bottom: -4,
+        fontSize: 9,
+        fontWeight: 800,
+        background: "#FFFFFF",
+        color: palette.ink,
+        borderRadius: 999,
+        padding: "0 3px",
+        lineHeight: "13px",
+        border: `1px solid ${palette.line}`
+      }
+    }, f.getDate())) : descanso ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "relative",
+        display: "inline-flex",
+        borderRadius: "50%",
+        opacity: 0.5,
+        boxShadow: esHoy ? `0 0 0 2px #FFFFFF, 0 0 0 4px ${palette.greenDark}` : "none"
+      }
+    }, /*#__PURE__*/React.createElement(IconoEntreno, {
+      kind: "descanso",
+      size: 28
     }), /*#__PURE__*/React.createElement("span", {
       style: {
         position: "absolute",
@@ -17231,7 +17338,8 @@ function SesionEntreno({
   perfilId,
   pesoKg,
   registros,
-  onSalir
+  onSalir,
+  fecha
 }) {
   const items = (doc.ejercicios || []).map(it => ({
     ...it,
@@ -17357,8 +17465,8 @@ function SesionEntreno({
     })).filter(e => e.series.length);
     await sb.from("entreno_registros").insert({
       perfil: perfilId,
-      fecha: toKey(hoy()),
-      dia: indiceDia(hoy()),
+      fecha: fecha || toKey(hoy()),
+      dia: indiceDia(fecha ? new Date(fecha + "T12:00:00") : hoy()),
       dia_plan: dia,
       titulo: doc.titulo || "Entreno de fuerza",
       tipo: "fuerza",
@@ -17957,7 +18065,8 @@ function SesionCarrera({
   dia,
   perfilId,
   pesoKg,
-  onSalir
+  onSalir,
+  fecha
 }) {
   const km0 = Number(doc.carrera && doc.carrera.km || 0);
   const [corriendo, setCorriendo] = useState(false);
@@ -18011,8 +18120,8 @@ function SesionCarrera({
     setGuardando(true);
     await sb.from("entreno_registros").insert({
       perfil: perfilId,
-      fecha: toKey(hoy()),
-      dia: indiceDia(hoy()),
+      fecha: fecha || toKey(hoy()),
+      dia: indiceDia(fecha ? new Date(fecha + "T12:00:00") : hoy()),
       dia_plan: dia,
       titulo: doc.titulo || "Carrera",
       tipo: "carrera",
@@ -18139,7 +18248,8 @@ function SesionCardio({
   dia,
   perfilId,
   pesoKg,
-  onSalir
+  onSalir,
+  fecha
 }) {
   const c = doc.cardio || {
     maquina: "bici",
@@ -18213,8 +18323,8 @@ function SesionCardio({
     setGuardando(true);
     await sb.from("entreno_registros").insert({
       perfil: perfilId,
-      fecha: toKey(hoy()),
-      dia: indiceDia(hoy()),
+      fecha: fecha || toKey(hoy()),
+      dia: indiceDia(fecha ? new Date(fecha + "T12:00:00") : hoy()),
       dia_plan: dia,
       titulo: doc.titulo || maq.nombre,
       tipo: "cardio",
