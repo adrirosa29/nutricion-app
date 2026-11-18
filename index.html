@@ -13018,31 +13018,54 @@ function minutosEstimados(ejs) {
   });
   return Math.max(1, Math.round(t / 60));
 }
-function pitido() {
-  try {
-    if (navigator.vibrate) navigator.vibrate([220, 90, 220]);
-  } catch (e) {}
+let _ctxAudio = null;
+function ctxAudio() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const ctx = new AC();
-    [0, 0.22].forEach(d => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.frequency.value = 880;
-      g.gain.value = 0.15;
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start(ctx.currentTime + d);
-      o.stop(ctx.currentTime + d + 0.15);
-    });
-    setTimeout(() => {
-      try {
-        ctx.close();
-      } catch (e) {}
-    }, 800);
+    if (!AC) return null;
+    if (!_ctxAudio || _ctxAudio.state === "closed") _ctxAudio = new AC();
+    if (_ctxAudio.state === "suspended") _ctxAudio.resume();
+    return _ctxAudio;
+  } catch (e) {
+    return null;
+  }
+}
+function bip(freq, dur, delay, vol) {
+  const c = ctxAudio();
+  if (!c) return;
+  try {
+    const o = c.createOscillator(),
+      g = c.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    g.gain.value = vol || 0.2;
+    o.connect(g);
+    g.connect(c.destination);
+    const t = c.currentTime + (delay || 0);
+    o.start(t);
+    o.stop(t + dur);
   } catch (e) {}
 }
+function vibra(p) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(p);
+  } catch (e) {}
+}
+function pitido() {
+  vibra([220, 90, 220]);
+  bip(880, 0.15, 0);
+  bip(880, 0.15, 0.22);
+  bip(1175, 0.3, 0.44);
+} // fin del descanso / de la cuenta atrás
+function pitidoSerie() {
+  vibra(60);
+  bip(1040, 0.12, 0);
+  bip(1320, 0.16, 0.12);
+} // serie hecha
+function pitidoTick() {
+  vibra(25);
+  bip(660, 0.09, 0);
+} // 3, 2, 1
 function textoReps(it, ej) {
   return `${Number(it.reps) || 0}` + (ej && ej.unidad === "s" ? " s" : "");
 }
@@ -16423,13 +16446,13 @@ function EditorDiaEntreno({
       style: {
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "8px 10px",
+        gap: 8,
+        padding: "6px 8px",
         cursor: "pointer"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 64,
+        width: 54,
         flexShrink: 0,
         borderRadius: 10,
         overflow: "hidden",
@@ -16468,8 +16491,44 @@ function EditorDiaEntreno({
       }, m) : null;
     })()), /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        flexShrink: 0
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => mover(i, -1),
+      disabled: i === 0,
+      "aria-label": "Subir",
+      style: {
+        width: 30,
+        height: 24,
+        borderRadius: 8,
+        background: palette.paperDark,
+        color: palette.ink,
+        fontSize: 13,
+        opacity: i === 0 ? 0.3 : 1
+      }
+    }, "▲"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => mover(i, 1),
+      disabled: i === ejercicios.length - 1,
+      "aria-label": "Bajar",
+      style: {
+        width: 30,
+        height: 24,
+        borderRadius: 8,
+        background: palette.paperDark,
+        color: palette.ink,
+        fontSize: 13,
+        opacity: i === ejercicios.length - 1 ? 0.3 : 1
+      }
+    }, "▼")), /*#__PURE__*/React.createElement("div", {
+      style: {
         color: palette.inkSoft,
-        fontSize: 16
+        fontSize: 16,
+        width: 12,
+        textAlign: "center"
       }
     }, abierta ? "⌄" : "›")), abierta && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -16477,19 +16536,23 @@ function EditorDiaEntreno({
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        width: "78%",
+        margin: "0 auto 6px",
         borderRadius: 12,
-        background: "#F7FAF5",
-        marginBottom: 8
+        background: "#F7FAF5"
       }
     }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
       ej: ej
-    })), /*#__PURE__*/React.createElement(PanelMusculos, {
-      ej: ej
-    }), /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11.5,
+        marginBottom: 2
+      }
+    }, /*#__PURE__*/React.createElement("b", null, "Músculos:"), " ", ej.musculos), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11.5,
         color: palette.inkSoft,
-        marginBottom: 8
+        marginBottom: 6
       }
     }, ej.material), ult && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -16500,8 +16563,8 @@ function EditorDiaEntreno({
     }, "Última vez: ", ult.reps, ej.unidad === "s" ? " s" : "", ult.peso > 0 ? ` × ${String(ult.peso).replace(".", ",")} kg` : ""), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 8,
-        marginBottom: 8
+        gap: 6,
+        marginBottom: 6
       }
     }, /*#__PURE__*/React.createElement(Stepper, {
       etiqueta: "Series",
@@ -16512,7 +16575,7 @@ function EditorDiaEntreno({
         series: v
       })
     }), /*#__PURE__*/React.createElement(Stepper, {
-      etiqueta: ej.unidad === "s" ? "Segundos" : "Repeticiones",
+      etiqueta: ej.unidad === "s" ? "Seg" : "Reps",
       valor: it.reps,
       min: 1,
       max: 200,
@@ -16521,14 +16584,8 @@ function EditorDiaEntreno({
         reps: v,
         repsMin: 0
       })
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8,
-        marginBottom: 8
-      }
-    }, /*#__PURE__*/React.createElement(Stepper, {
-      etiqueta: "Peso (kg)",
+    }), /*#__PURE__*/React.createElement(Stepper, {
+      etiqueta: "Kg",
       valor: it.peso,
       min: 0,
       max: 100,
@@ -16580,44 +16637,19 @@ function EditorDiaEntreno({
         nota: e.target.value
       }),
       placeholder: "Nota (ej. cerca del fallo técnico)",
-      className: "w-full px-3 py-2 text-[12.5px] mb-3",
+      className: "w-full px-3 py-2 text-[12.5px] mb-2",
       style: inputStyle
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => mover(i, -1),
-      style: {
-        flex: 1,
-        padding: "7px 0",
-        borderRadius: 12,
-        background: palette.paperDark,
-        fontSize: 12,
-        color: palette.inkSoft
-      }
-    }, "▲ Subir"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => mover(i, 1),
-      style: {
-        flex: 1,
-        padding: "7px 0",
-        borderRadius: 12,
-        background: palette.paperDark,
-        fontSize: 12,
-        color: palette.inkSoft
-      }
-    }, "▼ Bajar"), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       onClick: () => quitar(i),
       style: {
-        flex: 1,
+        width: "100%",
         padding: "7px 0",
         borderRadius: 12,
         background: palette.redSoft,
         fontSize: 12,
         color: palette.red
       }
-    }, "✕ Quitar"))));
+    }, "✕ Quitar ejercicio")));
   }), /*#__PURE__*/React.createElement("button", {
     onClick: onPicker,
     className: "w-full py-2.5 text-[12.5px] font-semibold",
@@ -17538,6 +17570,7 @@ function SesionEntreno({
   const [guardando, setGuardando] = useState(false);
   const [inicio] = useState(() => Date.now());
   const [fin, setFin] = useState(null);
+  const ultBip = useRef("");
   useEffect(() => {
     let lock = null;
     try {
@@ -17586,6 +17619,7 @@ function SesionEntreno({
   }
   function hecha() {
     if (!p) return;
+    pitidoSerie();
     const v = valorDe(p);
     setHechas(h => ({
       ...h,
@@ -17600,6 +17634,35 @@ function SesionEntreno({
       setFase("descanso");
     }
   }
+  function quitarHecha(pp) {
+    setHechas(h => {
+      const n = {
+        ...h
+      };
+      delete n[pp.ei + "-" + pp.s];
+      return n;
+    });
+  }
+  function deshacer() {
+    // vuelve atrás una serie por si pulsaste por error
+    setFinTrab(0);
+    setVerInfo(false);
+    if (fase === "descanso") {
+      quitarHecha(p);
+      setFase("trabajo");
+      return;
+    }
+    if (fase === "fin") {
+      quitarHecha(pasos[pasos.length - 1]);
+      setFin(null);
+      setFase("trabajo");
+      return;
+    }
+    if (i > 0) {
+      quitarHecha(pasos[i - 1]);
+      setI(i - 1);
+    }
+  }
   function saltarEjercicio() {
     const j = pasos.findIndex(x => x.ei > p.ei);
     setFinTrab(0);
@@ -17611,6 +17674,14 @@ function SesionEntreno({
   }
   // fin del descanso / fin de la cuenta atrás de un ejercicio por tiempo
   useEffect(() => {
+    const seg = fase === "descanso" ? restante : fase === "trabajo" && finTrab ? restTrab : null;
+    if (seg !== null && seg >= 1 && seg <= 3) {
+      const clave = `${fase}-${i}-${seg}`;
+      if (ultBip.current !== clave) {
+        ultBip.current = clave;
+        pitidoTick();
+      }
+    }
     if (fase === "descanso" && restante === 0) {
       pitido();
       setI(x => x + 1);
@@ -17804,6 +17875,13 @@ function SesionEntreno({
         opacity: guardando ? 0.6 : 1
       }
     }, guardando ? "Guardando…" : "Guardar entrenamiento"), /*#__PURE__*/React.createElement("button", {
+      onClick: deshacer,
+      className: "w-full py-2.5 mt-2 text-[12.5px] font-semibold",
+      style: {
+        background: palette.paperDark,
+        borderRadius: 14
+      }
+    }, "↶ Deshacer la última serie"), /*#__PURE__*/React.createElement("button", {
       onClick: () => onSalir(false),
       className: "w-full py-2.5 mt-1 text-[12px]",
       style: {
@@ -17932,37 +18010,108 @@ function SesionEntreno({
         fontSize: 13,
         fontWeight: 700
       }
-    }, "Saltar")), /*#__PURE__*/React.createElement("div", {
+    }, "Saltar")), /*#__PURE__*/React.createElement("button", {
+      onClick: deshacer,
       style: {
-        background: palette.paperDark,
-        borderRadius: 16,
-        padding: 12,
-        textAlign: "left"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "text-[10px] uppercase tracking-wide mb-1",
-      style: {
-        color: palette.inkSoft
-      }
-    }, "Siguiente"), siguiente && siguiente.ei === p.ei ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 14,
-        fontWeight: 600
-      }
-    }, "Serie ", siguiente.s + 1, " de ", sigIt.series, " · ", valorDe(siguiente).reps, porTiempo ? " s" : " reps", Number(valorDe(siguiente).peso) > 0 ? ` × ${String(valorDe(siguiente).peso).replace(".", ",")} kg` : "") : sigIt ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 14,
-        fontWeight: 600
-      }
-    }, "Ejercicio ", siguiente.ei + 1, "/", nEj, ": ", sigIt.ej.nombre) : null, sigIt && /*#__PURE__*/React.createElement("div", {
-      style: {
+        width: "100%",
+        marginBottom: 12,
+        padding: "9px 0",
         borderRadius: 12,
-        background: "#FFFFFF",
-        marginTop: 8
+        background: palette.redSoft,
+        color: palette.red,
+        fontSize: 12.5,
+        fontWeight: 600
       }
-    }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
-      ej: sigIt.ej
-    })))), salida);
+    }, "↶ Me equivoqué: deshacer esta serie"), sigIt && (() => {
+      const vs = valorDe(siguiente);
+      const mismo = siguiente.ei === p.ei;
+      const tiempo = sigIt.ej.unidad === "s";
+      const ultS = ultimaVez(registros, sigIt.eid);
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: palette.paperDark,
+          borderRadius: 16,
+          padding: 12,
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "text-[10px] uppercase tracking-wide mb-1",
+        style: {
+          color: palette.inkSoft
+        }
+      }, mismo ? "Siguiente serie" : `Siguiente ejercicio · ${siguiente.ei + 1}/${nEj}`), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 17,
+          fontWeight: 700,
+          lineHeight: 1.2
+        }
+      }, sigIt.ej.nombre), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11.5,
+          color: palette.inkSoft,
+          marginBottom: 6
+        }
+      }, sigIt.ej.musculos), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          flexWrap: "wrap",
+          marginBottom: 8
+        }
+      }, [`Serie ${siguiente.s + 1} de ${sigIt.series}`, `${vs.reps}${tiempo ? " s" : " reps"}${sigIt.porLado ? " por " + (sigIt.ej.lado || "lado") : ""}`, Number(vs.peso) > 0 ? `${String(vs.peso).replace(".", ",")} kg` : null, ultS ? `Última vez ${ultS.reps}${tiempo ? "s" : ""}${ultS.peso > 0 ? "×" + String(ultS.peso).replace(".", ",") : ""}` : null].filter(Boolean).map(t => /*#__PURE__*/React.createElement("span", {
+        key: t,
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 999,
+          padding: "4px 10px",
+          fontSize: 12,
+          fontWeight: 700
+        }
+      }, t))), sigIt.nota ? /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: palette.greenDark,
+          fontStyle: "italic",
+          marginBottom: 8
+        }
+      }, sigIt.nota) : null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          borderRadius: 12,
+          background: "#FFFFFF"
+        }
+      }, /*#__PURE__*/React.createElement(AnimacionEjercicio, {
+        ej: sigIt.ej
+      })), (sigIt.ej.desc || (sigIt.ej.pasos || []).length > 0) && /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          color: palette.inkSoft,
+          marginBottom: 4
+        }
+      }, "CÓMO SE HACE"), sigIt.ej.desc ? /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12.5,
+          marginBottom: 6
+        }
+      }, sigIt.ej.desc) : null, (sigIt.ej.pasos || []).map((t, k) => /*#__PURE__*/React.createElement("div", {
+        key: k,
+        style: {
+          display: "flex",
+          gap: 6,
+          fontSize: 12.5,
+          marginBottom: 3
+        }
+      }, /*#__PURE__*/React.createElement("b", {
+        style: {
+          color: palette.green
+        }
+      }, k + 1, "."), /*#__PURE__*/React.createElement("span", null, t)))));
+    })()), salida);
   }
 
   // ----- Trabajo -----
@@ -18145,7 +18294,10 @@ function SesionEntreno({
       }
     }, m) : null;
   })(), porTiempo && !finTrab && /*#__PURE__*/React.createElement("button", {
-    onClick: () => setFinTrab(Date.now() + (Number(val.reps) || 30) * 1000),
+    onClick: () => {
+      ctxAudio();
+      setFinTrab(Date.now() + (Number(val.reps) || 30) * 1000);
+    },
     className: "w-full py-3 mb-2 text-[14px] font-semibold",
     style: {
       background: palette.greenSoft,
@@ -18189,7 +18341,19 @@ function SesionEntreno({
       color: palette.inkSoft,
       textDecoration: "underline"
     }
-  }, "Saltar ejercicio")), /*#__PURE__*/React.createElement("div", {
+  }, "Saltar ejercicio")), i > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: deshacer,
+    style: {
+      width: "100%",
+      marginBottom: 12,
+      padding: "9px 0",
+      borderRadius: 12,
+      background: palette.paperDark,
+      color: palette.ink,
+      fontSize: 12.5,
+      fontWeight: 600
+    }
+  }, "↶ Volver a la serie anterior"), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 16,
       background: "#F7FAF5",
