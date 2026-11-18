@@ -14471,6 +14471,14 @@ function EntrenoTab({
   }, "Ir a hoy")))), pestana === "entrenos" ? /*#__PURE__*/React.createElement(ListaPacks, {
     packs: packs,
     pesoKg: pesoKg,
+    perfilId: perfilId,
+    onCopiar: async pk => {
+      const r = await guardarPack({
+        ...pk,
+        clave: null
+      }, true);
+      setAvisoPack(`⧉ «${r.titulo}» copiado a tus entrenos`);
+    },
     onNuevo: () => setVista({
       t: "pack",
       clave: null
@@ -16750,12 +16758,14 @@ function EditorDiaEntreno({
 
 // ---------- Mis entrenamientos (packs reutilizables) ----------
 const CATEGORIAS_PACK = [["fuerza", "Fuerza", ["fuerza"]], ["correr", "Correr", ["carrera"]], ["cardio", "Cardio", ["bici", "cinta", "eliptica", "paseo"]], ["otro", "Libre", ["otro"]]];
-function ListaPacks({
+function PacksPersona({
   packs,
   pesoKg,
+  propio,
   onNuevo,
   onEditar,
-  onAsignar
+  onAsignar,
+  onCopiar
 }) {
   const [cerradas, setCerradas] = useState({});
   const conInfo = packs.map(p => ({
@@ -16776,13 +16786,10 @@ function ListaPacks({
     items: conInfo.filter(x => kinds.includes(x.inf.ico || "otro"))
   })).filter(g => g.items.length > 0);
   return /*#__PURE__*/React.createElement("div", {
-    className: "px-5 pb-5"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[12px] mb-3",
     style: {
-      color: palette.inkSoft
+      paddingTop: 4
     }
-  }, "Guarda tus entrenamientos y asígnalos a los días que quieras."), /*#__PURE__*/React.createElement("button", {
+  }, propio && /*#__PURE__*/React.createElement("button", {
     onClick: onNuevo,
     className: "w-full py-3 text-[13.5px] font-semibold mb-3",
     style: {
@@ -16791,11 +16798,11 @@ function ListaPacks({
       borderRadius: 16
     }
   }, "+ Nuevo entrenamiento"), packs.length === 0 && /*#__PURE__*/React.createElement("div", {
-    className: "text-[13px] text-center py-6",
+    className: "text-[13px] text-center py-4",
     style: {
       color: palette.inkSoft
     }
-  }, "Todavía no tienes entrenamientos guardados."), grupos.map(g => {
+  }, propio ? "Todavía no tienes entrenamientos guardados." : "Aún no tiene entrenamientos guardados."), grupos.map(g => {
     const abierta = !cerradas[g.id];
     const col = colorKind(g.kinds[0]);
     return /*#__PURE__*/React.createElement("div", {
@@ -16906,7 +16913,7 @@ function ListaPacks({
           fontSize: 13,
           color: palette.inkSoft
         }
-      }, "+", inf.nEj - 4)), /*#__PURE__*/React.createElement("div", {
+      }, "+", inf.nEj - 4)), propio ? /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 8,
@@ -16933,8 +16940,134 @@ function ListaPacks({
           fontSize: 13,
           fontWeight: 600
         }
-      }, "✎ Editar")));
+      }, "✎ Editar")) : /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: 12
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => onCopiar(p),
+        style: {
+          width: "100%",
+          padding: "9px 0",
+          borderRadius: 12,
+          background: palette.greenSoft,
+          color: palette.greenDark,
+          fontSize: 13,
+          fontWeight: 700
+        }
+      }, "⧉ Copiar a mis entrenos")));
     }));
+  }));
+}
+function ListaPacks({
+  packs,
+  pesoKg,
+  perfilId,
+  onNuevo,
+  onEditar,
+  onAsignar,
+  onCopiar
+}) {
+  const perfiles = cargarPerfiles();
+  const [abiertos, setAbiertos] = useState({});
+  const [ajenos, setAjenos] = useState({});
+  useEffect(() => {
+    perfiles.filter(pf => pf.id !== perfilId && abiertos[pf.id] && !ajenos[pf.id]).forEach(pf => {
+      sb.from("entreno_packs").select("*").eq("perfil", pf.id).then(({
+        data
+      }) => setAjenos(a => ({
+        ...a,
+        [pf.id]: (data || []).filter(x => x.tipo !== "marca").sort((x, y) => (Number(x.orden) || 0) - (Number(y.orden) || 0))
+      })));
+    });
+  }, [abiertos, perfilId]);
+  const ordenados = [...perfiles].sort((a, b) => a.id === perfilId ? -1 : b.id === perfilId ? 1 : 0);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "px-5 pb-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[12px] mb-3",
+    style: {
+      color: palette.inkSoft
+    }
+  }, "Guarda entrenamientos y asígnalos a los días que quieras. Puedes ver los de la otra persona y copiarlos a los tuyos."), ordenados.map(pf => {
+    const propio = pf.id === perfilId;
+    const abierto = !!abiertos[pf.id];
+    const lista = propio ? packs : ajenos[pf.id];
+    return /*#__PURE__*/React.createElement("div", {
+      key: pf.id,
+      style: {
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setAbiertos(a => ({
+        ...a,
+        [pf.id]: !a[pf.id]
+      })),
+      style: {
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 14px",
+        borderRadius: 18,
+        background: propio ? "#E6F4E8" : "#EEF1F7",
+        border: `1.5px solid ${palette.line}`,
+        textAlign: "left"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: 999,
+        background: propio ? palette.greenDark : "#4B5E8C",
+        color: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 800,
+        fontSize: 15,
+        flexShrink: 0
+      }
+    }, (pf.label || "?").slice(0, 1).toUpperCase()), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "block",
+        fontSize: 15,
+        fontWeight: 800
+      }
+    }, pf.label, propio ? " (tú)" : ""), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "block",
+        fontSize: 11.5,
+        color: palette.inkSoft
+      }
+    }, lista ? `${lista.length} entrenamiento${lista.length === 1 ? "" : "s"}` : propio ? "" : "Toca para ver")), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: palette.inkSoft
+      }
+    }, abierto ? "▴" : "▾")), abierto && /*#__PURE__*/React.createElement("div", {
+      style: {
+        paddingTop: 8
+      }
+    }, lista ? /*#__PURE__*/React.createElement(PacksPersona, {
+      packs: lista,
+      pesoKg: pesoKg,
+      propio: propio,
+      onNuevo: onNuevo,
+      onEditar: onEditar,
+      onAsignar: onAsignar,
+      onCopiar: onCopiar
+    }) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: palette.inkSoft,
+        padding: 10
+      }
+    }, "Cargando…")));
   }));
 }
 function EditorPack({
